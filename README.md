@@ -1,6 +1,6 @@
 # Waitlist Mini App Quickstart
 
-This is a demo Mini App application built using OnchainKit and the Farcaster SDK. Build a waitlist sign-up mini app for your company that can be published to the Base app and Farcaster. 
+This is a demo Mini App application built using OnchainKit and the Farcaster SDK. Build a waitlist sign-up mini app for your company that can be published to the Base app and Farcaster.
 
 > [!IMPORTANT]  
 > Before interacting with this demo, please review our [disclaimer](#disclaimer) — there are **no official tokens or apps** associated with Cubey, Base, or Coinbase.
@@ -16,13 +16,13 @@ Before getting started, make sure you have:
 
 ## Getting Started
 
-### 1. Clone this repository 
+### 1. Clone this repository
 
 ```bash
 git clone https://github.com/base/demos.git
 ```
 
-### 2. Install dependencies:
+### 2. Install dependencies
 
 ```bash
 cd demos/minikit/waitlist-mini-app-qs
@@ -36,10 +36,12 @@ Create a `.env.local` file and add your environment variables:
 ```bash
 NEXT_PUBLIC_PROJECT_NAME="Your App Name"
 NEXT_PUBLIC_ONCHAINKIT_API_KEY=<Replace-WITH-YOUR-CDP-API-KEY>
+NEXT_PUBLIC_ONCHAINKIT_PROJECT_ID="<Replace-WITH-YOUR-CDP-PROJECT-ID>"
 NEXT_PUBLIC_URL=
+NEXT_PUBLIC_DAILY_GM_ADDRESS="0xC9F754F99C069779486Eb9d70b46209c9Ed396CA"
 ```
 
-### 4. Run locally:
+### 4. Run locally
 
 ```bash
 npm run dev
@@ -72,7 +74,9 @@ Add your production URL to your local `.env` file:
 ```bash
 NEXT_PUBLIC_PROJECT_NAME="Your App Name"
 NEXT_PUBLIC_ONCHAINKIT_API_KEY=<Replace-WITH-YOUR-CDP-API-KEY>
+NEXT_PUBLIC_ONCHAINKIT_PROJECT_ID="<Replace-WITH-YOUR-CDP-PROJECT-ID>"
 NEXT_PUBLIC_URL=https://your-vercel-project-name.vercel.app/
+NEXT_PUBLIC_DAILY_GM_ADDRESS="0xC9F754F99C069779486Eb9d70b46209c9Ed396CA"
 ```
 
 ### 3. Upload environment variables to Vercel
@@ -82,7 +86,9 @@ Add environment variables to your production environment:
 ```bash
 vercel env add NEXT_PUBLIC_PROJECT_NAME production
 vercel env add NEXT_PUBLIC_ONCHAINKIT_API_KEY production
+vercel env add NEXT_PUBLIC_ONCHAINKIT_PROJECT_ID production
 vercel env add NEXT_PUBLIC_URL production
+vercel env add NEXT_PUBLIC_DAILY_GM_ADDRESS production
 ```
 
 ## Account Association
@@ -135,7 +141,6 @@ To publish your app, create a post in the Base app with your app's URL.
 
 For detailed step-by-step instructions, see the [Create a Mini App tutorial](https://docs.base.org/docs/mini-apps/quickstart/create-new-miniapp/) in the Base documentation.
 
-
 ---
 
 ## Disclaimer  
@@ -153,7 +158,8 @@ We do **not** endorse or support any third-party tokens, apps, or projects using
 > Coinbase and Base will never issue a token or ask you to connect your wallet for this demo.  
 
 For official Base developer resources, please visit:  
-- [https://base.org](https://base.org)  
-- [https://docs.base.org](https://docs.base.org)  
+
+* [https://base.org](https://base.org)  
+* [https://docs.base.org](https://docs.base.org)  
 
 ---

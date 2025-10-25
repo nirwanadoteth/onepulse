@@ -1,26 +1,19 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useQuickAuth,useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useRouter } from "next/navigation";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { Transaction, TransactionButton, TransactionStatus, TransactionToast } from "@coinbase/onchainkit/transaction";
+import { ConnectWallet } from "@coinbase/onchainkit/wallet";
+import { useAccount } from "wagmi";
+import { isAddress } from "viem";
 import { minikitConfig } from "../minikit.config";
+import { DAILY_GM_ADDRESS } from "../lib/constants";
+import { dailyGMAbi } from "../lib/abi/dailyGM";
 import styles from "./page.module.css";
-
-interface AuthResponse {
-  success: boolean;
-  user?: {
-    fid: number; // FID is the unique identifier for the user
-    issuedAt?: number;
-    expiresAt?: number;
-  };
-  message?: string; // Error messages come as 'message' not 'error'
-}
-
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit();
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const [recipient, setRecipient] = useState("");
 
   // Initialize the  miniapp
   useEffect(() => {
@@ -28,91 +21,93 @@ export default function Home() {
       setFrameReady();
     }
   }, [setFrameReady, isFrameReady]);
- 
-  
 
-  // If you need to verify the user's identity, you can use the useQuickAuth hook.
-  // This hook will verify the user's signature and return the user's FID. You can update
-  // this to meet your needs. See the /app/api/auth/route.ts file for more details.
-  // Note: If you don't need to verify the user's identity, you can get their FID and other user data
-  // via `context.user.fid`.
-  // const { data, isLoading, error } = useQuickAuth<{
-  //   userFid: string;
-  // }>("/api/auth");
 
-  const { data: authData, isLoading: isAuthLoading, error: authError } = useQuickAuth<AuthResponse>(
-    "/api/auth",
-    { method: "GET" }
-  );
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    // Check authentication first
-    if (isAuthLoading) {
-      setError("Please wait while we verify your identity...");
-      return;
-    }
-
-    if (authError || !authData?.success) {
-      setError("Please authenticate to join the waitlist");
-      return;
-    }
-
-    if (!email) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-    // TODO: Save email to database/API with user FID
-    console.log("Valid email submitted:", email);
-    console.log("User authenticated:", authData.user);
-    
-    // Navigate to success page
-    router.push("/success");
-  };
+  const isContractReady = Boolean(DAILY_GM_ADDRESS && DAILY_GM_ADDRESS !== "");
+  const isRecipientValid = recipient === "" ? false : isAddress(recipient);
 
   return (
     <div className={styles.container}>
-      <button className={styles.closeButton} type="button">
-        ✕
-      </button>
-      
+      <button className={styles.closeButton} type="button">✕</button>
       <div className={styles.content}>
         <div className={styles.waitlistForm}>
-          <h1 className={styles.title}>Join {minikitConfig.miniapp.name.toUpperCase()}</h1>
-          
+          <h1 className={styles.title}>{minikitConfig.miniapp.name.toUpperCase()}</h1>
           <p className={styles.subtitle}>
-             Hey {context?.user?.displayName || "there"}, Get early access and be the first to experience the future of<br />
-            crypto marketing strategy.
+            Hey {context?.user?.displayName || "there"}, say GM on Base and start your streak.
           </p>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <input
-              type="email"
-              placeholder="Your amazing email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.emailInput}
-            />
-            
-            {error && <p className={styles.error}>{error}</p>}
-            
-            <button type="submit" className={styles.joinButton}>
-              JOIN WAITLIST
-            </button>
-          </form>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "center", justifyContent: "center", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+            <ConnectWallet />
+          </div>
+
+          {!isContractReady && (
+            <p className={styles.error} style={{ textAlign: "center" }}>
+              Contract not configured. Set NEXT_PUBLIC_DAILY_GM_ADDRESS to enable GM.
+            </p>
+          )}
+
+          {/* GM (no recipient) */}
+          <div style={{ marginTop: "1rem" }}>
+            {address && (
+              <Transaction
+                calls={[
+                  {
+                    abi: dailyGMAbi,
+                    address: DAILY_GM_ADDRESS as `0x${string}`,
+                    functionName: "gm",
+                  },
+                ]}
+              >
+                <TransactionButton
+                  disabled={!isConnected || !isContractReady}
+                  text="GM"
+                />
+                <TransactionStatus />
+                <TransactionToast />
+              </Transaction>
+            )}
+          </div>
+
+          {/* GM to a recipient - only visible when connected */}
+          {isConnected && (
+            <div style={{ marginTop: "2rem" }}>
+              <div className={styles.form}>
+                <input
+                  type="text"
+                  placeholder="Recipient address (0x...)"
+                  value={recipient}
+                  onChange={(e) => {
+                    setRecipient(e.target.value);
+                  }}
+                  className={styles.emailInput}
+                />
+                {recipient && !isRecipientValid && (
+                  <p className={styles.error}>Enter a valid address.</p>
+                )}
+
+                {address && (
+                  <Transaction
+                    calls={[
+                      {
+                        abi: dailyGMAbi,
+                        address: DAILY_GM_ADDRESS as `0x${string}`,
+                        functionName: "gmTo",
+                        args: [recipient as `0x${string}`],
+                      },
+                    ]}
+                  >
+                    <TransactionButton
+                      disabled={!isConnected || !isContractReady || !isRecipientValid}
+                      text="GM to recipient"
+                    />
+                    <TransactionStatus />
+                    <TransactionToast />
+                  </Transaction>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
