@@ -31,6 +31,7 @@ export const minikitConfig = {
     ogTitle: "OnePulse - Daily GM Community",
     ogDescription: "Build your streak and connect with the community through daily GM interactions",
     ogImageUrl: `${ROOT_URL}/onepulse-hero.png`,
+    noindex: false
   },
   baseBuilder: {
     ownerAddress: "0x0e2d4eF0a0A82cd818f0B3cfFe52F4Ebcbf0d96e",
