@@ -33,6 +33,7 @@ export const minikitConfig = {
     ogImageUrl: `${ROOT_URL}/onepulse-hero.png`,
   },
   baseBuilder: {
+    ownerAddress: "0x0e2d4eF0a0A82cd818f0B3cfFe52F4Ebcbf0d96e",
     allowedAddresses: [
       "0xf68da68C7894b62aaA893D49F3B119177C98dE69",
       "0x5cbEEB487a6F7a65E480a38fff7b4537a8D1C874",
