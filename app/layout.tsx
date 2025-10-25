@@ -8,10 +8,10 @@ const frame = {
   version: minikitConfig.miniapp.version,
   imageUrl: minikitConfig.miniapp.heroImageUrl,
   button: {
-    title: `Launch ${minikitConfig.miniapp.name}`,
+    title: `Send GM`,
     action: {
       type: "launch_frame",
-      name: `Launch ${minikitConfig.miniapp.name}`,
+      name: `${minikitConfig.miniapp.name}`,
       url: minikitConfig.miniapp.homeUrl,
       splashImageUrl: minikitConfig.miniapp.splashImageUrl,
       splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor
