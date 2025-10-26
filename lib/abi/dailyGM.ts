@@ -10,17 +10,15 @@ export const dailyGMAbi = [
     type: "function",
     name: "gmTo",
     stateMutability: "nonpayable",
-    inputs: [
-      { name: "recipient", type: "address" },
-    ],
+    inputs: [{ name: "recipient", type: "address" }],
     outputs: [],
   },
   {
     type: "function",
     name: "lastGMDay",
     stateMutability: "view",
-    inputs: [ { name: "user", type: "address" } ],
-    outputs: [ { type: "uint256" } ],
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ type: "uint256" }],
   },
   {
     type: "event",
@@ -31,4 +29,4 @@ export const dailyGMAbi = [
     ],
     anonymous: false,
   },
-] as const;
+] as const

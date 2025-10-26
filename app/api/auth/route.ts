@@ -1,49 +1,49 @@
-import { Errors, createClient } from "@farcaster/quick-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"
+import { createClient, Errors } from "@farcaster/quick-auth"
 
-const client = createClient();
+const client = createClient()
 
 // Helper function to determine the correct domain for JWT verification
 function getUrlHost(request: NextRequest): string {
   // First try to get the origin from the Origin header (most reliable for CORS requests)
-  const origin = request.headers.get("origin");
+  const origin = request.headers.get("origin")
   if (origin) {
     try {
-      const url = new URL(origin);
-      return url.host;
+      const url = new URL(origin)
+      return url.host
     } catch (error) {
-      console.warn("Invalid origin header:", origin, error);
+      console.warn("Invalid origin header:", origin, error)
     }
   }
 
   // Fallback to Host header
-  const host = request.headers.get("host");
+  const host = request.headers.get("host")
   if (host) {
-    return host;
+    return host
   }
 
   // Final fallback to environment variables (your original logic)
-  let urlValue: string;
+  let urlValue: string
   if (process.env.VERCEL_ENV === "production") {
-    urlValue = process.env.NEXT_PUBLIC_URL!;
+    urlValue = process.env.NEXT_PUBLIC_URL!
   } else if (process.env.VERCEL_URL) {
-    urlValue = `https://${process.env.VERCEL_URL}`;
+    urlValue = `https://${process.env.VERCEL_URL}`
   } else {
-    urlValue = "http://localhost:3000";
+    urlValue = "http://localhost:3000"
   }
 
-  const url = new URL(urlValue);
-  return url.host;
+  const url = new URL(urlValue)
+  return url.host
 }
 
 export async function GET(request: NextRequest) {
   // Because we're fetching this endpoint via `sdk.quickAuth.fetch`,
   // if we're in a mini app, the request will include the necessary `Authorization` header.
-  const authorization = request.headers.get("Authorization");
+  const authorization = request.headers.get("Authorization")
 
   // Here we ensure that we have a valid token.
   if (!authorization || !authorization.startsWith("Bearer ")) {
-    return NextResponse.json({ message: "Missing token" }, { status: 401 });
+    return NextResponse.json({ message: "Missing token" }, { status: 401 })
   }
 
   try {
@@ -53,12 +53,12 @@ export async function GET(request: NextRequest) {
     const payload = await client.verifyJwt({
       token: authorization.split(" ")[1] as string,
       domain: getUrlHost(request),
-    });
+    })
 
-    console.log("payload", payload);
+    console.log("payload", payload)
 
     // If the token was valid, `payload.sub` will be the user's Farcaster ID.
-    const userFid = payload.sub;
+    const userFid = payload.sub
 
     // Return user information for your waitlist application
     return NextResponse.json({
@@ -68,15 +68,14 @@ export async function GET(request: NextRequest) {
         issuedAt: payload.iat,
         expiresAt: payload.exp,
       },
-    });
-
+    })
   } catch (e) {
     if (e instanceof Errors.InvalidTokenError) {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+      return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     if (e instanceof Error) {
-      return NextResponse.json({ message: e.message }, { status: 500 });
+      return NextResponse.json({ message: e.message }, { status: 500 })
     }
-    throw e;
+    throw e
   }
 }

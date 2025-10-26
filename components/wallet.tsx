@@ -1,23 +1,23 @@
 import {
+  Address,
+  Avatar,
+  EthBalance,
+  Identity,
+  Name,
+} from "@coinbase/onchainkit/identity"
+import {
   ConnectWallet,
   Wallet,
   WalletDropdown,
   WalletDropdownDisconnect,
-} from '@coinbase/onchainkit/wallet';
-import {
-  Address,
-  Avatar,
-  Name,
-  Identity,
-  EthBalance,
-} from '@coinbase/onchainkit/identity';
+} from "@coinbase/onchainkit/wallet"
 
 export function WalletComponents() {
   return (
     <div className="flex justify-end">
       <Wallet>
-        <ConnectWallet>
-          <Avatar className="h-6 w-6" />
+        <ConnectWallet className="max-h-12">
+          <Avatar className="ock:h-6 ock:w-6" />
           <Name />
         </ConnectWallet>
         <WalletDropdown>
@@ -31,5 +31,5 @@ export function WalletComponents() {
         </WalletDropdown>
       </Wallet>
     </div>
-  );
+  )
 }
