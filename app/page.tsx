@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useMiniKit } from "@coinbase/onchainkit/minikit"
+import { useMiniKit, useIsInMiniApp } from "@coinbase/onchainkit/minikit"
 import { WalletIsland } from "@coinbase/onchainkit/wallet"
 import { useTheme } from "next-themes"
 
@@ -16,6 +16,7 @@ import { minikitConfig } from "../minikit.config"
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit()
+  const { isInMiniApp } = useIsInMiniApp();
   const { resolvedTheme } = useTheme()
   const [color, setColor] = useState("#ffffff")
 
@@ -68,7 +69,9 @@ export default function Home() {
           </Tabs>
         </div>
       </div>
-      <WalletIsland />
+      {!isInMiniApp && (
+        <WalletIsland />
+      )}
       <Particles
         className="absolute inset-0 z-0"
         quantity={100}
