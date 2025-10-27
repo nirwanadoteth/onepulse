@@ -18,6 +18,7 @@ export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit()
   const { resolvedTheme } = useTheme()
   const [color, setColor] = useState("#ffffff")
+  const [tab, setTab] = useState("home")
 
   // Initialize the  miniapp
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function Home() {
           <AnimatedThemeToggler />
         </div>
         <div className="mt-4 mb-6">
-          <Tabs defaultValue="home">
+          <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="bg-background border-border flex h-12 w-full gap-2 rounded-lg border">
               <TabsTrigger
                 value="home"
@@ -63,14 +64,14 @@ export default function Home() {
               <GMBase />
             </TabsContent>
             <TabsContent value="profile">
-              <Profile user={context?.user as unknown as MiniAppUser} />
+              <Profile
+                user={context?.user as unknown as MiniAppUser}
+                onDisconnected={() => setTab("home")}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </div>
-      {!context && (
-        <WalletIsland />
-      )}
       <Particles
         className="absolute inset-0 z-0"
         quantity={100}

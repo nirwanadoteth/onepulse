@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
+import { ConnectWallet } from "@coinbase/onchainkit/wallet"
 import {
   Transaction,
   TransactionButton,
   TransactionStatus,
   TransactionToast,
 } from "@coinbase/onchainkit/transaction"
+import { useQueryClient } from "@tanstack/react-query"
 import { isAddress } from "viem"
-import { useAccount } from "wagmi"
+import { useAccount, useReadContract } from "wagmi"
 
 import { dailyGMAbi } from "@/lib/abi/dailyGM"
 import { DAILY_GM_ADDRESS } from "@/lib/constants"
@@ -25,7 +27,7 @@ import { MagicCard } from "@/components/ui/magic-card"
 import { ShinyButton } from "@/components/ui/shiny-button"
 
 export function GMBase() {
-  const { isConnected } = useAccount()
+  const { isConnected, address } = useAccount()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<"main" | "gmTo">("main")
   const [recipient, setRecipient] = useState("")
@@ -33,10 +35,118 @@ export function GMBase() {
   const isContractReady = Boolean(DAILY_GM_ADDRESS && DAILY_GM_ADDRESS !== "")
   const isRecipientValid = recipient !== "" && isAddress(recipient)
 
+  // Onchain: lastGMDay(address)
+  const {
+    data: lastGmDayData,
+    refetch: refetchLastGmDay,
+    isPending: isPendingLastGm,
+  } = useReadContract({
+    abi: dailyGMAbi,
+    address: DAILY_GM_ADDRESS as `0x${string}`,
+    functionName: "lastGMDay",
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address && isContractReady) },
+  })
+
+  // Compute CTA state and countdown target
+  const { hasGmToday, gmDisabled, ctaText, targetSec } = useMemo(() => {
+    if (!address || !isContractReady) {
+      return {
+        hasGmToday: false,
+        gmDisabled: !isConnected || !isContractReady,
+        ctaText: isConnected ? "GM on Base" : "Connect wallet to GM",
+        targetSec: 0,
+      }
+    }
+    if (lastGmDayData === undefined) {
+      return {
+        hasGmToday: false,
+        gmDisabled: true,
+        ctaText: "Checking…",
+        targetSec: 0,
+      }
+    }
+    const lastDay = Number((lastGmDayData as unknown as bigint) ?? 0n)
+    const nowSec = Math.floor(Date.now() / 1000)
+    const currentDay = Math.floor(nowSec / 86400)
+    const already = lastDay >= currentDay
+    const nextDayStartSec = (currentDay + 1) * 86400
+    return {
+      hasGmToday: already,
+      gmDisabled: already || isPendingLastGm,
+      ctaText: already ? "GM in --:--:--" : "GM on Base",
+      targetSec: nextDayStartSec,
+    }
+  }, [address, isContractReady, isConnected, lastGmDayData, isPendingLastGm])
+
+  // Live countdown if already GM'd today
+  const [countdown, setCountdown] = useState("--:--:--")
+  useEffect(() => {
+    if (!hasGmToday || !targetSec) return
+    const fmt = (ms: number) => {
+      const total = Math.max(0, Math.floor(ms / 1000))
+      const h = Math.floor(total / 3600)
+      const m = Math.floor((total % 3600) / 60)
+      const s = total % 60
+      const pad = (n: number) => String(n).padStart(2, "0")
+      return `${pad(h)}:${pad(m)}:${pad(s)}`
+    }
+    const tick = () => {
+      const nowSec = Math.floor(Date.now() / 1000)
+      const ms = (targetSec - nowSec) * 1000
+      setCountdown(fmt(ms))
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [hasGmToday, targetSec])
+
   const close = () => {
     setOpen(false)
     setMode("main")
     setRecipient("")
+  }
+
+  function SuccessReporter({
+    status,
+    onReported,
+  }: {
+    status: string
+    onReported?: () => void
+  }) {
+    const didReport = useRef(false)
+    const queryClient = useQueryClient()
+    useEffect(() => {
+      const report = async () => {
+        if (didReport.current) return
+        if (!address) return
+        try {
+          await fetch("/api/gm/report", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address }),
+          })
+        } catch {}
+        // Refresh cached stats for this address
+        try {
+          if (address) {
+            await queryClient.invalidateQueries({
+              queryKey: ["gm-stats", address],
+            })
+          }
+        } catch {}
+        // Update onchain lastGMDay so CTA refreshes
+        try {
+          await refetchLastGmDay()
+        } catch {}
+        didReport.current = true
+        onReported?.()
+      }
+      if (status === "success") {
+        void report()
+      }
+    }, [status])
+    return null
   }
 
   return (
@@ -55,7 +165,18 @@ export function GMBase() {
           <ItemDescription>Boost your Base onchain footprint.</ItemDescription>
         </ItemContent>
         <ItemActions>
-          <ShinyButton onClick={() => setOpen(true)}>GM on Base</ShinyButton>
+          {isConnected ? (
+            <ShinyButton
+              disabled={gmDisabled}
+              onClick={() => {
+                if (!gmDisabled) setOpen(true)
+              }}
+            >
+              {hasGmToday ? `GM in ${countdown}` : ctaText}
+            </ShinyButton>
+          ) : (
+            <ConnectWallet>Connect Wallet</ConnectWallet>
+          )}
         </ItemActions>
       </Item>
 
@@ -86,13 +207,19 @@ export function GMBase() {
                       <TransactionButton
                         disabled={!isContractReady}
                         render={({ onSubmit, isDisabled, status }) => (
-                          <Button
-                            onClick={onSubmit}
-                            disabled={isDisabled}
-                            className="w-full"
-                          >
-                            {status === "pending" ? "Processing..." : "GM"}
-                          </Button>
+                          <>
+                            <Button
+                              onClick={onSubmit}
+                              disabled={isDisabled}
+                              className="w-full"
+                            >
+                              {status === "pending" ? "Processing..." : "GM"}
+                            </Button>
+                            <SuccessReporter
+                              status={String(status)}
+                              onReported={close}
+                            />
+                          </>
                         )}
                       />
                       <TransactionStatus />
@@ -147,13 +274,19 @@ export function GMBase() {
                       <TransactionButton
                         disabled={!isRecipientValid || !isContractReady}
                         render={({ onSubmit, isDisabled, status }) => (
-                          <Button
-                            onClick={onSubmit}
-                            disabled={isDisabled}
-                            className="w-full"
-                          >
-                            {status === "pending" ? "Sending..." : "Send GM"}
-                          </Button>
+                          <>
+                            <Button
+                              onClick={onSubmit}
+                              disabled={isDisabled}
+                              className="w-full"
+                            >
+                              {status === "pending" ? "Sending..." : "Send GM"}
+                            </Button>
+                            <SuccessReporter
+                              status={String(status)}
+                              onReported={close}
+                            />
+                          </>
                         )}
                       />
                       <TransactionStatus />
