@@ -9,7 +9,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item"
 
-type MiniAppUser = {
+export type MiniAppUser = {
   fid: number
   displayName: string
   username: string

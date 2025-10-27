@@ -10,7 +10,7 @@ import { Particles } from "@/components/ui/particles"
 import { SparklesText } from "@/components/ui/sparkles-text"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
-import { Profile } from "@/components/profile"
+import { Profile, type MiniAppUser } from "@/components/profile"
 
 import { minikitConfig } from "../minikit.config"
 
@@ -63,7 +63,7 @@ export default function Home() {
               <GMBase />
             </TabsContent>
             <TabsContent value="profile">
-              <Profile user={context?.user as any} />
+              <Profile user={context?.user as unknown as MiniAppUser} />
             </TabsContent>
           </Tabs>
         </div>
