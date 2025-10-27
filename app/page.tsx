@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react"
 import { useMiniKit } from "@coinbase/onchainkit/minikit"
+import { WalletIsland } from "@coinbase/onchainkit/wallet"
 import { useTheme } from "next-themes"
 
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { Particles } from "@/components/ui/particles"
 import { SparklesText } from "@/components/ui/sparkles-text"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
-import { WalletComponents } from "@/components/wallet"
+import { Profile } from "@/components/profile"
 
 import { minikitConfig } from "../minikit.config"
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit()
@@ -25,8 +27,6 @@ export default function Home() {
     }
   }, [resolvedTheme, setFrameReady, isFrameReady])
 
-  // GM UI moved into GMBase component
-
   return (
     <div
       style={{
@@ -38,36 +38,37 @@ export default function Home() {
     >
       <div className="mx-auto w-[95%] max-w-lg px-4 py-4">
         <div className="mt-3 mb-6 flex items-center justify-between">
-          <SparklesText className="text-2xl justify-left">
+          <SparklesText className="justify-left text-2xl">
             {minikitConfig.miniapp.name}
           </SparklesText>
-          {/* Profile picture - only show if context data is available */}
-          {context && context?.user?.pfpUrl ? (
-            <button
-              // onClick={() => sdk.actions.viewProfile({ fid: context.user.fid })}
-              className="shrink-0 justify-right"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={context.user.pfpUrl}
-                alt="Profile"
-                className="h-6 w-6 rounded-full object-cover"
-              />
-              <p>{context?.user?.displayName}</p>
-            </button>
-          ) : (
-            <WalletComponents />
-          )}
+          <AnimatedThemeToggler />
         </div>
-        <div>
-          <div className="space-y-3">
-            <div className="flex items-end justify-end">
-            <AnimatedThemeToggler />
-            </div>
-            <GMBase />
-          </div>
+        <div className="mt-4 mb-6">
+          <Tabs defaultValue="home">
+            <TabsList className="bg-background border-border flex h-12 w-full gap-2 rounded-lg border">
+              <TabsTrigger
+                value="home"
+                className="data-[state=active]:bg-accent"
+              >
+                Home
+              </TabsTrigger>
+              <TabsTrigger
+                value="profile"
+                className="data-[state=active]:bg-accent"
+              >
+                Profile
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="home">
+              <GMBase />
+            </TabsContent>
+            <TabsContent value="profile">
+              <Profile user={context?.user as any} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
+      <WalletIsland />
       <Particles
         className="absolute inset-0 z-0"
         quantity={100}
