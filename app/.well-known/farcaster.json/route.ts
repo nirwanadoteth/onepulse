@@ -1,6 +1,7 @@
-import { withValidManifest } from "@coinbase/onchainkit/minikit";
-import { minikitConfig } from "../../../minikit.config";
+import { withValidManifest } from "@coinbase/onchainkit/minikit"
+
+import { minikitConfig } from "../../../minikit.config"
 
 export async function GET() {
-  return Response.json(withValidManifest(minikitConfig));
+  return Response.json(withValidManifest(minikitConfig))
 }

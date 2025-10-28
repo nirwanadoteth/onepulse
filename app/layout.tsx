@@ -1,8 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google"
 import { SafeArea } from "@coinbase/onchainkit/minikit"
 
-import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { minikitConfig } from "../minikit.config"
 import { RootProvider } from "./rootProvider"
@@ -27,11 +27,13 @@ const frame = {
 export async function generateMetadata() {
   return {
     title: minikitConfig.miniapp.ogTitle || minikitConfig.miniapp.name,
-    description: minikitConfig.miniapp.ogDescription || minikitConfig.miniapp.description,
+    description:
+      minikitConfig.miniapp.ogDescription || minikitConfig.miniapp.description,
     openGraph: {
       title: minikitConfig.miniapp.ogTitle || minikitConfig.miniapp.name,
       description:
-        minikitConfig.miniapp.ogDescription || minikitConfig.miniapp.description,
+        minikitConfig.miniapp.ogDescription ||
+        minikitConfig.miniapp.description,
       images: [minikitConfig.miniapp.heroImageUrl],
       url: minikitConfig.miniapp.homeUrl,
       siteName: minikitConfig.miniapp.name,
@@ -40,7 +42,8 @@ export async function generateMetadata() {
       card: "summary_large_image",
       title: minikitConfig.miniapp.ogTitle || minikitConfig.miniapp.name,
       description:
-        minikitConfig.miniapp.ogDescription || minikitConfig.miniapp.description,
+        minikitConfig.miniapp.ogDescription ||
+        minikitConfig.miniapp.description,
       images: [minikitConfig.miniapp.heroImageUrl],
     },
     other: {

@@ -137,8 +137,8 @@ export function GMBase() {
           const toastId = txHash
             ? `gm-success-${txHash}`
             : addressProp
-            ? `gm-success-${addressProp}`
-            : `gm-success`
+              ? `gm-success-${addressProp}`
+              : `gm-success`
           toast.success(message ?? "GM successful", {
             id: toastId,
             duration: 3000,
@@ -146,7 +146,8 @@ export function GMBase() {
               ? {
                   action: {
                     label: "View tx",
-                    onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
+                    onClick: () =>
+                      window.open(url, "_blank", "noopener,noreferrer"),
                   },
                 }
               : {}),
@@ -179,7 +180,15 @@ export function GMBase() {
       if (status === "success") {
         void report()
       }
-    }, [status, addressProp, onReported, queryClient, refetchLastGmDayProp, txHash, message])
+    }, [
+      status,
+      addressProp,
+      onReported,
+      queryClient,
+      refetchLastGmDayProp,
+      txHash,
+      message,
+    ])
     return null
   }
 
@@ -286,7 +295,9 @@ export function GMBase() {
                         context?: {
                           transactionHash?: string
                           receipt?: { transactionHash?: string }
-                          transactionReceipts?: Array<{ transactionHash?: string }>
+                          transactionReceipts?: Array<{
+                            transactionHash?: string
+                          }>
                         }
                       }) => {
                         const txHash =
@@ -391,7 +402,9 @@ export function GMBase() {
                         context?: {
                           transactionHash?: string
                           receipt?: { transactionHash?: string }
-                          transactionReceipts?: Array<{ transactionHash?: string }>
+                          transactionReceipts?: Array<{
+                            transactionHash?: string
+                          }>
                         }
                       }) => {
                         const txHash =
