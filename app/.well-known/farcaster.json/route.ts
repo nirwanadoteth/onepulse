@@ -15,7 +15,7 @@ function withValidProperties(
 }
 
 export async function GET() {
-  return Response.json({
+  const body = {
     accountAssociation: {
       header: minikitConfig.accountAssociation.header,
       payload: minikitConfig.accountAssociation.payload,
@@ -43,5 +43,13 @@ export async function GET() {
       ogDescription: minikitConfig.miniapp.ogDescription,
       ogImageUrl: minikitConfig.miniapp.ogImageUrl,
     }),
+  }
+  return Response.json(body, {
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      // Strongly discourage intermediaries and clients from caching the manifest
+      "Cache-Control":
+        "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+    },
   })
 }

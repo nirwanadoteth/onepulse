@@ -4,6 +4,11 @@ const ROOT_URL =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000")
 
+const BUILD_ID =
+  process.env.NEXT_PUBLIC_BUILD_ID ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  String(Date.now())
+
 /**
  * MiniApp configuration object. Must follow the Farcaster MiniApp specification.
  *
@@ -23,20 +28,20 @@ export const minikitConfig = {
     subtitle: "Daily GM on Base",
     description:
       "Boost your onchain footprint and build streaks with OnePulse on Base, Celo, and Optimism",
-    screenshotUrls: [`${ROOT_URL}/screenshot.png`],
-    iconUrl: `${ROOT_URL}/icon.png`,
-    splashImageUrl: `${ROOT_URL}/splash.png`,
+    screenshotUrls: [`${ROOT_URL}/screenshot.png?v=${BUILD_ID}`],
+    iconUrl: `${ROOT_URL}/icon.png?v=${BUILD_ID}`,
+    splashImageUrl: `${ROOT_URL}/splash.png?v=${BUILD_ID}`,
     splashBackgroundColor: "#FFFFFF",
     homeUrl: ROOT_URL,
     webhookUrl: `${ROOT_URL}/api/webhook`,
     primaryCategory: "social",
     tags: ["base", "celo", "op", "gm", "daily"],
-    heroImageUrl: `${ROOT_URL}/hero.png`,
+    heroImageUrl: `${ROOT_URL}/hero.png?v=${BUILD_ID}`,
     tagline: "Based onchain booster",
     ogTitle: "OnePulse",
     ogDescription:
       "Boost your onchain footprint and build streaks with OnePulse on Base, Celo, and Optimism",
-    ogImageUrl: `${ROOT_URL}/hero.png`,
+    ogImageUrl: `${ROOT_URL}/hero.png?v=${BUILD_ID}`,
     noindex: false,
   },
   baseBuilder: {
