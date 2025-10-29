@@ -45,7 +45,7 @@ export function RootProvider({
               },
             },
             analytics: false,
-            paymaster: process.env.PAYMASTER_ENDPOINT
+            paymaster: process.env.PAYMASTER_ENDPOINT,
           }}
           miniKit={{
             enabled: true,

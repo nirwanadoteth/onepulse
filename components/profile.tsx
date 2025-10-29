@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAccount } from "wagmi"
 
@@ -37,8 +37,10 @@ export type MiniAppUser = {
 
 export const Profile = React.memo(function Profile({
   user,
+  isSmartWallet,
 }: {
   user?: MiniAppUser
+  isSmartWallet?: boolean
 }) {
   const { address } = useAccount()
   type GmStats = {
@@ -57,13 +59,23 @@ export const Profile = React.memo(function Profile({
     []
   )
 
-  const chains = [
-    { id: 8453, name: "Base" },
-    { id: 42220, name: "Celo" },
-    { id: 10, name: "Optimism" },
-  ] as const
+  const chains = useMemo(() => {
+    const list = [
+      { id: 8453, name: "Base" },
+      { id: 42220, name: "Celo" },
+      { id: 10, name: "Optimism" },
+    ] as const
+    return isSmartWallet ? list.filter((c) => c.id !== 42220) : list
+  }, [isSmartWallet])
 
   const [selectedChainId, setSelectedChainId] = useState<number>(8453)
+  // Ensure selected chain remains valid if list changes
+  useEffect(() => {
+    if (!chains.find((c) => c.id === selectedChainId)) {
+      const id = setTimeout(() => setSelectedChainId(8453), 0)
+      return () => clearTimeout(id)
+    }
+  }, [chains, selectedChainId])
 
   const { data: selectedStats, isFetching } = useQuery<GmStats>({
     queryKey: ["gm-stats", address ?? "no-address", selectedChainId],

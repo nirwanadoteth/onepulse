@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from "react"
 import { minikitConfig } from "@/minikit.config"
 import { useMiniKit } from "@coinbase/onchainkit/minikit"
+import { isWalletACoinbaseSmartWallet } from "@coinbase/onchainkit/wallet"
 import { useTheme } from "next-themes"
+import {
+  createPublicClient,
+  http,
+  type PublicClient,
+  type RpcUserOperation,
+} from "viem"
+import { base } from "viem/chains"
 import { useAccount } from "wagmi"
 
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
@@ -14,16 +22,39 @@ import { GMBase } from "@/components/gm-base"
 import { Profile } from "@/components/profile"
 import { DisconnectWallet } from "@/components/wallet"
 
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http(),
+})
+
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit()
-  const { isConnected } = useAccount()
+  const { address, isConnected } = useAccount()
   const { resolvedTheme } = useTheme()
   const color = useMemo(
     () => (resolvedTheme === "dark" ? "#ffffff" : "#0a0a0a"),
     [resolvedTheme]
   )
   const [tab, setTab] = useState("home")
-  const isBaseApp = context?.client?.clientFid === 309857;
+  const [isSmartWallet, setIsSmartWallet] = useState(false)
+  const isBaseApp = context?.client?.clientFid === 309857
+
+  // Detect Coinbase Smart Wallet after connected
+  useEffect(() => {
+    if (!isConnected || !address) return
+    const userOperation = { sender: address } as RpcUserOperation<"0.6">
+    ;(async () => {
+      try {
+        const res = await isWalletACoinbaseSmartWallet({
+          client: publicClient as PublicClient,
+          userOp: userOperation,
+        })
+        setIsSmartWallet(res.isCoinbaseSmartWallet === true)
+      } catch {
+        setIsSmartWallet(false)
+      }
+    })()
+  }, [isConnected, address])
 
   // Initialize the  miniapp
   useEffect(() => {
@@ -68,10 +99,11 @@ export default function Home() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="home">
-              <GMBase sponsored={isBaseApp} />
+              <GMBase isSmartWallet={isSmartWallet} sponsored={isBaseApp} />
             </TabsContent>
             <TabsContent value="profile">
               <Profile
+                isSmartWallet={isSmartWallet}
                 user={
                   context?.user
                     ? {

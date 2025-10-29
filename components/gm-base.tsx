@@ -17,9 +17,11 @@ import { GMChainCard } from "@/components/gm/GMChainCard"
 import { Button } from "./ui/button"
 
 export const GMBase = React.memo(function GMBase({
+  isSmartWallet,
   sponsored,
 }: {
-  sponsored: boolean
+  isSmartWallet?: boolean
+  sponsored?: boolean
 }) {
   const { isConnected, address } = useAppKitAccount()
   // Use stable, theme-agnostic icons at SSR to avoid hydration mismatch.
@@ -27,14 +29,15 @@ export const GMBase = React.memo(function GMBase({
   const opIcon = "/opmark.png"
 
   // Define supported chains here; adding a new chain is a one-liner.
-  const chains = useMemo(
-    () => [
+  const chains = useMemo(() => {
+    const list = [
       { id: 8453, name: "Base", iconSrc: "/basemark.png" },
       { id: 42220, name: "Celo", iconSrc: celoIcon },
       { id: 10, name: "Optimism", iconSrc: opIcon },
-    ],
-    []
-  )
+    ] as const
+    const hideCelo = Boolean(isSmartWallet)
+    return hideCelo ? list.filter((c) => c.id !== 42220) : list
+  }, [isSmartWallet])
 
   // Track per-chain GM status to determine if all chains are completed
   const [statusMap, setStatusMap] = useState<
@@ -121,7 +124,7 @@ export const GMBase = React.memo(function GMBase({
             isConnected={Boolean(isConnected)}
             address={address}
             onStatusChange={handleStatus}
-            sponsored={sponsored && c.id === 8453}
+            sponsored={Boolean(sponsored) && c.id === 8453}
           />
         )
       })}
