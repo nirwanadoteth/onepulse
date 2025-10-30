@@ -4,6 +4,8 @@ import { Inter, Roboto_Mono } from "next/font/google"
 import { headers } from "next/headers"
 import { minikitConfig } from "@/minikit.config"
 import { SafeArea } from "@coinbase/onchainkit/minikit"
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -91,7 +93,11 @@ export default async function RootLayout({
       <body>
         <RootProvider cookies={cookies}>
           <TooltipProvider delayDuration={0}>
-            <SafeArea>{children}</SafeArea>
+            <SafeArea>
+              {children}
+              <Analytics />
+              <SpeedInsights />
+            </SafeArea>
           </TooltipProvider>
         </RootProvider>
       </body>
