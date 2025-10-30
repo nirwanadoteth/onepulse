@@ -1,3 +1,5 @@
+import { Metadata } from "next"
+import type { Viewport } from "next"
 import { Inter, Roboto_Mono } from "next/font/google"
 import { headers } from "next/headers"
 import { minikitConfig } from "@/minikit.config"
@@ -28,15 +30,14 @@ const frame = {
     title: "GM on Base",
     action: {
       type: "launch_frame",
-      name: `${minikitConfig.miniapp.name}`,
-      url: minikitConfig.miniapp.homeUrl,
+      name: minikitConfig.miniapp.name,
       splashImageUrl: minikitConfig.miniapp.splashImageUrl,
       splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
     },
   },
 }
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: minikitConfig.miniapp.ogTitle || minikitConfig.miniapp.name,
     description:
@@ -61,14 +62,16 @@ export async function generateMetadata() {
     other: {
       "fc:frame": JSON.stringify(frame),
       "fc:miniapp": JSON.stringify(frame),
-      "fc:miniapp:subtitle": minikitConfig.miniapp.subtitle,
-      "fc:miniapp:description": minikitConfig.miniapp.description,
-      "fc:miniapp:tags": JSON.stringify(minikitConfig.miniapp.tags),
-      "fc:miniapp:tagline": minikitConfig.miniapp.tagline,
-      "fc:miniapp:og:title": minikitConfig.miniapp.ogTitle,
-      "fc:miniapp:og:description": minikitConfig.miniapp.ogDescription,
     },
   }
+}
+
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
 }
 
 export default async function RootLayout({

@@ -44,7 +44,6 @@ export function RootProvider({
                 frame: true,
               },
             },
-            analytics: false,
             paymaster: process.env.PAYMASTER_ENDPOINT,
           }}
           miniKit={{
@@ -52,7 +51,6 @@ export function RootProvider({
             autoConnect: true,
             notificationProxyUrl: undefined,
           }}
-          analytics={false}
         >
           {children}
         </OnchainKitProvider>

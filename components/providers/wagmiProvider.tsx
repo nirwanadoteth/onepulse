@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
 import { minikitConfig } from "@/minikit.config"
+import { sdk } from "@farcaster/miniapp-sdk"
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector"
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi"
 import { base, celo, optimism } from "@reown/appkit/networks"
@@ -12,6 +14,8 @@ import {
   CreateConnectorFn,
   createStorage,
   http,
+  useAccount,
+  useConnect,
   WagmiProvider,
   type Config,
 } from "wagmi"
@@ -28,8 +32,9 @@ if (!projectId) {
 export const networks = [base, celo, optimism]
 
 const connectors: CreateConnectorFn[] = [
-  injected(),
+  // Prefer Farcaster connector when inside Farcaster Mini App
   farcasterMiniApp(),
+  injected(),
   baseAccount({
     appName: minikitConfig.miniapp.name,
     appLogoUrl: minikitConfig.miniapp.iconUrl,
@@ -89,7 +94,38 @@ export default function Provider({
       config={wagmiAdapter.wagmiConfig as Config}
       initialState={initialState}
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <AutoConnectOnMiniApp />
+        {children}
+      </QueryClientProvider>
     </WagmiProvider>
   )
+}
+
+function AutoConnectOnMiniApp() {
+  const { isConnected } = useAccount()
+  const { connect, connectors: availableConnectors } = useConnect()
+
+  useEffect(() => {
+    try {
+      const isMini = Boolean(
+        (sdk as unknown as { isMiniApp?: boolean })?.isMiniApp
+      )
+      if (!isConnected && isMini) {
+        const fc = availableConnectors.find((c) => {
+          const id = (c as unknown as { id?: string }).id
+          const name = c.name
+          const key = String(id ?? name).toLowerCase()
+          return key.includes("farcaster")
+        })
+        if (fc) {
+          connect({ connector: fc })
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [isConnected, connect, availableConnectors])
+
+  return null
 }
