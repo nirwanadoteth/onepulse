@@ -17,9 +17,9 @@ import { useAccount } from "wagmi"
 import { Particles } from "@/components/ui/particles"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
+import { ModeToggle } from "@/components/mode-toggle"
 import { Profile } from "@/components/profile"
 import { DisconnectWallet } from "@/components/wallet"
-import { ModeToggle } from "@/components/mode-toggle"
 
 const publicClient = createPublicClient({
   chain: base,

@@ -8,9 +8,7 @@ export function buildServerDbConnection(): DbConnection {
     "ws://127.0.0.1:3000"
   const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse"
   const token = process.env.SPACETIMEDB_TOKEN || ""
-  const builder = DbConnection.builder()
-    .withUri(uri)
-    .withModuleName(moduleName)
+  const builder = DbConnection.builder().withUri(uri).withModuleName(moduleName)
   if (token) builder.withToken(token)
   return builder.build()
 }

@@ -276,7 +276,16 @@ export const Particles: React.FC<ParticlesProps> = ({
       }
     })
     rafID.current = window.requestAnimationFrame(animate)
-  }, [drawCircle, ease, remapValue, staticity, vx, vy, clearContext, circleParams])
+  }, [
+    drawCircle,
+    ease,
+    remapValue,
+    staticity,
+    vx,
+    vy,
+    clearContext,
+    circleParams,
+  ])
 
   const initCanvas = useCallback(() => {
     resizeCanvas()
@@ -299,7 +308,7 @@ export const Particles: React.FC<ParticlesProps> = ({
       }, 200)
     }
 
-  window.addEventListener("resize", handleResize)
+    window.addEventListener("resize", handleResize)
 
     return () => {
       if (rafID.current != null) {
@@ -323,9 +332,6 @@ export const Particles: React.FC<ParticlesProps> = ({
   useEffect(() => {
     initCanvas()
   }, [refresh, initCanvas])
-
-
-
 
   return (
     <div
