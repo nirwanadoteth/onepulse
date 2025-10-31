@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useAccount } from "wagmi"
 
+import { useGmStats } from "@/hooks/use-gm-stats"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Card,
@@ -47,13 +47,7 @@ export const Profile = React.memo(function Profile({
   onDisconnected?: () => void
 }) {
   const { address } = useAccount()
-  type GmStats = {
-    currentStreak: number
-    highestStreak: number
-    allTimeGmCount: number
-    lastGmDay: number
-  }
-  const defaultStats: GmStats = useMemo(
+  const defaultStats = useMemo(
     () => ({
       currentStreak: 0,
       highestStreak: 0,
@@ -81,23 +75,7 @@ export const Profile = React.memo(function Profile({
     }
   }, [chains, selectedChainId])
 
-  const { data: selectedStats, isFetching } = useQuery<GmStats>({
-    queryKey: ["gm-stats", address ?? "no-address", selectedChainId],
-    enabled: Boolean(address),
-    queryFn: async (): Promise<GmStats> => {
-      const res = await fetch(
-        `/api/gm/stats?address=${address}&chainId=${selectedChainId}`
-      )
-      if (!res.ok) throw new Error("Failed to load stats")
-      return res.json()
-    },
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: true,
-    placeholderData: defaultStats,
-  })
+  const { stats: selectedStats, isReady } = useGmStats(address, selectedChainId)
 
   // Note: We rely on the query key (which includes the address) to fetch on wallet change.
   // GM success flow already invalidates this key to refresh immediately after reporting.
@@ -168,7 +146,7 @@ export const Profile = React.memo(function Profile({
               <div className="text-muted-foreground text-xs">All-time</div>
             </div>
           </div>
-          {isFetching && (
+          {!isReady && address && (
             <div className="text-muted-foreground mt-3 flex items-center gap-2 text-xs">
               <Spinner className="size-3" />
               <span>Updating…</span>

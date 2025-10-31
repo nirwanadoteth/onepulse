@@ -8,9 +8,13 @@ class GmStatsByAddressStore {
   private connection: DbConnection | null = null
   private cachedSnapshot: GmStatsByAddress[] = []
   private serverSnapshot: GmStatsByAddress[] = []
+  private subscribedAddress: string | null = null
+  private subscriptionReady = false
 
   constructor() {
     onSubscriptionChange(() => {
+      // Global subscription event; refresh snapshot
+      this.subscriptionReady = true
       this.updateSnapshot()
     })
   }
@@ -42,6 +46,47 @@ class GmStatsByAddressStore {
     return this.serverSnapshot
   }
 
+  public isSubscribedForAddress(address?: string | null) {
+    if (!address) return false
+    return (
+      this.subscriptionReady &&
+      this.subscribedAddress?.toLowerCase() === address.toLowerCase()
+    )
+  }
+
+  public async subscribeToAddress(address?: string | null) {
+    if (!address) return
+    const addr = address.toLowerCase()
+    // If already subscribed to this address, do nothing
+    if (
+      this.subscribedAddress?.toLowerCase() === addr &&
+      this.subscriptionReady
+    ) {
+      return
+    }
+    this.subscribedAddress = address
+    this.subscriptionReady = false
+    // Clear snapshot while (re)subscribing to avoid showing stale data
+    this.cachedSnapshot = []
+    this.emitChange()
+
+    const conn = this.getConnection()
+    conn
+      .subscriptionBuilder()
+      .onApplied(() => {
+        this.subscriptionReady = true
+        this.updateSnapshot()
+      })
+      .onError(() => {
+        this.subscriptionReady = false
+        // Keep snapshot empty on error; UI can show zeros gracefully
+        this.emitChange()
+      })
+      .subscribe([
+        `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`,
+      ])
+  }
+
   public reportGm(
     address: string,
     chainId: number,
@@ -71,6 +116,9 @@ class GmStatsByAddressStore {
         this.updateSnapshot()
       )
       this.connection.db.gmStatsByAddress.onDelete((ctx, row) =>
+        this.updateSnapshot()
+      )
+      this.connection.db.gmStatsByAddress.onUpdate((ctx, _old, _new) =>
         this.updateSnapshot()
       )
     }
