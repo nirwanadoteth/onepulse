@@ -74,7 +74,7 @@ export const GMChainCard = React.memo(function GMChainCard({
     ? "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90"
     : isOptimism
       ? "bg-[#ff0420] text-white hover:bg-[#ff0420]/90"
-      : ""
+      : "bg-[#0052ff] text-white hover:bg-[#0052ff]/90"
 
   const isContractReady = Boolean(contractAddress)
   const sanitizedRecipient = useMemo(() => recipient.trim(), [recipient])
