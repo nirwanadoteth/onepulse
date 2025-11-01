@@ -2,18 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { minikitConfig } from "@/minikit.config"
-import { useAddFrame, useMiniKit } from "@coinbase/onchainkit/minikit"
-import { isWalletACoinbaseSmartWallet } from "@coinbase/onchainkit/wallet"
+import { useAddFrame, useMiniKit, useIsInMiniApp } from "@coinbase/onchainkit/minikit"
+import { Bookmark } from "lucide-react"
 import { useTheme } from "next-themes"
-import {
-  createPublicClient,
-  http,
-  type PublicClient,
-  type RpcUserOperation,
-} from "viem"
-import { base } from "viem/chains"
 import { useAccount } from "wagmi"
 
+import { detectCoinbaseSmartWallet } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Particles } from "@/components/ui/particles"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -22,14 +16,10 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { Profile } from "@/components/profile"
 import { DisconnectWallet } from "@/components/wallet"
 
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http(),
-})
-
 export default function Home() {
   const addFrame = useAddFrame()
   const { isFrameReady, setFrameReady, context } = useMiniKit()
+  const { isInMiniApp } = useIsInMiniApp()
   const { address, isConnected } = useAccount()
   const { resolvedTheme } = useTheme()
   const color = useMemo(
@@ -43,31 +33,9 @@ export default function Home() {
   // Detect Coinbase Smart Wallet after connected
   useEffect(() => {
     if (!isConnected || !address) return
-    // Provide a minimal, well-formed ERC-4337 v0.6 UserOp so the checker
-    // doesn't access undefined fields (which causes substring errors)
-    const userOperation: RpcUserOperation<"0.6"> = {
-      sender: address as `0x${string}`,
-      nonce: "0x0",
-      initCode: "0x",
-      callData: "0x",
-      callGasLimit: "0x0",
-      verificationGasLimit: "0x0",
-      preVerificationGas: "0x0",
-      maxFeePerGas: "0x0",
-      maxPriorityFeePerGas: "0x0",
-      paymasterAndData: "0x",
-      signature: "0x",
-    }
     ;(async () => {
-      try {
-        const res = await isWalletACoinbaseSmartWallet({
-          client: publicClient as PublicClient,
-          userOp: userOperation,
-        })
-        setIsSmartWallet(res.isCoinbaseSmartWallet === true)
-      } catch {
-        setIsSmartWallet(false)
-      }
+      const result = await detectCoinbaseSmartWallet(address as `0x${string}`)
+      setIsSmartWallet(result)
     })()
   }, [isConnected, address])
 
@@ -84,7 +52,7 @@ export default function Home() {
       const targetFids = [context?.user.fid]
       const notification = {
         title: "Welcome to OnePulse",
-        body: "It's time to savor farcaster",
+        body: "Thank you for adding OnePulse",
         target_url: minikitConfig.miniapp.homeUrl,
       }
       const resp = await fetch("/api/notifications", {
@@ -119,8 +87,20 @@ export default function Home() {
           <div className="justify-left text-2xl font-bold">
             {minikitConfig.miniapp.name}
           </div>
-          <Button onClick={handleAddMiniApp}>Add Mini App</Button>
-          <ModeToggle />
+          <div>
+            {!context?.client.added && isInMiniApp && (
+              <Button
+                variant={"outline"}
+                size={"sm"}
+                className="mr-2"
+                onClick={handleAddMiniApp}
+              >
+                <Bookmark />
+                Save
+              </Button>
+            )}
+            <ModeToggle />
+          </div>
         </div>
         <div className="mt-4 mb-6">
           <Tabs value={tab} onValueChange={setTab}>
