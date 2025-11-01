@@ -88,7 +88,7 @@ export default function Home() {
             {minikitConfig.miniapp.name}
           </div>
           <div>
-            {!context?.client.added && isInMiniApp && (
+            {context?.client?.added === false && isInMiniApp && (
               <Button
                 variant={"outline"}
                 size={"sm"}
