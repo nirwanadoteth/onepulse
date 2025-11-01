@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { minikitConfig } from "@/minikit.config"
-import { useAddFrame, useMiniKit, useIsInMiniApp } from "@coinbase/onchainkit/minikit"
+import {
+  useAddFrame,
+  useIsInMiniApp,
+  useMiniKit,
+} from "@coinbase/onchainkit/minikit"
 import { Bookmark } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useAccount } from "wagmi"
