@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import { minikitConfig } from "@/minikit.config"
 import {
   useAddFrame,
-  useIsInMiniApp,
   useMiniKit,
 } from "@coinbase/onchainkit/minikit"
 import { Bookmark } from "lucide-react"
@@ -23,7 +22,6 @@ import { DisconnectWallet } from "@/components/wallet"
 export default function Home() {
   const addFrame = useAddFrame()
   const { isFrameReady, setFrameReady, context } = useMiniKit()
-  const { isInMiniApp } = useIsInMiniApp()
   const { address, isConnected } = useAccount()
   const { resolvedTheme } = useTheme()
   const color = useMemo(
@@ -33,6 +31,7 @@ export default function Home() {
   const [tab, setTab] = useState("home")
   const [isSmartWallet, setIsSmartWallet] = useState(false)
   const isBaseApp = context?.client?.clientFid === 309857
+  const isFarcaster = context?.client?.clientFid === 1
 
   // Detect Coinbase Smart Wallet after connected
   useEffect(() => {
@@ -92,17 +91,19 @@ export default function Home() {
             {minikitConfig.miniapp.name}
           </div>
           <div>
-            {isFrameReady && isInMiniApp && context?.client?.added !== true && (
-              <Button
-                variant={"outline"}
-                size={"sm"}
-                className="mr-2"
-                onClick={handleAddMiniApp}
-              >
-                <Bookmark />
-                Save
-              </Button>
-            )}
+            {isFrameReady &&
+              (isBaseApp || isFarcaster) &&
+              context?.client?.added !== true && (
+                <Button
+                  variant={"outline"}
+                  size={"sm"}
+                  className="mr-2"
+                  onClick={handleAddMiniApp}
+                >
+                  <Bookmark />
+                  Save
+                </Button>
+              )}
             <ModeToggle />
           </div>
         </div>
