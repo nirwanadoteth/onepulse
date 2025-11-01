@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { minikitConfig } from "@/minikit.config"
-import { useMiniKit } from "@coinbase/onchainkit/minikit"
+import { useAddFrame, useMiniKit } from "@coinbase/onchainkit/minikit"
 import { isWalletACoinbaseSmartWallet } from "@coinbase/onchainkit/wallet"
 import { useTheme } from "next-themes"
 import {
@@ -14,6 +14,7 @@ import {
 import { base } from "viem/chains"
 import { useAccount } from "wagmi"
 
+import { Button } from "@/components/ui/button"
 import { Particles } from "@/components/ui/particles"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
@@ -27,6 +28,7 @@ const publicClient = createPublicClient({
 })
 
 export default function Home() {
+  const addFrame = useAddFrame()
   const { isFrameReady, setFrameReady, context } = useMiniKit()
   const { address, isConnected } = useAccount()
   const { resolvedTheme } = useTheme()
@@ -76,6 +78,30 @@ export default function Home() {
     }
   }, [setFrameReady, isFrameReady])
 
+  const handleAddMiniApp = async () => {
+    const result = await addFrame()
+    if (result && context?.user.fid) {
+      const targetFids = [context?.user.fid]
+      const notification = {
+        title: "Welcome to OnePulse",
+        body: "It's time to savor farcaster",
+        target_url: minikitConfig.miniapp.homeUrl,
+      }
+      const resp = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetFids, notification, filters: {} }),
+      })
+      const notify = await resp.json()
+
+      if (notify.success) {
+        console.log("Notification sent successfully:", notify.data)
+      } else {
+        console.error("Failed to send notification:", notify.error)
+      }
+    }
+  }
+
   const safeAreaStyle = useMemo(
     () => ({
       marginTop: context?.client?.safeAreaInsets?.top ?? 0,
@@ -93,6 +119,7 @@ export default function Home() {
           <div className="justify-left text-2xl font-bold">
             {minikitConfig.miniapp.name}
           </div>
+          <Button onClick={handleAddMiniApp}>Add Mini App</Button>
           <ModeToggle />
         </div>
         <div className="mt-4 mb-6">

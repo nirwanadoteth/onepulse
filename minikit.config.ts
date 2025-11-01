@@ -33,7 +33,7 @@ export const minikitConfig = {
     splashImageUrl: `${ROOT_URL}/splash.png?v=${BUILD_ID}`,
     splashBackgroundColor: "#FFFFFF",
     homeUrl: ROOT_URL,
-    webhookUrl: `${ROOT_URL}/api/webhook`,
+    webhookUrl: `https://api.neynar.com/f/app/83e38474-41bd-43fb-862f-84359b7d2049/event`,
     primaryCategory: "social",
     tags: ["base", "celo", "op", "gm", "daily"],
     heroImageUrl: `${ROOT_URL}/hero.png?v=${BUILD_ID}`,
