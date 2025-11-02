@@ -7,7 +7,7 @@ import {
   type PublicClient,
   type RpcUserOperation,
 } from "viem"
-import { base } from "viem/chains"
+import { base, celo, optimism } from "viem/chains"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -16,9 +16,7 @@ const publicClient = createPublicClient({
   chain: base,
   transport: http(),
 })
-// Checks whether the given EOA/account address is a Coinbase Smart Wallet by
-// simulating a minimal ERC-4337 v0.6 UserOperation against the provided viem client.
-// Returns false on any failure to keep calling code simple and resilient.
+
 export async function detectCoinbaseSmartWallet(
   address: `0x${string}`
 ): Promise<boolean> {
@@ -44,4 +42,18 @@ export async function detectCoinbaseSmartWallet(
   } catch {
     return false
   }
+}
+
+const chainExplorerMap: Record<number, string> = {
+  [base.id]: "https://basescan.org",
+  [celo.id]: "https://celoscan.io",
+  [optimism.id]: "https://optimistic.etherscan.io",
+}
+
+export function getChainExplorer(chainId?: number) {
+  if (!chainId) {
+    return "https://basescan.org"
+  }
+
+  return chainExplorerMap[chainId] ?? "https://basescan.org"
 }

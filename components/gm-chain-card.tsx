@@ -1,20 +1,16 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useAddress } from "@coinbase/onchainkit/identity"
 import {
   Transaction,
   TransactionButton,
   TransactionSponsor,
-  TransactionToast,
-  TransactionToastIcon,
-  TransactionToastLabel,
-  useTransactionContext,
 } from "@coinbase/onchainkit/transaction"
 import { useQueryClient } from "@tanstack/react-query"
 import { isAddress, type Address } from "viem"
 import { useChainId, useReadContract, useSwitchChain } from "wagmi"
 import { base, celo, optimism } from "wagmi/chains"
-import { useShowCallsStatus } from "wagmi/experimental"
 
 import { dailyGMAbi } from "@/lib/abi/daily-gm"
 import { Button } from "@/components/ui/button"
@@ -34,6 +30,7 @@ import {
 } from "@/components/ui/item"
 import { Spinner } from "@/components/ui/spinner"
 import { Icons } from "@/components/icons"
+import { TransactionToast } from "@/components/transaction-toast"
 import { ConnectWallet } from "@/components/wallet"
 
 type TransactionStatus = "default" | "success" | "error" | "pending"
@@ -150,6 +147,17 @@ export const GMChainCard = React.memo(function GMChainCard({
     setRecipient("")
     setProcessing(false)
   }, [])
+
+  // Name resolution: resolve ENS or Basename to an address before sending gmTo
+  const isName = sanitizedRecipient !== "" && !isAddress(sanitizedRecipient)
+
+  const { data: resolvedAddress, isFetching: isResolving } = useAddress(
+    { name: sanitizedRecipient },
+    { enabled: isName }
+  )
+
+  const finalRecipient =
+    resolvedAddress ?? (isRecipientValid ? sanitizedRecipient : undefined)
 
   // Focus trap helpers for the modal dialog
   const dialogRef = useRef<HTMLDivElement | null>(null)
@@ -467,11 +475,7 @@ export const GMChainCard = React.memo(function GMChainCard({
                       }}
                     />
                     {sponsored && <TransactionSponsor />}
-                    <TransactionToast position="top-center">
-                      <TransactionToastIcon />
-                      <TransactionToastLabel />
-                      <CustomTransactionToastAction />
-                    </TransactionToast>
+                    <TransactionToast />
                   </Transaction>
 
                   <Button
@@ -507,20 +511,27 @@ export const GMChainCard = React.memo(function GMChainCard({
                 <CardContent>
                   <input
                     type="text"
-                    placeholder="0x..."
+                    placeholder="0x... or nirwana.eth"
                     value={recipient}
                     onChange={(e) => setRecipient(e.target.value)}
                     disabled={processing}
                     className="w-full rounded-md border bg-transparent px-3 py-2"
                     aria-label="Recipient wallet address"
                     aria-invalid={
-                      sanitizedRecipient !== "" && !isRecipientValid
+                      sanitizedRecipient !== "" &&
+                      !isRecipientValid &&
+                      !resolvedAddress &&
+                      !isResolving
                     }
                     aria-describedby={
-                      sanitizedRecipient !== "" && !isRecipientValid
+                      sanitizedRecipient !== "" &&
+                      !isRecipientValid &&
+                      !resolvedAddress &&
+                      !isResolving
                         ? "recipient-error"
                         : undefined
                     }
+                    aria-busy={isResolving}
                     autoComplete="off"
                     spellCheck={false}
                     autoCapitalize="none"
@@ -528,92 +539,109 @@ export const GMChainCard = React.memo(function GMChainCard({
                     inputMode="text"
                     autoFocus
                   />
-                  {sanitizedRecipient && !isRecipientValid && (
-                    <p
-                      id="recipient-error"
-                      className="text-sm text-red-500"
-                      role="alert"
-                    >
-                      Enter a valid address.
-                    </p>
-                  )}
+                  {sanitizedRecipient &&
+                    !isRecipientValid &&
+                    !resolvedAddress &&
+                    !isResolving && (
+                      <p
+                        id="recipient-error"
+                        className="text-sm text-red-500"
+                        role="alert"
+                      >
+                        Enter a valid address.
+                      </p>
+                    )}
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                  <Transaction
-                    isSponsored={sponsored}
-                    chainId={chainId}
-                    calls={[
-                      {
-                        abi: dailyGMAbi,
-                        address: contractAddress,
-                        functionName: "gmTo",
-                        args: [sanitizedRecipient as `0x${string}`],
-                      },
-                    ]}
-                  >
-                    <TransactionButton
-                      disabled={
-                        !isRecipientValid || !isContractReady || processing
-                      }
-                      render={({
-                        onSubmit,
-                        isDisabled,
-                        status,
-                        context,
-                      }: {
-                        onSubmit: () => void
-                        isDisabled: boolean
-                        status: TransactionStatus
-                        context?: {
-                          transactionHash?: string
-                          receipt?: { transactionHash?: string }
-                          transactionReceipts?: Array<{
-                            transactionHash?: string
-                          }>
+                  {finalRecipient ? (
+                    <Transaction
+                      isSponsored={sponsored}
+                      chainId={chainId}
+                      calls={[
+                        {
+                          abi: dailyGMAbi,
+                          address: contractAddress,
+                          functionName: "gmTo",
+                          args: [finalRecipient as `0x${string}`],
+                        },
+                      ]}
+                    >
+                      <TransactionButton
+                        disabled={
+                          !finalRecipient || !isContractReady || processing
                         }
-                        error?: Error | null
-                      }) => {
-                        const txHash =
-                          context?.transactionHash ||
-                          context?.receipt?.transactionHash ||
-                          context?.transactionReceipts?.[0]?.transactionHash
-                        return (
-                          <>
-                            <ProcessingMirror
-                              status={status}
-                              onChange={setProcessing}
-                            />
-                            <Button
-                              onClick={onSubmit}
-                              disabled={isDisabled}
-                              className={`w-full ${chainBtnClasses}`}
-                              aria-busy={status === "pending"}
-                            >
-                              {status === "pending" ? "Sending..." : "Send GM"}
-                            </Button>
-                            <SuccessReporter
-                              status={String(status)}
-                              onReported={close}
-                              message={
-                                recipient
-                                  ? `GM sent to ${recipient.slice(0, 6)}...${recipient.slice(-4)}`
-                                  : "GM sent successfully"
-                              }
-                              txHash={txHash}
-                              address={address}
-                              refetchLastGmDay={refetchLastGmDay}
-                            />
-                          </>
-                        )
-                      }}
-                    />
-                    {sponsored && <TransactionSponsor />}
-                    <TransactionToast position="top-center">
-                      <TransactionToastIcon />
-                      <TransactionToastLabel />
-                      <CustomTransactionToastAction />
-                    </TransactionToast>
-                  </Transaction>
+                        render={({
+                          onSubmit,
+                          isDisabled,
+                          status,
+                          context,
+                        }: {
+                          onSubmit: () => void
+                          isDisabled: boolean
+                          status: TransactionStatus
+                          context?: {
+                            transactionHash?: string
+                            receipt?: { transactionHash?: string }
+                            transactionReceipts?: Array<{
+                              transactionHash?: string
+                            }>
+                          }
+                          error?: Error | null
+                        }) => {
+                          const txHash =
+                            context?.transactionHash ||
+                            context?.receipt?.transactionHash ||
+                            context?.transactionReceipts?.[0]?.transactionHash
+                          return (
+                            <>
+                              <ProcessingMirror
+                                status={status}
+                                onChange={setProcessing}
+                              />
+                              <Button
+                                onClick={onSubmit}
+                                disabled={isDisabled}
+                                className={`w-full ${chainBtnClasses}`}
+                                aria-busy={status === "pending"}
+                              >
+                                {status === "pending"
+                                  ? "Sending..."
+                                  : "Send GM"}
+                              </Button>
+                              <SuccessReporter
+                                status={String(status)}
+                                onReported={close}
+                                message={
+                                  recipient
+                                    ? `GM sent to ${recipient.slice(0, 6)}...${recipient.slice(-4)}`
+                                    : "GM sent successfully"
+                                }
+                                txHash={txHash}
+                                address={address}
+                                refetchLastGmDay={refetchLastGmDay}
+                              />
+                            </>
+                          )
+                        }}
+                      />
+                      {sponsored && <TransactionSponsor />}
+                      <TransactionToast />
+                    </Transaction>
+                  ) : (
+                    <Button
+                      disabled={
+                        !sanitizedRecipient ||
+                        isResolving ||
+                        !isContractReady ||
+                        processing
+                      }
+                      className={`w-full ${chainBtnClasses}`}
+                    >
+                      {isResolving
+                        ? "Resolving…"
+                        : "Enter a valid address or ENS"}
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => setMode("main")}
@@ -645,65 +673,6 @@ const ProcessingMirror = React.memo(function ProcessingMirror({
   }, [status, onChange])
   return null
 })
-
-function getExplorerUrl(chainId?: number) {
-  switch (chainId) {
-    case 42220:
-      return "https://celoscan.io"
-    case 10:
-      return "https://optimistic.etherscan.io"
-    case 8453:
-      return "https://basescan.org"
-    case 1:
-      return "https://etherscan.io"
-    default:
-      return "https://basescan.org"
-  }
-}
-
-const CustomTransactionToastAction = React.memo(
-  function CustomTransactionToastAction() {
-    const { chainId, errorMessage, onSubmit, transactionHash, transactionId } =
-      useTransactionContext()
-    const fallbackChainId = useChainId()
-    const accountChainId = chainId ?? fallbackChainId
-    const { showCallsStatus } = useShowCallsStatus()
-
-    if (errorMessage) {
-      return (
-        <button type="button" onClick={onSubmit}>
-          <span className="text-primary text-sm font-medium">Try again</span>
-        </button>
-      )
-    }
-
-    if (transactionId) {
-      return (
-        <button
-          type="button"
-          onClick={() => showCallsStatus({ id: transactionId })}
-        >
-          <span className="text-primary text-sm font-medium">
-            View transaction
-          </span>
-        </button>
-      )
-    }
-
-    if (transactionHash) {
-      const href = `${getExplorerUrl(accountChainId)}/tx/${transactionHash}`
-      return (
-        <a href={href} target="_blank" rel="noopener noreferrer">
-          <span className="text-primary text-sm font-medium">
-            View transaction
-          </span>
-        </a>
-      )
-    }
-
-    return null
-  }
-)
 
 // Lightweight countdown display to minimize parent re-renders
 const CountdownText = React.memo(function CountdownText({
