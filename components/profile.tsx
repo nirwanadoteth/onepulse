@@ -40,10 +40,12 @@ export const Profile = React.memo(function Profile({
   user,
   isSmartWallet,
   onDisconnected,
+  allowedChainIds,
 }: {
   user?: MiniAppUser
   isSmartWallet?: boolean
   onDisconnected?: () => void
+  allowedChainIds?: number[]
 }) {
   const { address } = useAccount()
   const defaultStats = useMemo(
@@ -57,13 +59,18 @@ export const Profile = React.memo(function Profile({
   )
 
   const chains = useMemo(() => {
-    const list = [
+    let list: Array<{ id: number; name: string }> = [
       { id: 8453, name: "Base" },
       { id: 42220, name: "Celo" },
       { id: 10, name: "Optimism" },
-    ] as const
-    return isSmartWallet ? list.filter((c) => c.id !== 42220) : list
-  }, [isSmartWallet])
+    ]
+    if (Array.isArray(allowedChainIds) && allowedChainIds.length > 0) {
+      list = list.filter((c) => allowedChainIds.includes(c.id))
+    } else if (isSmartWallet) {
+      list = list.filter((c) => c.id !== 42220)
+    }
+    return list
+  }, [allowedChainIds, isSmartWallet])
 
   const connectedChainId = useChainId()
   // Default to the connected chain if it's supported; otherwise fallback to Base (8453)

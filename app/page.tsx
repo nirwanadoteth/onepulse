@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react"
 import { minikitConfig } from "@/minikit.config"
 import { useMiniKit } from "@coinbase/onchainkit/minikit"
 import { sdk } from "@farcaster/miniapp-sdk"
@@ -15,8 +21,36 @@ import { Particles } from "@/components/ui/particles"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
 import { ModeToggle } from "@/components/mode-toggle"
+import { OnboardingModal } from "@/components/onboarding-modal"
 import { Profile } from "@/components/profile"
 import { DisconnectWallet } from "@/components/wallet"
+
+// SSR-safe onboarding visibility store using useSyncExternalStore
+const ONBOARDING_KEY = "onepulse:onboarded"
+const onboardingLocalListeners = new Set<() => void>()
+function subscribeOnboarding(listener: () => void) {
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", listener)
+  }
+  onboardingLocalListeners.add(listener)
+  return () => {
+    onboardingLocalListeners.delete(listener)
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", listener)
+    }
+  }
+}
+function getOnboardingSnapshot() {
+  try {
+    if (typeof window === "undefined") return false
+    return !window.localStorage.getItem(ONBOARDING_KEY)
+  } catch {
+    return false
+  }
+}
+function getOnboardingServerSnapshot() {
+  return false
+}
 
 export default function Home() {
   const { isFrameReady, setFrameReady, context } = useMiniKit()
@@ -28,8 +62,14 @@ export default function Home() {
   )
   const [tab, setTab] = useState("home")
   const [isSmartWallet, setIsSmartWallet] = useState(false)
+  const showOnboarding = useSyncExternalStore(
+    subscribeOnboarding,
+    getOnboardingSnapshot,
+    getOnboardingServerSnapshot
+  )
   const isBaseApp = context?.client?.clientFid === 309857
   const isFarcaster = context?.client?.clientFid === 1
+  const inMiniApp = Boolean(isBaseApp || isFarcaster)
 
   // Detect Coinbase Smart Wallet after connected
   useEffect(() => {
@@ -46,6 +86,14 @@ export default function Home() {
       setFrameReady()
     }
   }, [setFrameReady, isFrameReady])
+
+  const dismissOnboarding = () => {
+    try {
+      window.localStorage.setItem(ONBOARDING_KEY, "1")
+      // Same-tab notification: 'storage' doesn't fire in the same document
+      onboardingLocalListeners.forEach((l) => l())
+    } catch {}
+  }
 
   const handleAddMiniApp = useCallback(async () => {
     try {
@@ -79,19 +127,17 @@ export default function Home() {
             {minikitConfig.miniapp.name}
           </div>
           <div>
-            {isFrameReady &&
-              (isBaseApp || isFarcaster) &&
-              context?.client?.added !== true && (
-                <Button
-                  variant={"outline"}
-                  size={"sm"}
-                  className="mr-2"
-                  onClick={handleAddMiniApp}
-                >
-                  <Bookmark />
-                  Save
-                </Button>
-              )}
+            {isFrameReady && inMiniApp && context?.client?.added !== true && (
+              <Button
+                variant={"outline"}
+                size={"sm"}
+                className="mr-2"
+                onClick={handleAddMiniApp}
+              >
+                <Bookmark />
+                Save
+              </Button>
+            )}
             <ModeToggle />
           </div>
         </div>
@@ -112,7 +158,16 @@ export default function Home() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="home">
-              <GMBase isSmartWallet={isSmartWallet} sponsored={isBaseApp} />
+              <GMBase
+                sponsored={isBaseApp}
+                allowedChainIds={
+                  isFarcaster
+                    ? [8453, 42220, 10]
+                    : isBaseApp
+                      ? [8453, 10]
+                      : [8453, 42220, 10]
+                }
+              />
             </TabsContent>
             <TabsContent value="profile">
               <Profile
@@ -128,6 +183,13 @@ export default function Home() {
                     : undefined
                 }
                 onDisconnected={() => setTab("home")}
+                allowedChainIds={
+                  isFarcaster
+                    ? [8453, 42220, 10]
+                    : isBaseApp
+                      ? [8453, 10]
+                      : [8453, 42220, 10]
+                }
               />
             </TabsContent>
           </Tabs>
@@ -146,6 +208,19 @@ export default function Home() {
         ease={80}
         color={color}
         refresh
+      />
+      {/* Onboarding modal */}
+      <OnboardingModal
+        open={showOnboarding}
+        onClose={dismissOnboarding}
+        canSave={Boolean(
+          inMiniApp && isFrameReady && context?.client?.added !== true
+        )}
+        onSave={
+          inMiniApp && isFrameReady && context?.client?.added !== true
+            ? handleAddMiniApp
+            : undefined
+        }
       />
     </div>
   )

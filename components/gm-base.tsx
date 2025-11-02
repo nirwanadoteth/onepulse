@@ -24,26 +24,29 @@ const Confetti = dynamic(
 )
 
 export const GMBase = React.memo(function GMBase({
-  isSmartWallet,
   sponsored,
   onDisconnected,
+  allowedChainIds,
 }: {
-  isSmartWallet?: boolean
   sponsored?: boolean
   onDisconnected?: () => void
+  allowedChainIds?: number[]
 }) {
   const { isConnected, address } = useAccount()
 
   // Define supported chains here; adding a new chain is a one-liner.
   const chains = useMemo(() => {
-    const list = [
+    let list: Array<{ id: number; name: string }> = [
       { id: 8453, name: "Base" },
       { id: 42220, name: "Celo" },
       { id: 10, name: "Optimism" },
-    ] as const
-    const hideCelo = Boolean(isSmartWallet)
-    return hideCelo ? list.filter((c) => c.id !== 42220) : list
-  }, [isSmartWallet])
+    ]
+    if (Array.isArray(allowedChainIds) && allowedChainIds.length > 0) {
+      // Enforce explicit allowlist (e.g., Base App: Base + Optimism)
+      list = list.filter((c) => allowedChainIds.includes(c.id))
+    }
+    return list
+  }, [allowedChainIds])
 
   // Track per-chain GM status to determine if all chains are completed
   const [statusMap, setStatusMap] = useState<
