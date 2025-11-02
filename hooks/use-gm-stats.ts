@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react"
+import type { GmStatsByAddress } from "@/lib/module_bindings"
 import { gmStatsByAddressStore } from "@/stores/gm-store"
 
 export type GmStats = {
@@ -22,6 +23,8 @@ const ZERO: GmStats = {
   allTimeGmCount: 0,
   lastGmDay: 0,
 }
+
+const EMPTY_ROWS: GmStatsByAddress[] = []
 
 export function useGmStats(address?: string | null, chainId?: number) {
   // Start/refresh subscription for the current address
@@ -46,26 +49,37 @@ export function useGmStats(address?: string | null, chainId?: number) {
     | undefined
   >()
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const keyRef = useRef<string>("")
+  const normalizedAddress = address?.toLowerCase() ?? null
+
+  const rowsByAddress = useMemo(() => {
+    const map = new Map<string, GmStatsByAddress[]>()
+    for (const row of snapshot) {
+      const key = row.address.toLowerCase()
+      const existing = map.get(key)
+      if (existing) {
+        existing.push(row)
+      } else {
+        map.set(key, [row])
+      }
+    }
+    return map
+  }, [snapshot])
+
+  const rowsForAddress = useMemo<GmStatsByAddress[]>(() => {
+    if (!normalizedAddress) return EMPTY_ROWS
+    return rowsByAddress.get(normalizedAddress) ?? EMPTY_ROWS
+  }, [normalizedAddress, rowsByAddress])
 
   useEffect(() => {
-    if (!address) return
+    if (!address || !normalizedAddress) return
 
     const key = `${address}:${chainId ?? "all"}`
-    if (keyRef.current !== key) {
-      keyRef.current = key
-    }
-
-    const lower = address.toLowerCase()
-    const rows = snapshot.filter((r) => r.address.toLowerCase() === lower)
     const subReady = gmStatsByAddressStore.isSubscribedForAddress(address)
-
     const hasSubData =
       typeof chainId === "number"
-        ? rows.some((r) => r.chainId === chainId)
-        : rows.length > 0
+        ? rowsForAddress.some((r) => r.chainId === chainId)
+        : rowsForAddress.length > 0
 
-    // If we already have data via subscription, skip fallback
     if (subReady && hasSubData) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       return
@@ -77,7 +91,7 @@ export function useGmStats(address?: string | null, chainId?: number) {
         // Re-check latest state before performing fetch
         const latestRows = gmStatsByAddressStore
           .getSnapshot()
-          .filter((r) => r.address.toLowerCase() === lower)
+          .filter((r) => r.address.toLowerCase() === normalizedAddress)
         const latestReady =
           gmStatsByAddressStore.isSubscribedForAddress(address)
         const latestHasData =
@@ -92,7 +106,7 @@ export function useGmStats(address?: string | null, chainId?: number) {
           url.searchParams.set("chainId", String(chainId))
         const res = await fetch(url.toString())
         if (res.ok) {
-          const json = (await res.json()) as GmStats
+          const json = (await res.json()) as Partial<GmStats>
           setFallbackStats({
             key,
             stats: {
@@ -111,16 +125,14 @@ export function useGmStats(address?: string | null, chainId?: number) {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
-  }, [address, chainId, snapshot])
+  }, [address, chainId, normalizedAddress, rowsForAddress])
 
   // Derive stats from subscription snapshot
   const subDerived: GmStats | undefined = useMemo(() => {
-    if (!address) return undefined
-    const rows = snapshot.filter(
-      (r) => r.address.toLowerCase() === address.toLowerCase()
-    )
+    if (!address || !normalizedAddress || rowsForAddress.length === 0)
+      return undefined
     if (typeof chainId === "number") {
-      const row = rows.find((r) => r.chainId === chainId)
+      const row = rowsForAddress.find((r) => r.chainId === chainId)
       return row
         ? {
             currentStreak: row.currentStreak ?? 0,
@@ -130,17 +142,16 @@ export function useGmStats(address?: string | null, chainId?: number) {
           }
         : undefined
     }
-    if (!rows.length) return undefined
-    return rows.reduce<GmStats>(
+    return rowsForAddress.reduce<GmStats>(
       (acc, r) => ({
         currentStreak: 0,
         highestStreak: Math.max(acc.highestStreak, r.highestStreak ?? 0),
         allTimeGmCount: acc.allTimeGmCount + (r.allTimeGmCount ?? 0),
         lastGmDay: Math.max(acc.lastGmDay, r.lastGmDay ?? 0),
       }),
-      ZERO
+      { ...ZERO }
     )
-  }, [address, chainId, snapshot])
+  }, [address, chainId, normalizedAddress, rowsForAddress])
 
   // Prefer subscription data; fallback to API once if needed
   const currentKey = `${address ?? ""}:${chainId ?? "all"}`
