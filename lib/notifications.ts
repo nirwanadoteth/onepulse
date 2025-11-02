@@ -1,46 +1,68 @@
-import "server-only"
+import {
+  SendNotificationRequest,
+  sendNotificationResponseSchema,
+} from "@farcaster/miniapp-sdk"
 
-import { NeynarAPIClient } from "@neynar/nodejs-sdk"
+import { getUserNotificationDetails } from "@/lib/kv"
 
-type PublishParams = Parameters<NeynarAPIClient["publishFrameNotifications"]>[0]
-type PublishNotification = PublishParams["notification"]
-type PublishFilters = PublishParams["filters"]
+const appUrl = process.env.NEXT_PUBLIC_URL || ""
 
-let _client: NeynarAPIClient | null = null
+type sendMiniAppNotificationResult =
+  | {
+      state: "error"
+      error: unknown
+    }
+  | { state: "no_token" }
+  | { state: "rate_limit" }
+  | { state: "success" }
 
-function getClient() {
-  if (_client) return _client
-  const apiKey = process.env.NEYNAR_API_KEY
-  if (!apiKey) {
-    throw new Error("NEYNAR_API_KEY environment variable is required")
+export async function sendMiniAppNotification({
+  fid,
+  appFid,
+  title,
+  body,
+}: {
+  fid: number
+  appFid: number
+  title: string
+  body: string
+}): Promise<sendMiniAppNotificationResult> {
+  const notificationDetails = await getUserNotificationDetails(fid, appFid)
+  if (!notificationDetails) {
+    return { state: "no_token" }
   }
-  _client = new NeynarAPIClient({ apiKey })
-  return _client
-}
 
-export async function sendNotification(
-  targetFids: number[],
-  notification: PublishNotification,
-  filters?: PublishFilters
-) {
-  try {
-    const client = getClient()
-    const response = await client.publishFrameNotifications({
-      targetFids,
-      filters,
-      notification,
-    })
+  const response = await fetch(notificationDetails.url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      notificationId: crypto.randomUUID(),
+      title,
+      body,
+      targetUrl: appUrl,
+      tokens: [notificationDetails.token],
+    } satisfies SendNotificationRequest),
+  })
 
-    return {
-      success: true,
-      data: response,
+  const responseJson = await response.json()
+
+  if (response.status === 200) {
+    const responseBody = sendNotificationResponseSchema.safeParse(responseJson)
+    if (responseBody.success === false) {
+      // Malformed response
+      return { state: "error", error: responseBody.error.errors }
     }
-  } catch (error) {
-    console.error("Failed to send notification:", error)
-    const message = error instanceof Error ? error.message : String(error)
-    return {
-      success: false,
-      error: message,
+
+    if (responseBody.data.result.rateLimitedTokens.length) {
+      // Rate limited
+      return { state: "rate_limit" }
     }
+
+    return { state: "success" }
+  } else {
+    // Error response
+    return { state: "error", error: responseJson }
   }
 }

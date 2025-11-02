@@ -1,13 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { minikitConfig } from "@/minikit.config"
-import {
-  useAddFrame,
-  useMiniKit,
-} from "@coinbase/onchainkit/minikit"
+import { useMiniKit } from "@coinbase/onchainkit/minikit"
+import { sdk } from "@farcaster/miniapp-sdk"
 import { Bookmark } from "lucide-react"
 import { useTheme } from "next-themes"
+import { toast } from "sonner"
 import { useAccount } from "wagmi"
 
 import { detectCoinbaseSmartWallet } from "@/lib/utils"
@@ -20,7 +19,6 @@ import { Profile } from "@/components/profile"
 import { DisconnectWallet } from "@/components/wallet"
 
 export default function Home() {
-  const addFrame = useAddFrame()
   const { isFrameReady, setFrameReady, context } = useMiniKit()
   const { address, isConnected } = useAccount()
   const { resolvedTheme } = useTheme()
@@ -49,29 +47,19 @@ export default function Home() {
     }
   }, [setFrameReady, isFrameReady])
 
-  const handleAddMiniApp = async () => {
-    const result = await addFrame()
-    if (result && context?.user.fid) {
-      const targetFids = [context?.user.fid]
-      const notification = {
-        title: "Welcome to OnePulse",
-        body: "Thank you for adding OnePulse",
-        target_url: minikitConfig.miniapp.homeUrl,
-      }
-      const resp = await fetch("/api/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetFids, notification, filters: {} }),
-      })
-      const notify = await resp.json()
+  const handleAddMiniApp = useCallback(async () => {
+    try {
+      const response = await sdk.actions.addMiniApp()
 
-      if (notify.success) {
-        console.log("Notification sent successfully:", notify.data)
+      if (response.notificationDetails) {
+        toast.success("Mini App added with notifications enabled!")
       } else {
-        console.error("Failed to send notification:", notify.error)
+        toast.success("Mini App added without notifications")
       }
+    } catch (error) {
+      toast.error(`Error: ${error}`)
     }
-  }
+  }, [])
 
   const safeAreaStyle = useMemo(
     () => ({

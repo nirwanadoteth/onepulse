@@ -5,24 +5,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma generate && next build",
     "typecheck": "tsc --noEmit",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "format:fix": "prettier --write \"**/*.{ts,tsx,mdx}\" --cache",
-    "format:check": "prettier --check \"**/*.{ts,tsx,mdx}\" --cache",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
-    "db:push": "prisma db push"
+    "format:check": "prettier --check \"**/*.{ts,tsx,mdx}\" --cache"
   },
   "dependencies": {
     "@coinbase/onchainkit": "latest",
     "@farcaster/miniapp-node": "^0.1.11",
     "@farcaster/miniapp-sdk": "^0.2.1",
-    "@neynar/nodejs-sdk": "^3.34.0",
-    "@prisma/client": "^5.20.0",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-icons": "^1.3.2",
@@ -36,6 +29,7 @@
     "@tailwindcss/postcss": "^4.1.16",
     "@tanstack/react-query": "^5.90.5",
     "@types/canvas-confetti": "^1.9.0",
+    "@upstash/redis": "^1.35.6",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "canvas-confetti": "^1.9.4",
@@ -72,8 +66,7 @@
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "tailwindcss": "^4.1.16",
-    "typescript": "^5",
-    "prisma": "^5.20.0"
+    "typescript": "^5"
   },
   "prettier": {
     "endOfLine": "lf",
