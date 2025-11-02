@@ -12,10 +12,10 @@ import { minikitConfig } from "@/minikit.config"
 import { useMiniKit } from "@coinbase/onchainkit/minikit"
 import { sdk } from "@farcaster/miniapp-sdk"
 import { Bookmark } from "lucide-react"
+import { useReducedMotion } from "motion/react"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import { useAccount } from "wagmi"
-import { useReducedMotion } from "motion/react"
 
 import { detectCoinbaseSmartWallet } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -295,7 +295,9 @@ export default function Home() {
       <OnboardingModal
         open={showOnboarding}
         onClose={dismissOnboarding}
-        canSave={Boolean(isFrameReady && inMiniApp && context?.client?.added !== true)}
+        canSave={Boolean(
+          isFrameReady && inMiniApp && context?.client?.added !== true
+        )}
         onSave={
           isFrameReady && inMiniApp && context?.client?.added !== true
             ? handleAddMiniApp

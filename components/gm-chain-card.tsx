@@ -384,7 +384,7 @@ export const GMChainCard = React.memo(function GMChainCard({
               if (!processing) close()
             }}
           />
-          <Card className="relative z-10 w-full max-w-sm p-4" tabIndex={-1}>
+          <Card className="relative z-10 w-[95%] max-w-sm" tabIndex={-1}>
             {mode === "main" ? (
               <>
                 <CardHeader>

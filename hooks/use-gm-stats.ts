@@ -7,8 +7,9 @@ import {
   useState,
   useSyncExternalStore,
 } from "react"
-import type { GmStatsByAddress } from "@/lib/module_bindings"
 import { gmStatsByAddressStore } from "@/stores/gm-store"
+
+import type { GmStatsByAddress } from "@/lib/module_bindings"
 
 export type GmStats = {
   currentStreak: number

@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/card"
 import type { ConfettiRef } from "@/components/ui/confetti"
 import { GMChainCard } from "@/components/gm-chain-card"
-import { DisconnectWallet } from "@/components/wallet"
+
+const CONGRATS_KEY = "onepulse:last-congrats-day"
 
 // Defer canvas-confetti until needed (modal open)
 const Confetti = dynamic(
@@ -23,13 +24,13 @@ const Confetti = dynamic(
   { ssr: false }
 )
 
+const getCurrentDay = () => Math.floor(Date.now() / 86400)
+
 export const GMBase = React.memo(function GMBase({
   sponsored,
-  onDisconnected,
   allowedChainIds,
 }: {
   sponsored?: boolean
-  onDisconnected?: () => void
   allowedChainIds?: number[]
 }) {
   const { isConnected, address } = useAccount()
@@ -88,20 +89,41 @@ export const GMBase = React.memo(function GMBase({
   // Confetti control
   const confettiRef = useRef<ConfettiRef>(null)
   const [showCongrats, setShowCongrats] = useState(false)
+  const [lastCongratsDay, setLastCongratsDay] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null
+    const stored = window.localStorage.getItem(CONGRATS_KEY)
+    if (!stored) return null
+    const parsed = Number.parseInt(stored, 10)
+    return Number.isNaN(parsed) ? null : parsed
+  })
+
+  useEffect(() => {
+    if (lastCongratsDay == null) return
+    if (typeof window === "undefined") return
+    try {
+      window.localStorage.setItem(CONGRATS_KEY, String(lastCongratsDay))
+    } catch {
+      // Ignore persistence errors (e.g., quota, private mode)
+    }
+  }, [lastCongratsDay])
 
   useEffect(() => {
     if (!allDone) return
+    const today = getCurrentDay()
+    if (lastCongratsDay === today) return
+
     let rafId: number | null = null
-    const id = setTimeout(() => {
+    const id = window.setTimeout(() => {
       setShowCongrats(true)
-      // Align confetti trigger to the next frame to reduce layout thrash
-      rafId = requestAnimationFrame(() => confettiRef.current?.fire())
+      setLastCongratsDay(today)
+      rafId = window.requestAnimationFrame(() => confettiRef.current?.fire())
     }, 0)
+
     return () => {
       clearTimeout(id)
       if (rafId) cancelAnimationFrame(rafId)
     }
-  }, [allDone])
+  }, [allDone, lastCongratsDay])
 
   return (
     <div className="mt-4 space-y-4">
@@ -121,14 +143,13 @@ export const GMBase = React.memo(function GMBase({
           />
         )
       })}
-      <DisconnectWallet onDisconnected={onDisconnected} />
       {showCongrats && allDone && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 z-10 bg-black/40"
             onClick={() => setShowCongrats(false)}
           />
-          <Card className="relative z-20 w-full max-w-sm rounded-2xl text-center">
+          <Card className="relative z-20 w-[95%] max-w-sm rounded-2xl text-center">
             <CardHeader>
               <CardTitle>Congratulations 🎉</CardTitle>
             </CardHeader>
