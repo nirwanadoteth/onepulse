@@ -3,6 +3,16 @@ import { DbConnection, GmStatsByAddress } from "@/lib/module_bindings"
 import { getDbConnection } from "@/lib/spacetimedb/connection-factory"
 import { onSubscriptionChange } from "@/lib/spacetimedb/subscription-events"
 
+interface ReportGmParams {
+  address: string
+  chainId: number
+  lastGmDay: number
+  txHash: string
+  fid: bigint
+  displayName: string
+  username: string
+}
+
 class GmStatsByAddressStore {
   private listeners: Set<() => void> = new Set()
   private connection: DbConnection | null = null
@@ -87,24 +97,16 @@ class GmStatsByAddressStore {
       ])
   }
 
-  public reportGm(
-    address: string,
-    chainId: number,
-    lastGmDay: number,
-    txHash: string,
-    fid: bigint,
-    displayName: string,
-    username: string
-  ) {
+  public reportGm(params: ReportGmParams) {
     if (this.connection) {
       this.connection.reducers.reportGm(
-        address,
-        chainId,
-        lastGmDay,
-        txHash,
-        fid,
-        displayName,
-        username
+        params.address,
+        params.chainId,
+        params.lastGmDay,
+        params.txHash,
+        params.fid,
+        params.displayName,
+        params.username
       )
     }
   }
