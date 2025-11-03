@@ -1,3 +1,27 @@
+// Helper to resolve SpacetimeDB config from environment
+function getSpacetimeDbConfig() {
+  return {
+    uri:
+      process.env.SPACETIMEDB_HOST ||
+      process.env.SPACETIMEDB_HOST_URL ||
+      "ws://127.0.0.1:3000",
+    moduleName: process.env.SPACETIMEDB_MODULE || "onepulse",
+    token: process.env.SPACETIMEDB_TOKEN || "",
+  }
+}
+
+// Helper to create a DbConnection builder with config
+function createDbConnectionBuilder(config: {
+  uri: string
+  moduleName: string
+  token: string
+}) {
+  const builder = DbConnection.builder()
+    .withUri(config.uri)
+    .withModuleName(config.moduleName)
+  if (config.token) builder.withToken(config.token)
+  return builder
+}
 import { DbConnection, type GmStatsByAddress } from "@/lib/module_bindings"
 
 // Server-only SpacetimeDB connection builder
@@ -40,37 +64,31 @@ export async function subscribeOnce(
 export async function connectServerDbConnection(
   timeoutMs = 5000
 ): Promise<DbConnection> {
+  const config = getSpacetimeDbConfig()
   return await new Promise<DbConnection>((resolve, reject) => {
     let resolved = false
-    const uri =
-      process.env.SPACETIMEDB_HOST ||
-      process.env.SPACETIMEDB_HOST_URL ||
-      "ws://127.0.0.1:3000"
-    const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse"
-    const token = process.env.SPACETIMEDB_TOKEN || ""
     const timer = setTimeout(() => {
-      if (!resolved) {
-        reject(new Error("SpacetimeDB connect timeout"))
-      }
+      if (!resolved) reject(new Error("SpacetimeDB connect timeout"))
     }, timeoutMs)
-    const builder = DbConnection.builder()
-      .withUri(uri)
-      .withModuleName(moduleName)
-      .onConnect(() => {
-        if (!resolved) {
-          resolved = true
-          clearTimeout(timer)
-          resolve(built)
-        }
-      })
-      .onConnectError(() => {
-        if (!resolved) {
-          resolved = true
-          clearTimeout(timer)
-          reject(new Error("SpacetimeDB connect error"))
-        }
-      })
-    if (token) builder.withToken(token)
+
+    const handleConnect = (built: DbConnection) => {
+      if (!resolved) {
+        resolved = true
+        clearTimeout(timer)
+        resolve(built)
+      }
+    }
+    const handleConnectError = () => {
+      if (!resolved) {
+        resolved = true
+        clearTimeout(timer)
+        reject(new Error("SpacetimeDB connect error"))
+      }
+    }
+
+    const builder = createDbConnectionBuilder(config)
+      .onConnect(() => handleConnect(built))
+      .onConnectError(handleConnectError)
     const built = builder.build()
   })
 }
