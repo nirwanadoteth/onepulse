@@ -137,7 +137,7 @@ export const GMChainCard = React.memo(function GMChainCard({
 
   return (
     <>
-      <Item>
+      <Item variant="outline">
         <ItemContent>
           <ItemMedia>
             {Icons[chainIconName as keyof typeof Icons]?.({
