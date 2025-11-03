@@ -4,61 +4,115 @@ import { base, celo, optimism } from "viem/chains"
 
 import { dailyGMAbi } from "@/lib/abi/daily-gm"
 import { getDailyGmAddress } from "@/lib/constants"
+import type { GmStatsByAddress } from "@/lib/module_bindings"
 import { callReportGm, getGmRows } from "@/lib/spacetimedb/server-connection"
 
-export const runtime = "nodejs" // require Node for WebSocket client
+export const runtime = "nodejs"
+
+function validateAddress(
+  address: unknown
+): { error: string; status: number } | { value: string } {
+  if (typeof address !== "string")
+    return { error: "address is required", status: 400 }
+  if (!address) return { error: "address is required", status: 400 }
+  if (!isAddress(address)) return { error: "invalid address", status: 400 }
+  return { value: address }
+}
+
+function validateContractAddress(
+  chainId: number
+): { error: string; status: number } | { value: string } {
+  const contractAddress = getDailyGmAddress(chainId)
+  if (!contractAddress)
+    return { error: "DAILY_GM_ADDRESS not configured", status: 500 }
+  return { value: contractAddress }
+}
+
+function extractOptionalFields(body: Record<string, unknown>) {
+  return {
+    fid: typeof body.fid === "number" ? body.fid : undefined,
+    displayName:
+      typeof body.displayName === "string" ? body.displayName : undefined,
+    username: typeof body.username === "string" ? body.username : undefined,
+    txHash: typeof body.txHash === "string" ? body.txHash : undefined,
+  }
+}
+
+function validateReportGmRequest(body: Record<string, unknown>) {
+  const addressResult = validateAddress(body.address)
+  if ("error" in addressResult) return addressResult
+
+  const chainId = typeof body.chainId === "number" ? body.chainId : 8453
+  const contractResult = validateContractAddress(chainId)
+  if ("error" in contractResult) return contractResult
+
+  return {
+    address: addressResult.value,
+    chainId,
+    contractAddress: contractResult.value,
+    ...extractOptionalFields(body),
+  }
+}
+
+function resolveChain(chainId: number) {
+  if (chainId === celo.id) return celo
+  if (chainId === optimism.id) return optimism
+  return base
+}
+
+async function readOnchainLastGmDay(
+  address: string,
+  contractAddress: string,
+  chainId: number
+) {
+  const chain = resolveChain(chainId)
+  const client = createPublicClient({
+    chain,
+    transport: http(),
+  })
+  const onchainLastGmDay = await client.readContract({
+    address: contractAddress as Address,
+    abi: dailyGMAbi,
+    functionName: "lastGMDay",
+    args: [address as Address],
+  })
+  return Number(onchainLastGmDay)
+}
+
+function formatReportGmResponse(row: GmStatsByAddress) {
+  return {
+    address: row.address,
+    currentStreak: row.currentStreak,
+    highestStreak: row.highestStreak,
+    allTimeGmCount: row.allTimeGmCount,
+    lastGmDay: row.lastGmDay,
+  }
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
+    const validation = validateReportGmRequest(body)
+    if ("error" in validation) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: validation.status }
+      )
+    }
     const {
       address,
-      chainId = 8453,
+      chainId,
       fid,
       displayName,
       username,
       txHash,
-    } = body as {
-      address: string
-      chainId?: number
-      fid?: number
-      displayName?: string
-      username?: string
-      txHash?: string
-    }
-
-    if (!address)
-      return NextResponse.json(
-        { error: "address is required" },
-        { status: 400 }
-      )
-    if (!isAddress(address))
-      return NextResponse.json({ error: "invalid address" }, { status: 400 })
-    const contractAddress = getDailyGmAddress(chainId)
-    if (!contractAddress)
-      return NextResponse.json(
-        { error: "DAILY_GM_ADDRESS not configured" },
-        { status: 500 }
-      )
-
-    // Resolve chain by id (support Base, Celo and Optimism)
-    const resolvedChain =
-      chainId === celo.id ? celo : chainId === optimism.id ? optimism : base
-    const client = createPublicClient({
-      chain: resolvedChain,
-      transport: http(),
-    })
-
-    // Read onchain lastGMDay for the address
-    const onchainLastGmDay = await client.readContract({
-      address: contractAddress as Address,
-      abi: dailyGMAbi,
-      functionName: "lastGMDay",
-      args: [address as Address],
-    })
-
-    const lastGmDayOnchain = Number(onchainLastGmDay)
-
+      contractAddress,
+    } = validation
+    const lastGmDayOnchain = await readOnchainLastGmDay(
+      address,
+      contractAddress,
+      chainId
+    )
     const updated = await callReportGm({
       address,
       chainId,
@@ -68,7 +122,6 @@ export async function POST(req: Request) {
       displayName,
       username,
     })
-
     const row = updated ?? (await getGmRows(address, chainId)).at(0) ?? null
     if (!row) {
       return NextResponse.json(
@@ -76,13 +129,7 @@ export async function POST(req: Request) {
         { status: 500 }
       )
     }
-    return NextResponse.json({
-      address: row.address,
-      currentStreak: row.currentStreak,
-      highestStreak: row.highestStreak,
-      allTimeGmCount: row.allTimeGmCount,
-      lastGmDay: row.lastGmDay,
-    })
+    return NextResponse.json(formatReportGmResponse(row))
   } catch (e) {
     console.error("/api/gm/report error", e)
     return NextResponse.json({ error: "internal error" }, { status: 500 })
