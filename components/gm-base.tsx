@@ -47,8 +47,8 @@ export const GMBase = React.memo(function GMBase({
   // Manage congratulations day persistently
   const { lastCongratsDay, setLastCongratsDay } = useLastCongratsDay()
 
-  // Control confetti animation
-  const { confettiRef } = useConfettiControl(false) // Will be set by useCongratsLogic
+  // Control confetti animation (gated by isConnected)
+  const { confettiRef } = useConfettiControl(false, isConnected) // Will be set by useCongratsLogic
 
   // Show congratulations dialog when all done
   const { showCongrats, setShowCongrats } = useCongratsLogic({
