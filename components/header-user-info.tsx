@@ -68,14 +68,13 @@ const UserInfo = React.memo(function UserInfo({
   return (
     <div className="flex flex-col">
       <span className="text-sm leading-none font-medium">{displayName}</span>
-      {showUsername ?? (
+      {showUsername ? (
         <span className="text-muted-foreground text-xs">@{username}</span>
+      ) : (
+        <span className="text-muted-foreground text-xs">
+          {truncateAddress(address)}
+        </span>
       )}
-      : (
-      <span className="text-muted-foreground text-xs">
-        {truncateAddress(address)}
-      </span>
-      )
     </div>
   )
 })
