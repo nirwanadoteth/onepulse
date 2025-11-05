@@ -181,7 +181,7 @@ function useClaimHandler(
 
 function useClaimSetup(fid: bigint | undefined, chainId: number) {
   const contractAddress = getDailyRewardsAddress(chainId)
-  const { generateSignature, isSigning } = useDegenClaimSignature({ fid })
+  const { generateSignature, isSigning, isNoncePending } = useDegenClaimSignature({ fid })
   const {
     canClaim,
     reward,
@@ -192,6 +192,7 @@ function useClaimSetup(fid: bigint | undefined, chainId: number) {
     contractAddress,
     generateSignature,
     isSigning,
+    isNoncePending,
     canClaim,
     reward,
     refetchEligibility,
@@ -232,12 +233,13 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
     contractAddress,
     generateSignature,
     isSigning,
+    isNoncePending,
     canClaim,
     reward,
     refetchEligibility,
   } = useClaimSetup(fid, chainId)
 
-  const isLoading = isSigning || claimState.status === "confirming"
+  const isLoading = isSigning || claimState.status === "confirming" || isNoncePending
   const isDisabled = useClaimDisabledState({
     disabled,
     isConnected,
@@ -276,7 +278,7 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
         aria-busy={isLoading}
       >
         {isLoading && <Spinner />}
-        {buttonLabel}
+        {isNoncePending ? "Loading..." : buttonLabel}
       </Button>
       {claimState.error && (
         <p className="text-destructive mt-2 text-sm">{claimState.error}</p>

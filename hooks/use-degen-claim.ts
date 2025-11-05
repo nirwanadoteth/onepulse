@@ -103,9 +103,9 @@ function useSignatureDeadline(customDeadline?: bigint): bigint {
   }, [customDeadline])
 }
 
-function useUserNonce(address: string | undefined): bigint | undefined {
+function useUserNonce(address: string | undefined) {
   const contractAddress = getDailyRewardsAddress(CHAIN_ID)
-  const { data: userInfo } = useReadContract({
+  const { data: userInfo, isPending } = useReadContract({
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
     functionName: "userInfo",
@@ -115,7 +115,10 @@ function useUserNonce(address: string | undefined): bigint | undefined {
     },
   })
 
-  return userInfo ? (userInfo[1] as bigint) : undefined
+  return {
+    nonce: userInfo ? (userInfo[1] as bigint) : undefined,
+    isPending,
+  }
 }
 
 function createClaimMessage(
@@ -158,7 +161,7 @@ export function useDegenClaimSignature({
   const { signTypedDataAsync, isPending: isSigning } = useSignTypedData()
   const contractAddress = getDailyRewardsAddress(CHAIN_ID)
   const signatureDeadline = useSignatureDeadline(deadline)
-  const nonce = useUserNonce(address)
+  const { nonce, isPending: isNoncePending } = useUserNonce(address)
 
   const generateSignature = useCallback(
     async (fidToSign: bigint) => {
@@ -190,6 +193,7 @@ export function useDegenClaimSignature({
   return {
     generateSignature,
     isSigning,
+    isNoncePending,
     deadline: signatureDeadline,
   }
 }
