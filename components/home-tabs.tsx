@@ -1,6 +1,6 @@
 "use client"
 
-import { useIsInMiniApp, useMiniKit } from "@coinbase/onchainkit/minikit"
+import { useMiniKit } from "@coinbase/onchainkit/minikit"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
@@ -21,7 +21,8 @@ export function HomeTabs({
   onProfileDisconnected,
 }: HomeTabsProps) {
   const { context } = useMiniKit()
-  const { isInMiniApp } = useIsInMiniApp()
+  const isInMiniApp = !!context?.client
+
   const isBaseApp = context?.client?.clientFid === 309857
   const isFarcaster = context?.client?.clientFid === 1
 
