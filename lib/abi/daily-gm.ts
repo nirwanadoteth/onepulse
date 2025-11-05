@@ -1,32 +1,37 @@
 export const dailyGMAbi = [
   {
-    type: "function",
-    name: "gm",
-    stateMutability: "nonpayable",
-    inputs: [],
-    outputs: [],
-  },
-  {
-    type: "function",
-    name: "gmTo",
-    stateMutability: "nonpayable",
-    inputs: [{ name: "recipient", type: "address" }],
-    outputs: [],
-  },
-  {
-    type: "function",
-    name: "lastGMDay",
-    stateMutability: "view",
-    inputs: [{ name: "user", type: "address" }],
-    outputs: [{ type: "uint256" }],
-  },
-  {
-    type: "event",
-    name: "GM",
-    inputs: [
-      { name: "user", type: "address", indexed: true },
-      { name: "recipient", type: "address", indexed: true },
-    ],
     anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "user", type: "address" },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "recipient",
+        type: "address",
+      },
+    ],
+    name: "GM",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "gm",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "recipient", type: "address" }],
+    name: "gmTo",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "user", type: "address" }],
+    name: "lastGMDay",
+    outputs: [{ internalType: "uint256", name: "lastGMDay", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
   },
 ] as const

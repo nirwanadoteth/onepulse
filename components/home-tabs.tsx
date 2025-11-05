@@ -5,6 +5,7 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
 import { Profile } from "@/components/profile"
+import { RewardsBase } from "@/components/rewards-base"
 
 interface HomeTabsProps {
   tab: string
@@ -37,6 +38,12 @@ export function HomeTabs({
             Home
           </TabsTrigger>
           <TabsTrigger
+            value="rewards"
+            className="data-[state=active]:bg-accent"
+          >
+            Rewards
+          </TabsTrigger>
+          <TabsTrigger
             value="profile"
             className="data-[state=active]:bg-accent"
           >
@@ -45,6 +52,9 @@ export function HomeTabs({
         </TabsList>
         <TabsContent value="home">
           <GMBase sponsored={isBaseApp} allowedChainIds={allowedChainIds} />
+        </TabsContent>
+        <TabsContent value="rewards">
+          <RewardsBase />
         </TabsContent>
         <TabsContent value="profile">
           <Profile
