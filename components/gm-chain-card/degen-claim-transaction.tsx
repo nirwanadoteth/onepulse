@@ -127,7 +127,7 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
       <ShinyButton
         onClick={hook.handleClaim}
         disabled={hook.effectiveDisabled}
-        className={`w-full font-medium transition-all duration-200 ${
+        className={`flex items-center w-full font-medium transition-all duration-200 ${
           hook.claimState.status === "success"
             ? "bg-green-600 text-white hover:bg-green-700"
             : hook.effectiveDisabled
