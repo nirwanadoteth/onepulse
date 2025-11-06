@@ -18,6 +18,7 @@ interface ClaimState {
   isEligible: boolean
   hasAlreadyClaimed: boolean
   isFidBlacklisted: boolean
+  hasSentGMToday: boolean
   reward: bigint
 }
 
@@ -32,12 +33,14 @@ interface ClaimEligibility {
 }
 
 function extractClaimState(
-  claimStatus: ClaimEligibility | undefined
+  claimStatus: ClaimEligibility | undefined,
+  hasSentGMToday: boolean
 ): ClaimState {
   return {
     isEligible: claimStatus?.ok ?? false,
     hasAlreadyClaimed: claimStatus?.claimerClaimedToday ?? false,
     isFidBlacklisted: claimStatus?.fidIsBlacklisted ?? false,
+    hasSentGMToday,
     reward: claimStatus?.reward ?? 0n,
   }
 }
@@ -55,6 +58,13 @@ function getStatusConfig(state: ClaimState) {
       title: "Claimed Today",
       description: "You've already claimed your daily rewards",
       accentColor: "text-green-600 dark:text-green-400",
+    }
+  }
+  if (!state.hasSentGMToday) {
+    return {
+      title: "Send GM First",
+      description: "Send a GM on Base to become eligible for rewards",
+      accentColor: "text-blue-600 dark:text-blue-400",
     }
   }
   if (state.isEligible) {
@@ -154,12 +164,14 @@ export const DegenRewardCard = React.memo(function DegenRewardCard({
   fid,
 }: DegenRewardCardProps) {
   const { address, isConnected } = useAccount()
-  const { claimStatus, isPending: isCheckingEligibility } = useClaimEligibility(
-    {
-      fid,
-      enabled: isConnected,
-    }
-  )
+  const {
+    claimStatus,
+    hasSentGMToday,
+    isPending: isCheckingEligibility,
+  } = useClaimEligibility({
+    fid,
+    enabled: isConnected,
+  })
   const { hasRewards } = useRewardVaultStatus()
 
   if (!isConnected || !address) {
@@ -170,7 +182,7 @@ export const DegenRewardCard = React.memo(function DegenRewardCard({
     return <DepletedVaultCard />
   }
 
-  const claimState = extractClaimState(claimStatus)
+  const claimState = extractClaimState(claimStatus, hasSentGMToday)
   return (
     <RewardCard
       fid={fid}

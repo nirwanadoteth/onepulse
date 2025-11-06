@@ -41,12 +41,17 @@ function validateClaimInputs(
 
 function getClaimButtonLabel(
   isConnected: boolean,
-  eligibility: { canClaim: boolean; hasAlreadyClaimed: boolean },
+  eligibility: {
+    canClaim: boolean
+    hasAlreadyClaimed: boolean
+    hasSentGMToday: boolean
+  },
   isSigning: boolean,
   status: ClaimStatus
 ): string {
   if (!isConnected) return "Connect Wallet"
   if (eligibility.hasAlreadyClaimed) return "Already Claimed"
+  if (!eligibility.hasSentGMToday) return "Send GM First"
   if (!eligibility.canClaim) return "Not Eligible"
   if (isSigning) return "Sign Transaction"
   if (status === "confirming") return "Processing..."
@@ -65,6 +70,7 @@ function useClaimSetup(fid: bigint | undefined, chainId: number) {
     canClaim,
     reward,
     claimStatus,
+    hasSentGMToday,
     refetch: refetchEligibility,
   } = useClaimEligibility({ fid })
 
@@ -77,6 +83,7 @@ function useClaimSetup(fid: bigint | undefined, chainId: number) {
     canClaim,
     reward,
     claimStatus,
+    hasSentGMToday,
     refetchEligibility,
   }
 }
@@ -85,6 +92,7 @@ function useClaimDisabledState(conditions: {
   disabled: boolean
   isConnected: boolean
   canClaim: boolean
+  hasSentGMToday: boolean
   hasAddress: boolean
   hasFid: boolean
   hasContract: boolean
@@ -93,6 +101,7 @@ function useClaimDisabledState(conditions: {
   const isNotConnected = !conditions.isConnected
   const missingPrereqs =
     !conditions.canClaim ||
+    !conditions.hasSentGMToday ||
     !conditions.hasAddress ||
     !conditions.hasFid ||
     !conditions.hasContract
@@ -183,6 +192,7 @@ function useDegenClaimTransaction({
     canClaim,
     reward,
     claimStatus,
+    hasSentGMToday,
     refetchEligibility,
   } = useClaimSetup(fid, chainId)
   // Local hook state and handler are created inside this hook to reduce module-level
@@ -206,6 +216,7 @@ function useDegenClaimTransaction({
     disabled,
     isConnected,
     canClaim,
+    hasSentGMToday,
     hasAddress,
     hasFid,
     hasContract,
@@ -254,6 +265,7 @@ function useDegenClaimTransaction({
       hasAlreadyClaimed:
         (claimStatus?.claimerClaimedToday || claimStatus?.fidClaimedToday) ??
         false,
+      hasSentGMToday,
     },
     isSigning,
     status

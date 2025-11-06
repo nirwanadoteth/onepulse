@@ -4,7 +4,8 @@ import { useCallback, useMemo } from "react"
 import { useAccount, useReadContract, useSignTypedData } from "wagmi"
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
-import { getDailyRewardsAddress } from "@/lib/constants"
+import { dailyGMAbi } from "@/lib/abi/daily-gm"
+import { getDailyRewardsAddress, getDailyGmAddress } from "@/lib/constants"
 
 interface UseClaimEligibilityProps {
   fid: bigint | undefined
@@ -86,9 +87,12 @@ export function useClaimEligibility({
     },
   })
 
+  const { hasSentGMToday, isPending: isGMPending } = useHasSentGMToday()
+
   return {
     ...formatClaimEligibility(claimStatus),
-    isPending,
+    hasSentGMToday,
+    isPending: isPending || isGMPending,
     isError,
     refetch,
   }
@@ -253,4 +257,33 @@ function hasRequiredClaimEligibilityInputs(
   contractAddress: string
 ): boolean {
   return Boolean(address && fid && contractAddress)
+}
+
+function getCurrentDay(): bigint {
+  return BigInt(Math.floor(Date.now() / 1000 / 86400))
+}
+
+export function useHasSentGMToday() {
+  const { address } = useAccount()
+  const gmContractAddress = getDailyGmAddress(CHAIN_ID)
+
+  const { data: lastGMDay, isPending } = useReadContract({
+    address: (gmContractAddress as `0x${string}`) || undefined,
+    abi: dailyGMAbi,
+    functionName: "lastGMDay",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: {
+      enabled: !!address && gmContractAddress !== "",
+      refetchInterval: REFETCH_ELIGIBILITY_MS,
+    },
+  })
+
+  const currentDay = getCurrentDay()
+  const hasSentGMToday = lastGMDay !== undefined && lastGMDay === currentDay
+
+  return {
+    hasSentGMToday,
+    lastGMDay,
+    isPending,
+  }
 }
