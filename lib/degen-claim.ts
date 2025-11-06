@@ -2,6 +2,7 @@ import {
   getAccount,
   waitForTransactionReceipt,
   writeContract,
+  getPublicClient,
 } from "wagmi/actions"
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
@@ -10,11 +11,23 @@ import { config as wagmiConfig } from "@/components/providers/wagmi-provider"
 async function isSmartWallet(): Promise<boolean> {
   try {
     const account = getAccount(wagmiConfig)
-    // Coinbase Smart Wallet uses EIP-1271 and has connector type
-    if (account.connector?.type === "coinbaseWalletSDK") {
-      return true
+    if (!account.address) {
+      return false
     }
-    return false
+
+    // Get public client for on-chain verification
+    const publicClient = getPublicClient(wagmiConfig)
+    if (!publicClient) {
+      return false
+    }
+
+    // Check if the address has bytecode (smart contract wallet)
+    const bytecode = await publicClient.getCode({
+      address: account.address,
+    })
+
+    // If bytecode exists, it's a smart contract wallet
+    return bytecode !== undefined && bytecode !== "0x"
   } catch {
     return false
   }
