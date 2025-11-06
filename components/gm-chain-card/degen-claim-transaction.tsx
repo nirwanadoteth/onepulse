@@ -131,7 +131,7 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
           hook.claimState.status === "success"
             ? "bg-green-600 text-white hover:bg-green-700"
             : hook.effectiveDisabled
-              ? "cursor-not-allowed bg-muted text-muted-foreground"
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
         }`}
         aria-busy={hook.isLoading}

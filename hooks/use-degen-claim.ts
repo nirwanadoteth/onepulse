@@ -3,9 +3,9 @@
 import { useCallback, useMemo } from "react"
 import { useAccount, useReadContract, useSignTypedData } from "wagmi"
 
-import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
 import { dailyGMAbi } from "@/lib/abi/daily-gm"
-import { getDailyRewardsAddress, getDailyGmAddress } from "@/lib/constants"
+import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
+import { getDailyGmAddress, getDailyRewardsAddress } from "@/lib/constants"
 
 interface UseClaimEligibilityProps {
   fid: bigint | undefined

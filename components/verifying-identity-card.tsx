@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 
 export function VerifyingIdentityCard() {
