@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, createWalletClient, http } from "viem"
+import {
+  createWalletClient,
+  http,
+  keccak256,
+  encodePacked,
+} from "viem"
 import { privateKeyToAccount } from "viem/accounts"
 import { base } from "viem/chains"
 
-import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
 import { getDailyRewardsAddress } from "@/lib/constants"
 
-const GASLESS_OPERATOR_PRIVATE_KEY = process.env.GASLESS_OPERATOR_PRIVATE_KEY
+// Backend signer for claim authorizations (not for executing transactions)
+const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY
 
-if (!GASLESS_OPERATOR_PRIVATE_KEY) {
-  console.warn("GASLESS_OPERATOR_PRIVATE_KEY not configured")
+if (!BACKEND_SIGNER_PRIVATE_KEY) {
+  console.warn("BACKEND_SIGNER_PRIVATE_KEY not configured")
 }
 
 type ValidationSuccess = {
@@ -50,22 +55,22 @@ function validateRequest(
   }
 }
 
-async function executeGaslessClaim(params: {
+/**
+ * Generates a backend-signed authorization for a claim.
+ * The user receives this signature and submits it with their own transaction.
+ * This works with all wallet types (EOA, smart wallet, passkey, etc.)
+ */
+async function generateClaimAuthorization(params: {
   claimer: string
   fid: number | bigint
   deadline: number | bigint
 }) {
   const account = privateKeyToAccount(
-    GASLESS_OPERATOR_PRIVATE_KEY as `0x${string}`
+    BACKEND_SIGNER_PRIVATE_KEY as `0x${string}`
   )
 
   const walletClient = createWalletClient({
     account,
-    chain: base,
-    transport: http(),
-  })
-
-  const publicClient = createPublicClient({
     chain: base,
     transport: http(),
   })
@@ -76,77 +81,39 @@ async function executeGaslessClaim(params: {
     throw new Error("Contract address not configured")
   }
 
-  // Read the user's current nonce from the contract
-  const userInfo = await publicClient.readContract({
-    address: contractAddress as `0x${string}`,
-    abi: dailyRewardsAbi,
-    functionName: "userInfo",
-    args: [params.claimer as `0x${string}`],
-  })
+  // Create message hash matching the contract's format:
+  // keccak256(abi.encodePacked(claimer, fid, deadline, address(this)))
+  const messageHash = keccak256(
+    encodePacked(
+      ["address", "uint256", "uint256", "address"],
+      [
+        params.claimer as `0x${string}`,
+        BigInt(params.fid),
+        BigInt(params.deadline),
+        contractAddress as `0x${string}`,
+      ]
+    )
+  )
 
-  // userInfo returns [lastClaimDay, nonce]
-  const nonce = userInfo[1]
-
-  // Generate signature using the operator's private key
-  // The signature is for the claimer's address, not the operator
-  const domain = {
-    name: "DailyRewards",
-    version: "1",
-    chainId: base.id,
-    verifyingContract: contractAddress as `0x${string}`,
-  }
-
-  const types = {
-    Claim: [
-      { name: "claimer", type: "address" },
-      { name: "fid", type: "uint256" },
-      { name: "deadline", type: "uint256" },
-      { name: "nonce", type: "uint256" },
-    ],
-  }
-
-  const message = {
-    claimer: params.claimer as `0x${string}`,
-    fid: BigInt(params.fid),
-    deadline: BigInt(params.deadline),
-    nonce: BigInt(nonce),
-  }
-
-  // Sign with the operator's private key
-  const signature = await walletClient.signTypedData({
+  // Sign with personal_sign (adds "\x19Ethereum Signed Message:\n32" prefix)
+  // This is simpler than EIP-712 and works with all wallet types
+  const signature = await walletClient.signMessage({
     account,
-    domain,
-    types,
-    primaryType: "Claim",
-    message,
+    message: { raw: messageHash },
   })
 
-  // Execute the gasless claim with the operator's signature
-  const hash = await walletClient.writeContract({
-    address: contractAddress as `0x${string}`,
-    abi: dailyRewardsAbi,
-    functionName: "executeGaslessClaim",
-    args: [
-      params.claimer as `0x${string}`,
-      BigInt(params.fid),
-      BigInt(params.deadline),
-      signature,
-    ],
-  })
-
-  const receipt = await publicClient.waitForTransactionReceipt({
-    hash,
-    confirmations: 1,
-  })
-
-  return { hash, status: receipt.status }
+  return {
+    signature,
+    messageHash,
+    deadline: params.deadline,
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    if (!GASLESS_OPERATOR_PRIVATE_KEY) {
+    if (!BACKEND_SIGNER_PRIVATE_KEY) {
       return NextResponse.json(
-        { error: "Gasless operator not configured" },
+        { error: "Backend signer not configured" },
         { status: 500 }
       )
     }
@@ -164,15 +131,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const result = await executeGaslessClaim(validation.data)
+    const result = await generateClaimAuthorization(validation.data)
 
     return NextResponse.json({
       success: true,
-      txHash: result.hash,
-      status: result.status,
+      signature: result.signature,
+      deadline: result.deadline,
+      messageHash: result.messageHash,
     })
   } catch (error: unknown) {
-    console.error("Gasless claim execution error:", error)
+    console.error("Claim authorization error:", error)
 
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error"
@@ -180,7 +148,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Failed to execute claim",
+        error: "Failed to generate claim authorization",
         message: errorMessage,
         details:
           errorDetails?.shortMessage || errorDetails?.details || undefined,

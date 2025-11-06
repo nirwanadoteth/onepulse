@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
-import { useAccount, useReadContract, useSignTypedData } from "wagmi"
+import { useMemo } from "react"
+import { useAccount, useReadContract } from "wagmi"
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
 import { getDailyRewardsAddress } from "@/lib/constants"
@@ -41,8 +41,7 @@ function buildClaimEligibilityArgs(
   fid: bigint | undefined,
   contractAddress: string
 ): readonly [`0x${string}`, bigint] | undefined {
-  if (!hasRequiredClaimEligibilityInputs(address, fid, contractAddress))
-    return undefined
+  if (!address || !fid || !contractAddress) return undefined
   return [address as `0x${string}`, fid as bigint]
 }
 
@@ -52,9 +51,7 @@ function shouldQueryEligibility(
   fid: bigint | undefined,
   contractAddress: string
 ): boolean {
-  return (
-    enabled && hasRequiredClaimEligibilityInputs(address, fid, contractAddress)
-  )
+  return enabled && !!address && !!fid && !!contractAddress
 }
 
 export function useClaimEligibility({
@@ -96,135 +93,15 @@ export function useClaimEligibility({
   }
 }
 
-interface UseDegenClaimSignatureProps {
-  fid: bigint | undefined
-  deadline?: bigint
-}
-
-function useSignatureDeadline(customDeadline?: bigint): bigint {
+/**
+ * Hook to get the deadline for claim signatures.
+ * Returns a timestamp 1 hour in the future.
+ */
+export function useClaimDeadline(customDeadline?: bigint): bigint {
   return useMemo(() => {
     if (customDeadline) return customDeadline
     return BigInt(Math.floor(Date.now() / 1000) + SIGNATURE_DEADLINE_SECONDS)
   }, [customDeadline])
-}
-
-function useUserNonce(address: string | undefined) {
-  const contractAddress = getDailyRewardsAddress(CHAIN_ID)
-  const { data: userInfo, isPending } = useReadContract({
-    address: (contractAddress as `0x${string}`) || undefined,
-    abi: dailyRewardsAbi,
-    functionName: "userInfo",
-    args: address ? [address as `0x${string}`] : undefined,
-    query: {
-      enabled: !!address && contractAddress !== "",
-    },
-  })
-
-  return {
-    nonce: userInfo ? (userInfo[1] as bigint) : undefined,
-    isPending,
-  }
-}
-
-function createClaimMessage(
-  address: `0x${string}`,
-  fid: bigint,
-  nonce: bigint,
-  deadline: bigint,
-  contractAddress: string
-) {
-  return {
-    account: address,
-    domain: {
-      name: "DailyRewards",
-      version: "1",
-      chainId: CHAIN_ID,
-      verifyingContract: contractAddress as `0x${string}`,
-    },
-    types: {
-      Claim: [
-        { name: "claimer", type: "address" },
-        { name: "fid", type: "uint256" },
-        { name: "deadline", type: "uint256" },
-        { name: "nonce", type: "uint256" },
-      ],
-    },
-    primaryType: "Claim" as const,
-    message: {
-      claimer: address,
-      fid,
-      deadline,
-      nonce,
-    },
-  }
-}
-
-function validateSignatureRequirements(
-  address: string | undefined,
-  nonce: bigint | undefined
-): { address: `0x${string}`; nonce: bigint } {
-  const missingAddress = !address
-  const nonceMissing = nonce === undefined || nonce === null
-
-  if (missingAddress || nonceMissing) {
-    const missing: string[] = []
-    if (missingAddress) missing.push("address")
-    if (nonceMissing) missing.push("nonce")
-    throw new Error(
-      `Missing required parameters for signature: ${missing.join(", ")}`
-    )
-  }
-
-  return {
-    address: address as `0x${string}`,
-    nonce,
-  }
-}
-
-export function useDegenClaimSignature({
-  deadline,
-}: UseDegenClaimSignatureProps) {
-  const { address } = useAccount()
-  const { signTypedDataAsync, isPending: isSigning } = useSignTypedData()
-  const contractAddress = getDailyRewardsAddress(CHAIN_ID)
-  const signatureDeadline = useSignatureDeadline(deadline)
-  const { nonce, isPending: isNoncePending } = useUserNonce(address)
-
-  const generateSignature = useCallback(
-    async (fidToSign: bigint) => {
-      // Validate required parameters before proceeding
-      const { address: validatedAddress, nonce: validatedNonce } =
-        validateSignatureRequirements(address, nonce)
-
-      const messageData = createClaimMessage(
-        validatedAddress,
-        fidToSign,
-        validatedNonce,
-        signatureDeadline,
-        contractAddress
-      )
-
-      const signature = await signTypedDataAsync(
-        messageData as Parameters<typeof signTypedDataAsync>[0]
-      )
-
-      return {
-        signature,
-        nonce: validatedNonce,
-        deadline: signatureDeadline,
-      }
-    },
-    [address, nonce, signTypedDataAsync, signatureDeadline, contractAddress]
-  )
-
-  return {
-    generateSignature,
-    isSigning,
-    isNoncePending,
-    deadline: signatureDeadline,
-    // expose the nonce so callers can know whether it's available
-    nonce,
-  }
 }
 
 export function useRewardVaultStatus() {
@@ -247,12 +124,4 @@ export function useRewardVaultStatus() {
     isPending,
     hasRewards: (vaultStatus?.[2] ?? 0n) > 0n,
   }
-}
-
-function hasRequiredClaimEligibilityInputs(
-  address: string | undefined,
-  fid: bigint | undefined,
-  contractAddress: string
-): boolean {
-  return Boolean(address && fid && contractAddress)
 }

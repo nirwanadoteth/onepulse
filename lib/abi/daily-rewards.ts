@@ -1,13 +1,17 @@
 export const dailyRewardsAbi = [
   {
     inputs: [
-      { internalType: "address", name: "_gaslessOperator", type: "address" },
-      { internalType: "uint256", name: "_minVaultBalance", type: "uint256" },
+      { internalType: "address", name: "_backendSigner", type: "address" },
       { internalType: "address", name: "_dailyGMContract", type: "address" },
     ],
     stateMutability: "payable",
     type: "constructor",
   },
+  { inputs: [], name: "AlreadyClaimedFIDToday", type: "error" },
+  { inputs: [], name: "AlreadyClaimedUserToday", type: "error" },
+  { inputs: [], name: "BatchTooLarge", type: "error" },
+  { inputs: [], name: "BelowMinimumReserve", type: "error" },
+  { inputs: [], name: "DeadlineTooLong", type: "error" },
   { inputs: [], name: "ECDSAInvalidSignature", type: "error" },
   {
     inputs: [{ internalType: "uint256", name: "length", type: "uint256" }],
@@ -19,7 +23,11 @@ export const dailyRewardsAbi = [
     name: "ECDSAInvalidSignatureS",
     type: "error",
   },
-  { inputs: [], name: "InvalidShortString", type: "error" },
+  { inputs: [], name: "FIDBlacklisted", type: "error" },
+  { inputs: [], name: "InsufficientVaultBalance", type: "error" },
+  { inputs: [], name: "InvalidFID", type: "error" },
+  { inputs: [], name: "InvalidSignature", type: "error" },
+  { inputs: [], name: "MustGMToday", type: "error" },
   {
     inputs: [{ internalType: "address", name: "owner", type: "address" }],
     name: "OwnableInvalidOwner",
@@ -36,28 +44,47 @@ export const dailyRewardsAbi = [
     name: "SafeERC20FailedOperation",
     type: "error",
   },
-  {
-    inputs: [{ internalType: "string", name: "str", type: "string" }],
-    name: "StringTooLong",
-    type: "error",
-  },
+  { inputs: [], name: "SameValue", type: "error" },
+  { inputs: [], name: "SignatureAlreadyUsed", type: "error" },
+  { inputs: [], name: "SignatureExpired", type: "error" },
+  { inputs: [], name: "ZeroAddress", type: "error" },
+  { inputs: [], name: "ZeroAmount", type: "error" },
   {
     anonymous: false,
     inputs: [
       {
-        indexed: true,
+        indexed: false,
         internalType: "uint256[]",
         name: "fids",
         type: "uint256[]",
       },
       {
-        indexed: false,
+        indexed: true,
         internalType: "bool",
         name: "isBlacklisted",
         type: "bool",
       },
     ],
     name: "BlacklistUpdated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "oldValue",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "newValue",
+        type: "uint256",
+      },
+    ],
+    name: "ClaimRewardAmountUpdated",
     type: "event",
   },
   {
@@ -97,27 +124,6 @@ export const dailyRewardsAbi = [
       },
     ],
     name: "DailyGMContractUpdated",
-    type: "event",
-  },
-  { anonymous: false, inputs: [], name: "EIP712DomainChanged", type: "event" },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "operator",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "claimer",
-        type: "address",
-      },
-      { indexed: true, internalType: "uint256", name: "fid", type: "uint256" },
-    ],
-    name: "GaslessClaimExecuted",
     type: "event",
   },
   {
@@ -185,6 +191,13 @@ export const dailyRewardsAbi = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "backendSigner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       { internalType: "address", name: "claimer", type: "address" },
       { internalType: "uint256", name: "fid", type: "uint256" },
@@ -212,6 +225,7 @@ export const dailyRewardsAbi = [
   },
   {
     inputs: [
+      { internalType: "address", name: "claimer", type: "address" },
       { internalType: "uint256", name: "fid", type: "uint256" },
       { internalType: "uint256", name: "deadline", type: "uint256" },
       { internalType: "bytes", name: "signature", type: "bytes" },
@@ -219,6 +233,13 @@ export const dailyRewardsAbi = [
     name: "claim",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "claimRewardAmount",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -239,39 +260,12 @@ export const dailyRewardsAbi = [
     inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
     name: "deposit",
     outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "eip712Domain",
-    outputs: [
-      { internalType: "bytes1", name: "fields", type: "bytes1" },
-      { internalType: "string", name: "name", type: "string" },
-      { internalType: "string", name: "version", type: "string" },
-      { internalType: "uint256", name: "chainId", type: "uint256" },
-      { internalType: "address", name: "verifyingContract", type: "address" },
-      { internalType: "bytes32", name: "salt", type: "bytes32" },
-      { internalType: "uint256[]", name: "extensions", type: "uint256[]" },
-    ],
-    stateMutability: "view",
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
     name: "emergencyWithdraw",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "claimer", type: "address" },
-      { internalType: "uint256", name: "fid", type: "uint256" },
-      { internalType: "uint256", name: "deadline", type: "uint256" },
-      { internalType: "bytes", name: "signature", type: "bytes" },
-    ],
-    name: "executeGaslessClaim",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -279,14 +273,12 @@ export const dailyRewardsAbi = [
   {
     inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     name: "fidInfo",
-    outputs: [{ internalType: "bool", name: "blacklisted", type: "bool" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "gaslessOperator",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
+    outputs: [
+      { internalType: "bool", name: "blacklisted", type: "bool" },
+      { internalType: "uint48", name: "blacklistedSince", type: "uint48" },
+      { internalType: "uint48", name: "reserved1", type: "uint48" },
+      { internalType: "uint160", name: "reserved2", type: "uint160" },
+    ],
     stateMutability: "view",
     type: "function",
   },
@@ -338,6 +330,15 @@ export const dailyRewardsAbi = [
   },
   {
     inputs: [
+      { internalType: "uint256", name: "_claimRewardAmount", type: "uint256" },
+    ],
+    name: "setClaimRewardAmount",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [
       { internalType: "address", name: "_dailyGMContract", type: "address" },
     ],
     name: "setDailyGMContract",
@@ -372,11 +373,19 @@ export const dailyRewardsAbi = [
     type: "function",
   },
   {
+    inputs: [{ internalType: "bytes", name: "", type: "bytes" }],
+    name: "usedSignatures",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [{ internalType: "address", name: "", type: "address" }],
     name: "userInfo",
     outputs: [
-      { internalType: "uint256", name: "lastClaimDay", type: "uint256" },
-      { internalType: "uint256", name: "nonce", type: "uint256" },
+      { internalType: "uint48", name: "lastClaimDay", type: "uint48" },
+      { internalType: "uint48", name: "reserved1", type: "uint48" },
+      { internalType: "uint160", name: "reserved2", type: "uint160" },
     ],
     stateMutability: "view",
     type: "function",

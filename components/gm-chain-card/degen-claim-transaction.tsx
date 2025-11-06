@@ -8,13 +8,11 @@ import { getDailyRewardsAddress } from "@/lib/constants"
 import { performClaimFlow } from "@/lib/degen-claim"
 import {
   useClaimEligibility,
-  useDegenClaimSignature,
+  useClaimDeadline,
 } from "@/hooks/use-degen-claim"
 import { Particles } from "@/components/ui/particles"
 import { ShinyButton } from "@/components/ui/shiny-button"
 import { Spinner } from "@/components/ui/spinner"
-
-// wagmiConfig is used in lib/degen-claim
 
 interface DegenClaimTransactionProps {
   fid: bigint | undefined
@@ -37,8 +35,6 @@ function validateClaimInputs(
   return { isValid: true }
 }
 
-// (moved to lib/degen-claim.ts)
-
 function getClaimButtonLabel(
   isConnected: boolean,
   eligibility: {
@@ -46,26 +42,20 @@ function getClaimButtonLabel(
     hasAlreadyClaimed: boolean
     hasSentGMToday: boolean
   },
-  isSigning: boolean,
   status: ClaimStatus
 ): string {
   if (!isConnected) return "Connect Wallet"
   if (eligibility.hasAlreadyClaimed) return "Already Claimed"
   if (!eligibility.hasSentGMToday) return "Send GM First"
   if (!eligibility.canClaim) return "Not Eligible"
-  if (isSigning) return "Sign Transaction"
   if (status === "confirming") return "Processing..."
   if (status === "success") return "Claimed!"
   return "Claim Rewards"
 }
 
-// useClaimState and useClaimHandler are implemented inside the hook below to
-// keep top-level module complexity low.
-
 function useClaimSetup(fid: bigint | undefined, chainId: number) {
   const contractAddress = getDailyRewardsAddress(chainId)
-  const { generateSignature, isSigning, isNoncePending, nonce } =
-    useDegenClaimSignature({ fid })
+  const deadline = useClaimDeadline()
   const {
     canClaim,
     reward,
@@ -76,10 +66,7 @@ function useClaimSetup(fid: bigint | undefined, chainId: number) {
 
   return {
     contractAddress,
-    generateSignature,
-    isSigning,
-    isNoncePending,
-    nonce,
+    deadline,
     canClaim,
     reward,
     claimStatus,
@@ -137,11 +124,7 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
         aria-busy={hook.isLoading}
       >
         {hook.isLoading && <Spinner />}
-        {hook.isNoncePending
-          ? "Loading..."
-          : !hook.isSignatureReady
-            ? "Preparing..."
-            : hook.buttonLabel}
+        {hook.buttonLabel}
       </ShinyButton>
       {hook.claimState.error && (
         <div className="mt-3 rounded-md border border-red-200 bg-red-50/50 p-3 dark:border-red-800 dark:bg-red-950/20">
@@ -185,18 +168,14 @@ function useDegenClaimTransaction({
   const queryClient = useQueryClient()
   const {
     contractAddress,
-    generateSignature,
-    isSigning,
-    isNoncePending,
-    nonce,
+    deadline,
     canClaim,
     reward,
     claimStatus,
     hasSentGMToday,
     refetchEligibility,
   } = useClaimSetup(fid, chainId)
-  // Local hook state and handler are created inside this hook to reduce module-level
-  // complexity; these mirror the previous top-level utilities.
+
   const [status, setStatus] = useState<ClaimStatus>("idle")
   const [error, setError] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
@@ -206,7 +185,7 @@ function useDegenClaimTransaction({
     setTxHash(null)
   }, [])
 
-  const isLoading = isSigning || status === "confirming" || isNoncePending
+  const isLoading = status === "confirming"
 
   const hasAddress = !!address
   const hasFid = !!fid
@@ -223,17 +202,14 @@ function useDegenClaimTransaction({
     isLoading,
   })
 
-  // If nonce is not yet available we should prevent signing to avoid
-  // the "Missing required parameters for signature" runtime error.
-  const isSignatureReady = nonce !== undefined && nonce !== null
-  const effectiveDisabled = isDisabled || !isSignatureReady
+  const effectiveDisabled = isDisabled
 
   const handleClaim = useCallback(() => {
     const handler = createHandleClaim({
       address,
       fid,
       contractAddress,
-      generateSignature,
+      deadline,
       refetchEligibility,
       queryClient,
       setStatus,
@@ -250,7 +226,7 @@ function useDegenClaimTransaction({
     address,
     fid,
     contractAddress,
-    generateSignature,
+    deadline,
     refetchEligibility,
     queryClient,
     onSuccess,
@@ -267,7 +243,6 @@ function useDegenClaimTransaction({
         false,
       hasSentGMToday,
     },
-    isSigning,
     status
   )
 
@@ -275,8 +250,6 @@ function useDegenClaimTransaction({
     handleClaim,
     effectiveDisabled,
     isLoading,
-    isNoncePending,
-    isSignatureReady,
     buttonLabel,
     claimState: { status, error, txHash, resetState },
     reward,
@@ -289,9 +262,7 @@ function createHandleClaim(opts: {
   address?: string
   fid?: bigint
   contractAddress?: string
-  generateSignature: (
-    fid: bigint
-  ) => Promise<{ signature: `0x${string}`; deadline: bigint }>
+  deadline: bigint
   refetchEligibility: () => void
   queryClient: ReturnType<typeof useQueryClient>
   setStatus: (s: ClaimStatus) => void
@@ -306,7 +277,7 @@ function createHandleClaim(opts: {
       address,
       fid,
       contractAddress,
-      generateSignature,
+      deadline,
       refetchEligibility,
       queryClient,
       setStatus,
@@ -326,16 +297,15 @@ function createHandleClaim(opts: {
       return Promise.reject(e)
     }
 
-    setStatus("signing")
+    setStatus("confirming")
     setError(null)
     setTxHash(null)
 
-    setStatus("confirming")
     return performClaimFlow(
       address as `0x${string}`,
       fid!,
       contractAddress as `0x${string}`,
-      generateSignature,
+      deadline,
       refetchEligibility,
       queryClient
     )

@@ -3,11 +3,11 @@ pragma solidity 0.8.30;
 
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 /// @notice Interface for DailyGM contract
 interface IDailyGM {
@@ -15,32 +15,42 @@ interface IDailyGM {
 }
 
 /// @author OnePulse Team
-/// @dev Contract for managing daily DEGEN rewards for Farcaster FIDs with EIP-712 signatures.
-contract DailyRewards is Ownable2Step, ReentrancyGuard, EIP712 {
+/// @title Daily DEGEN Rewards Contract
+/// @dev Contract for managing daily DEGEN rewards for Farcaster FIDs with backend-signed authorizations.
+/// @notice Uses personal_sign for universal wallet compatibility (EOA, smart wallets, passkeys, etc.)
+/// @notice Replay protection uses signature mapping instead of nonces for gas efficiency and simplicity
+contract DailyRewards is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using ECDSA for bytes32;
 
     IERC20 private constant DEGEN_TOKEN =
         IERC20(0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed); // DEGEN on Base
     uint256 private constant MAX_DEADLINE_WINDOW = 1 hours; // Max signature validity window
-    uint256 private constant MAX_CLAIM = 5e18; // 5 DEGEN per day
     uint256 private constant MAX_BATCH_SIZE = 100; // Max FIDs per batch update to prevent gas limit DoS
+    uint256 private constant SECONDS_PER_DAY = 1 days;
 
-    /// @notice Address authorized to execute gasless claims on behalf of users.
-    address public immutable gaslessOperator;
+    /// @notice Address authorized to sign claim authorizations.
+    address public immutable backendSigner;
     /// @notice Minimum DEGEN balance to maintain in the vault as reserve.
     uint256 public minVaultBalance = 100e18; // 100 DEGEN default
+    /// @notice Daily reward amount per claim in DEGEN tokens.
+    uint256 public claimRewardAmount = 5e18; // 5 DEGEN default
     /// @notice Address of the DailyGM contract to check GM status.
     address public dailyGMContract;
-
+    // Cache for address(this) to save gas on repeated usage
     address private immutable _self;
 
-    // --- Storage ---
+    // Storage
     struct UserInfo {
-        uint256 lastClaimDay; // last claim day number (block.timestamp / 1 days)
-        uint256 nonce; // EIP-712 signature nonce
+        uint48 lastClaimDay; // last claim day number (block.timestamp / 1 days) - uint48 sufficient until year ~8.9M
+        uint48 reserved1; // Reserved for future use (packed in same slot, no extra cost)
+        uint160 reserved2; // Reserved for future use (completes the 256-bit slot)
     }
     struct FidInfo {
-        bool blacklisted; // whether FID is blacklisted
+        bool blacklisted; // whether FID is blacklisted (1 byte)
+        uint48 blacklistedSince; // day when blacklisted (0 if not blacklisted) - packed in same slot
+        uint48 reserved1; // Reserved for future use
+        uint160 reserved2; // Reserved for future use (completes the 256-bit slot)
     }
     struct ClaimStatus {
         bool ok;
@@ -54,150 +64,157 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard, EIP712 {
     }
 
     /// @notice Mapping of FID to their blacklist status and information.
-    mapping(uint256 => FidInfo) public fidInfo; // fid => info
-    /// @notice Mapping of claimer addresses to their claim information (last claim day and nonce).
-    mapping(address => UserInfo) public userInfo; // claimer => info
+    /// @dev Maps Farcaster FID to FidInfo struct containing blacklist status
+    mapping(uint256 => FidInfo) public fidInfo;
+
+    /// @notice Mapping of claimer addresses to their claim information (last claim day).
+    /// @dev Maps user address to UserInfo struct containing last claim day
+    mapping(address => UserInfo) public userInfo;
+
     /// @notice Mapping tracking which FIDs have claimed on each specific day (key = keccak256(abi.encode(fid, day))).
+    /// @dev Uses keccak256(abi.encode(fid, day)) as key to track daily claims per FID - safer than encodePacked
     mapping(bytes32 => bool) public claimedByDay;
 
-    // --- EIP-712 Types ---
-    bytes32 private constant CLAIM_TYPEHASH =
-        keccak256(
-            "Claim(address claimer,uint256 fid,uint256 deadline,uint256 nonce)"
-        );
+    /// @notice Mapping to track used signatures to prevent replay attacks.
+    /// @dev Stores signature bytes as key to prevent signature reuse across claims
+    mapping(bytes => bool) public usedSignatures;
 
-    // --- Events ---
+    // Events
+    /// @dev Emitted when a user successfully claims their daily DEGEN reward
     event Claimed(
         address indexed recipient,
         uint256 indexed fid,
         uint256 amount
     );
-    event BlacklistUpdated(uint256[] indexed fids, bool isBlacklisted);
-    event GaslessClaimExecuted(
-        address indexed operator,
-        address indexed claimer,
-        uint256 indexed fid
-    );
+    /// @dev Emitted when FID blacklist status is updated
+    event BlacklistUpdated(uint256[] fids, bool indexed isBlacklisted);
+    /// @dev Emitted when minimum vault balance is changed
     event MinVaultBalanceUpdated(uint256 oldValue, uint256 newValue);
+    /// @dev Emitted when daily claim reward amount is changed
+    event ClaimRewardAmountUpdated(uint256 oldValue, uint256 newValue);
+    /// @dev Emitted when DailyGM contract address is updated
     event DailyGMContractUpdated(
         address indexed oldContract,
         address indexed newContract
     );
 
-    /// @notice Initializes the contract with gasless operator and minimum vault balance.
-    /// @dev Initializes the contract with gasless operator and minimum vault balance.
+    // Custom errors
+    error ZeroAddress();
+    error InvalidFID();
+    error ZeroAmount();
+    error SignatureExpired();
+    error DeadlineTooLong();
+    error SignatureAlreadyUsed();
+    error InvalidSignature();
+    error FIDBlacklisted();
+    error MustGMToday();
+    error AlreadyClaimedFIDToday();
+    error AlreadyClaimedUserToday();
+    error InsufficientVaultBalance();
+    error BatchTooLarge();
+    error BelowMinimumReserve();
+    error SameValue();
+
+    /// @notice Initializes the contract with backend signer and minimum vault balance.
+    /// @dev Initializes the contract with backend signer and minimum vault balance.
     constructor(
-        address _gaslessOperator,
-        uint256 _minVaultBalance,
+        address _backendSigner,
         address _dailyGMContract
-    ) payable Ownable(msg.sender) EIP712("DailyRewards", "1") {
-        require(_gaslessOperator != address(0), "Zero address");
-        require(_minVaultBalance != 0, "Zero min balance");
-        require(_dailyGMContract != address(0), "Zero daily GM contract");
+    ) payable Ownable(msg.sender) {
+        if (_backendSigner == address(0)) revert ZeroAddress();
+        if (_dailyGMContract == address(0)) revert ZeroAddress();
         _self = address(this);
-        gaslessOperator = _gaslessOperator;
-        minVaultBalance = _minVaultBalance;
+        backendSigner = _backendSigner;
         dailyGMContract = _dailyGMContract;
     }
 
-    /// @dev Allows a user to claim daily rewards for their FID using an EIP-712 signature.
-    /// @notice Claims daily rewards for the caller's FID using an EIP-712 signature.
+    /// @dev Allows anyone to claim daily rewards with a backend-signed authorization.
+    /// @notice Claims daily rewards using a backend-signed authorization. Works with any wallet type.
+    /// @param claimer The address that will receive the DEGEN rewards
+    /// @param fid The Farcaster FID associated with this claim
+    /// @param deadline The timestamp when this signature expires (max 1 hour from creation)
+    /// @param signature The backend-signed authorization signature
     function claim(
-        uint256 fid,
-        uint256 deadline,
-        bytes memory signature
-    ) external nonReentrant {
-        require(msg.sender != address(0), "Zero claimer");
-        _validateClaim(msg.sender, fid, deadline, signature);
-        _executeClaim(msg.sender, fid);
-    }
-
-    /// @dev Allows the gasless operator to execute a claim on behalf of a user.
-    /// @notice Executes a claim on behalf of a user via gasless operator.
-    function executeGaslessClaim(
         address claimer,
         uint256 fid,
         uint256 deadline,
-        bytes memory signature
+        bytes calldata signature
     ) external nonReentrant {
-        require(claimer != address(0), "Zero claimer");
-        require(msg.sender == gaslessOperator, "Unauthorized");
-        _validateClaim(claimer, fid, deadline, signature);
-        _executeClaim(claimer, fid);
-    }
+        // Input validation
+        if (claimer == address(0)) revert ZeroAddress();
+        if (fid == 0) revert InvalidFID();
 
-    /// @dev Internal function to validate claim parameters, signature, and eligibility.
-    function _validateClaim(
-        address claimer,
-        uint256 fid,
-        uint256 deadline,
-        bytes memory signature
-    ) internal {
-        require(claimer != address(0), "Zero claimer");
-        uint256 currentNonce = userInfo[claimer].nonce;
-        IERC20 token = DEGEN_TOKEN;
-        require(block.timestamp <= deadline, "Sig expired");
-        require(
-            deadline <= block.timestamp + MAX_DEADLINE_WINDOW,
-            "Long deadline"
-        );
-        FidInfo storage fInfo = fidInfo[fid];
-        _checkDailyLimit(claimer);
-        require(!fInfo.blacklisted, "FID blacklisted");
+        // Cache block.timestamp to save gas
+        uint256 timestamp = block.timestamp;
+        if (timestamp > deadline) revert SignatureExpired();
 
-        // Check if user has sent GM today (if DailyGM contract is set)
-        if (dailyGMContract != address(0)) {
-            uint256 lastGM = IDailyGM(dailyGMContract).lastGMDay(claimer);
-            require(lastGM == _currentDay(), "Must GM today");
+        unchecked {
+            // Safe: deadline - timestamp cannot underflow due to check above
+            if (deadline - timestamp > MAX_DEADLINE_WINDOW)
+                revert DeadlineTooLong();
         }
 
-        // Enforce per-FID-per-day: disallow second claim for same fid on same day
-        bytes32 claimKey = keccak256(abi.encodePacked(fid, _currentDay()));
-        require(!claimedByDay[claimKey], "Already claimed (FID today)");
-        require(
-            token.balanceOf(_self) >= MAX_CLAIM + minVaultBalance,
-            "Low balance"
+        // Replay protection
+        if (usedSignatures[signature]) revert SignatureAlreadyUsed();
+
+        // Signature verification
+        bytes32 messageHash = keccak256(
+            abi.encodePacked(claimer, fid, deadline, _self)
         );
 
-        bytes32 digest = _hashTypedDataV4(
-            keccak256(
-                abi.encode(CLAIM_TYPEHASH, claimer, fid, deadline, currentNonce)
-            )
-        );
-        address signer = ECDSA.recover(digest, signature);
-        require(signer == claimer, "Bad sig");
-        userInfo[claimer].nonce = currentNonce + 1;
-    }
+        // Add Ethereum Signed Message prefix and recover signer
+        // Using OpenZeppelin's ECDSA library to prevent signature malleability attacks
+        address signer = MessageHashUtils
+            .toEthSignedMessageHash(messageHash)
+            .recover(signature);
 
-    /// @dev Internal function to execute the claim by updating state and transferring tokens.
-    function _executeClaim(address claimer, uint256 fid) internal {
-        require(claimer != address(0), "Zero claimer");
-        uint256 reward = MAX_CLAIM;
-        // Mark claimed for this fid on current day
-        bytes32 claimKey = keccak256(abi.encodePacked(fid, _currentDay()));
+        if (signer != backendSigner) revert InvalidSignature();
+
+        // Mark signature as used
+        usedSignatures[signature] = true;
+
+        // Validate eligibility (inlined and optimized)
+        uint48 currentDay = uint48(timestamp / SECONDS_PER_DAY);
+
+        // Check daily limit (inlined _checkDailyLimit)
+        if (userInfo[claimer].lastClaimDay == currentDay)
+            revert AlreadyClaimedUserToday();
+
+        // Check FID blacklist
+        if (fidInfo[fid].blacklisted) revert FIDBlacklisted();
+
+        // Check GM status (only if contract is set)
+        address gmContract = dailyGMContract; // Cache storage read
+        if (gmContract != address(0)) {
+            if (IDailyGM(gmContract).lastGMDay(claimer) != currentDay)
+                revert MustGMToday();
+        }
+
+        // Check per-FID-per-day limit
+        bytes32 claimKey = keccak256(abi.encode(fid, currentDay));
+        if (claimedByDay[claimKey]) revert AlreadyClaimedFIDToday();
+
+        // Check vault balance (cache storage reads)
+        uint256 reward = claimRewardAmount;
+        uint256 minReserve = minVaultBalance;
+        if (DEGEN_TOKEN.balanceOf(_self) < reward + minReserve)
+            revert InsufficientVaultBalance();
+
+        // Execute claim (effects before interactions)
         claimedByDay[claimKey] = true;
-        uint256 newClaimDay = _currentDay();
-        uint256 prevClaimDay = userInfo[claimer].lastClaimDay;
-        // Update last claim day only if it changed to avoid redundant storage writes
-        if (prevClaimDay != newClaimDay) {
-            userInfo[claimer].lastClaimDay = newClaimDay;
-        }
+        userInfo[claimer].lastClaimDay = currentDay; // Packed storage write - only writes once!
 
-        IERC20 token = DEGEN_TOKEN;
-        token.safeTransfer(claimer, reward);
+        // Transfer tokens (interaction)
+        DEGEN_TOKEN.safeTransfer(claimer, reward);
         emit Claimed(claimer, fid, reward);
-        // Emit gasless-specific event only if executed by the gasless operator
-        if (msg.sender == gaslessOperator) {
-            emit GaslessClaimExecuted(msg.sender, claimer, fid);
-        }
     }
 
     /// @dev Deposits DEGEN tokens into the vault for rewards.
     /// @notice Deposits DEGEN tokens into the vault.
-    function deposit(uint256 amount) external payable onlyOwner {
-        require(amount != 0, "Zero amount");
-        IERC20 token = DEGEN_TOKEN;
-        token.safeTransferFrom(msg.sender, _self, amount);
+    /// @param amount The amount of DEGEN tokens to deposit (must be non-zero)
+    function deposit(uint256 amount) external onlyOwner nonReentrant {
+        if (amount == 0) revert ZeroAmount();
+        DEGEN_TOKEN.safeTransferFrom(msg.sender, _self, amount);
     }
 
     /// @dev Returns the current vault balance, minimum reserve, and available amount for claims.
@@ -212,30 +229,37 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard, EIP712 {
         )
     {
         currentBalance = DEGEN_TOKEN.balanceOf(_self);
-        uint256 minReserveCached = minVaultBalance;
-        minReserve = minReserveCached;
-        availableForClaims = currentBalance > minReserveCached
-            ? currentBalance - minReserveCached
-            : 0;
+        minReserve = minVaultBalance;
+
+        unchecked {
+            // Safe: underflow check is in the ternary
+            availableForClaims = currentBalance > minReserve
+                ? currentBalance - minReserve
+                : 0;
+        }
     }
 
     /// @dev Returns a formatted string of the vault's DEGEN balance.
     /// @notice Returns a formatted string of the vault's DEGEN balance.
     function getFormattedBalance() external view returns (string memory) {
-        IERC20 token = DEGEN_TOKEN;
-        uint256 balance = token.balanceOf(_self);
-        uint256 degenAmount = balance / 1e18;
-        uint256 decimals = (balance % 1e18) / 1e16;
-        return
-            string(
-                bytes.concat(
-                    bytes(Strings.toString(degenAmount)),
-                    bytes("."),
-                    bytes(decimals < 10 ? "0" : ""),
-                    bytes(Strings.toString(decimals)),
-                    bytes(" DEGEN")
-                )
-            );
+        uint256 balance = DEGEN_TOKEN.balanceOf(_self);
+
+        unchecked {
+            // Safe: division and modulo cannot overflow
+            uint256 degenAmount = balance / 1e18;
+            uint256 decimals = (balance % 1e18) / 1e16;
+
+            return
+                string(
+                    bytes.concat(
+                        bytes(Strings.toString(degenAmount)),
+                        bytes("."),
+                        decimals < 10 ? bytes("0") : bytes(""),
+                        bytes(Strings.toString(decimals)),
+                        bytes(" DEGEN")
+                    )
+                );
+        }
     }
 
     /// @notice Check if a given claimer can claim today for a specific fid
@@ -245,40 +269,43 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard, EIP712 {
         address claimer,
         uint256 fid
     ) external view returns (ClaimStatus memory status) {
-        require(claimer != address(0), "Zero claimer");
-        uint256 day = _currentDay();
-        bytes32 claimKey = keccak256(abi.encodePacked(fid, day));
-        FidInfo storage fInfo = fidInfo[fid];
-        bool fidIsBlacklisted = fInfo.blacklisted;
+        if (claimer == address(0)) revert ZeroAddress();
+
+        uint256 day = block.timestamp / SECONDS_PER_DAY;
+        bytes32 claimKey = keccak256(abi.encode(fid, day));
+
+        // Cache storage reads
+        bool fidIsBlacklisted = fidInfo[fid].blacklisted;
         bool fidClaimedToday = claimedByDay[claimKey];
         bool claimerClaimedToday = (userInfo[claimer].lastClaimDay == day);
 
-        // Check if user has sent GM today
-        bool hasSentGMToday = false;
-        if (dailyGMContract != address(0)) {
-            uint256 lastGM = IDailyGM(dailyGMContract).lastGMDay(claimer);
-            hasSentGMToday = (lastGM == day);
-        } else {
-            // If no DailyGM contract is set, assume GM requirement is not enforced
-            hasSentGMToday = true;
+        // Early exit optimizations
+        bool hasSentGMToday = true;
+        address gmContract = dailyGMContract;
+        if (gmContract != address(0)) {
+            hasSentGMToday = (IDailyGM(gmContract).lastGMDay(claimer) == day);
         }
 
-        uint256 reward = MAX_CLAIM;
+        uint256 reward = claimRewardAmount;
         uint256 vaultBalance = DEGEN_TOKEN.balanceOf(_self);
         uint256 minReserve = minVaultBalance;
-        bool ok = (!fidIsBlacklisted &&
+
+        bool ok = !fidIsBlacklisted &&
             !fidClaimedToday &&
             !claimerClaimedToday &&
             hasSentGMToday &&
-            (vaultBalance >= reward + minReserve));
-        status.ok = ok;
-        status.fidIsBlacklisted = fidIsBlacklisted;
-        status.fidClaimedToday = fidClaimedToday;
-        status.claimerClaimedToday = claimerClaimedToday;
-        status.hasSentGMToday = hasSentGMToday;
-        status.reward = reward;
-        status.vaultBalance = vaultBalance;
-        status.minReserve = minReserve;
+            vaultBalance >= reward + minReserve;
+
+        status = ClaimStatus({
+            ok: ok,
+            fidIsBlacklisted: fidIsBlacklisted,
+            fidClaimedToday: fidClaimedToday,
+            claimerClaimedToday: claimerClaimedToday,
+            hasSentGMToday: hasSentGMToday,
+            reward: reward,
+            vaultBalance: vaultBalance,
+            minReserve: minReserve
+        });
     }
 
     /// @dev Updates the blacklist status for multiple FIDs.
@@ -290,68 +317,69 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard, EIP712 {
         bool isBlacklisted
     ) external payable onlyOwner {
         uint256 len = fids.length;
-        require(len <= MAX_BATCH_SIZE, "Batch too large");
-        for (uint256 i = 0; i < len; ) {
-            uint256 id = fids[i];
-            FidInfo storage fInfoLoop = fidInfo[id];
-            // Update blacklist status only if it changed to avoid redundant storage writes
-            if (fInfoLoop.blacklisted != isBlacklisted) {
-                fInfoLoop.blacklisted = isBlacklisted;
+        if (len > MAX_BATCH_SIZE) revert BatchTooLarge();
+
+        for (uint256 i; i < len; ) {
+            FidInfo storage fInfo = fidInfo[fids[i]];
+            if (fInfo.blacklisted != isBlacklisted) {
+                fInfo.blacklisted = isBlacklisted;
             }
             unchecked {
-                i++;
-            }
+                ++i;
+            } // Safe: i < len
         }
         emit BlacklistUpdated(fids, isBlacklisted);
     }
 
     /// @dev Allows owner to withdraw excess DEGEN while maintaining minimum reserve.
     /// @notice Withdraws excess DEGEN while maintaining minimum reserve.
-    function emergencyWithdraw(uint256 amount) external payable onlyOwner {
-        require(amount != 0, "Zero amount");
-        IERC20 token = DEGEN_TOKEN;
-        require(
-            token.balanceOf(_self) >= amount + minVaultBalance,
-            "Below min"
-        );
-        token.safeTransfer(owner(), amount);
+    /// @param amount The amount of DEGEN to withdraw (must leave minimum reserve intact)
+    function emergencyWithdraw(uint256 amount) external onlyOwner nonReentrant {
+        if (amount == 0) revert ZeroAmount();
+        if (DEGEN_TOKEN.balanceOf(_self) < amount + minVaultBalance)
+            revert BelowMinimumReserve();
+        DEGEN_TOKEN.safeTransfer(owner(), amount);
     }
 
     /// @dev Updates the minimum vault balance requirement.
     /// @notice Sets the minimum vault balance requirement.
+    /// @param _minVaultBalance The new minimum vault balance (must be non-zero)
     function setMinVaultBalance(
         uint256 _minVaultBalance
     ) external payable onlyOwner {
-        require(_minVaultBalance != 0, "Zero min balance");
-        require(_minVaultBalance != minVaultBalance, "Same value");
+        if (_minVaultBalance == 0) revert ZeroAmount();
+        if (_minVaultBalance == minVaultBalance) revert SameValue();
+
         uint256 oldValue = minVaultBalance;
         minVaultBalance = _minVaultBalance;
         emit MinVaultBalanceUpdated(oldValue, _minVaultBalance);
     }
 
+    /// @dev Updates the daily claim reward amount.
+    /// @notice Sets the amount of DEGEN tokens distributed per successful claim.
+    /// @param _claimRewardAmount The new reward amount per claim (must be non-zero)
+    function setClaimRewardAmount(
+        uint256 _claimRewardAmount
+    ) external payable onlyOwner {
+        if (_claimRewardAmount == 0) revert ZeroAmount();
+        if (_claimRewardAmount == claimRewardAmount) revert SameValue();
+
+        uint256 oldValue = claimRewardAmount;
+        claimRewardAmount = _claimRewardAmount;
+        emit ClaimRewardAmountUpdated(oldValue, _claimRewardAmount);
+    }
+
     /// @dev Updates the DailyGM contract address.
     /// @notice Sets the DailyGM contract address for GM verification.
+    /// @param _dailyGMContract The new DailyGM contract address (must be non-zero)
     function setDailyGMContract(
         address _dailyGMContract
     ) external payable onlyOwner {
-        require(_dailyGMContract != address(0), "Zero daily GM contract");
-        require(_dailyGMContract != dailyGMContract, "Same address");
+        if (_dailyGMContract == address(0)) revert ZeroAddress();
+        if (_dailyGMContract == dailyGMContract) revert SameValue();
+
         address oldContract = dailyGMContract;
         dailyGMContract = _dailyGMContract;
         emit DailyGMContractUpdated(oldContract, _dailyGMContract);
-    }
-
-    /// @dev Private function to check if caller has already claimed today
-    function _checkDailyLimit(address claimer) private view {
-        require(claimer != address(0), "Zero claimer");
-        require(
-            userInfo[claimer].lastClaimDay != _currentDay(),
-            "Already claimed today"
-        );
-    }
-
-    /// @dev Utility: current UTC day number
-    function _currentDay() private view returns (uint256) {
-        return block.timestamp / 1 days;
     }
 }
