@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useCallback } from "react"
 import {
   Transaction,
@@ -9,7 +7,8 @@ import {
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction"
 import { useQueryClient } from "@tanstack/react-query"
 import type { ContractFunctionParameters } from "viem"
-import { useAccount, useChainId } from "wagmi"
+import { useAccount, useChainId, useSignMessage, useReadContract } from "wagmi"
+import { encodePacked, keccak256 } from "viem"
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards"
 import { getDailyRewardsAddress } from "@/lib/constants"
@@ -26,7 +25,7 @@ interface DegenClaimTransactionProps {
 
 /**
  * Component for claiming daily DEGEN rewards using OnchainKit Transaction with sponsorship.
- * Automatically gets backend signature and submits sponsored transaction.
+ * User signs their own claim message and submits sponsored transaction.
  */
 export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
   fid,
@@ -39,6 +38,7 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
   const queryClient = useQueryClient()
   const contractAddress = getDailyRewardsAddress(chainId)
   const deadline = useClaimDeadline()
+  const { signMessageAsync } = useSignMessage()
   const {
     canClaim,
     hasSentGMToday,
@@ -46,7 +46,20 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
     refetch: refetchEligibility,
   } = useClaimEligibility({ fid })
 
-  // Get backend signature for claim authorization
+  // Read the current nonce for the user (will need updated ABI after contract deployment)
+  const { data: nonceData } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: dailyRewardsAbi,
+    functionName: "nonces",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && !!contractAddress,
+    },
+  })
+
+  const nonce = nonceData ? BigInt(nonceData.toString()) : 0n
+
+  // User signs their own claim message with nonce
   const getClaimContracts = useCallback(async (): Promise<
     ContractFunctionParameters[]
   > => {
@@ -54,34 +67,30 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
       throw new Error("Missing required parameters")
     }
 
-    // Request backend signature
-    const response = await fetch("/api/claims/execute", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        claimer: address,
-        fid: Number(fid),
-        deadline: Number(deadline),
-      }),
+    // Create the message hash that matches the contract's expectation
+    // Format: keccak256(abi.encodePacked(claimer, fid, nonce, deadline, contractAddress))
+    const messageHash = keccak256(
+      encodePacked(
+        ["address", "uint256", "uint256", "uint256", "address"],
+        [address, fid, BigInt(nonce.toString()), deadline, contractAddress]
+      )
+    )
+
+    // Sign the message with the user's wallet
+    const signature = await signMessageAsync({
+      message: { raw: messageHash },
     })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || "Failed to get claim authorization")
-    }
-
-    const { signature } = await response.json()
-
-    // Return contract call with backend signature
+    // Return contract call with user's signature and nonce
     return [
       {
         address: contractAddress as `0x${string}`,
         abi: dailyRewardsAbi,
         functionName: "claim",
-        args: [address, fid, deadline, signature as `0x${string}`],
+        args: [address, fid, nonce, deadline, signature as `0x${string}`],
       },
     ]
-  }, [address, fid, contractAddress, deadline])
+  }, [address, fid, nonce, contractAddress, deadline, signMessageAsync])
 
   const handleStatus = useCallback(
     (status: LifecycleStatus) => {
