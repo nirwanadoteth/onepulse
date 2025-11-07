@@ -1,7 +1,6 @@
 export const dailyRewardsAbi = [
   {
     inputs: [
-      { internalType: "address", name: "_backendSigner", type: "address" },
       { internalType: "address", name: "_dailyGMContract", type: "address" },
     ],
     stateMutability: "payable",
@@ -12,17 +11,6 @@ export const dailyRewardsAbi = [
   { inputs: [], name: "BatchTooLarge", type: "error" },
   { inputs: [], name: "BelowMinimumReserve", type: "error" },
   { inputs: [], name: "DeadlineTooLong", type: "error" },
-  { inputs: [], name: "ECDSAInvalidSignature", type: "error" },
-  {
-    inputs: [{ internalType: "uint256", name: "length", type: "uint256" }],
-    name: "ECDSAInvalidSignatureLength",
-    type: "error",
-  },
-  {
-    inputs: [{ internalType: "bytes32", name: "s", type: "bytes32" }],
-    name: "ECDSAInvalidSignatureS",
-    type: "error",
-  },
   { inputs: [], name: "FIDBlacklisted", type: "error" },
   { inputs: [], name: "InsufficientVaultBalance", type: "error" },
   { inputs: [], name: "InvalidFID", type: "error" },
@@ -191,13 +179,6 @@ export const dailyRewardsAbi = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "backendSigner",
-    outputs: [{ internalType: "address", name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       { internalType: "address", name: "claimer", type: "address" },
       { internalType: "uint256", name: "fid", type: "uint256" },
@@ -227,6 +208,7 @@ export const dailyRewardsAbi = [
     inputs: [
       { internalType: "address", name: "claimer", type: "address" },
       { internalType: "uint256", name: "fid", type: "uint256" },
+      { internalType: "uint256", name: "nonce", type: "uint256" },
       { internalType: "uint256", name: "deadline", type: "uint256" },
       { internalType: "bytes", name: "signature", type: "bytes" },
     ],
@@ -260,14 +242,14 @@ export const dailyRewardsAbi = [
     inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
     name: "deposit",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
     inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
     name: "emergencyWithdraw",
     outputs: [],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
@@ -302,7 +284,21 @@ export const dailyRewardsAbi = [
   },
   {
     inputs: [],
+    name: "invalidatePendingSignatures",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "minVaultBalance",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "", type: "address" }],
+    name: "nonces",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",

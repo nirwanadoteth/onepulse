@@ -26,7 +26,7 @@ export function getDailyGmAddress(chainId?: number): `0x${string}` | "" {
 // Per-chain Daily Rewards contract addresses (DEGEN token claims)
 export const DAILY_REWARDS_ADDRESSES: Record<number, `0x${string}`> = {
   // Base mainnet (8453) - DEGEN rewards
-  8453: "0xE1C91130bD8f3D73aBaA295CF7D2c1ebC478e458" as const,
+  8453: "0x23c656fa9c5e404B1927892FeFE23696DB54fB50" as const,
 }
 
 export function getDailyRewardsAddress(chainId?: number): `0x${string}` | "" {
