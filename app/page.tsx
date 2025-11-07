@@ -26,7 +26,7 @@ const Particles = dynamic(
 
 export default function Home() {
   const { isFrameReady, context } = useMiniKit()
-  const { isSmartWallet, inMiniApp, isConnected } = usePageState()
+  const { inMiniApp, isConnected } = usePageState()
   const { showParticles, prefersReducedMotion } = useParticlesAnimation()
   const safeAreaStyle = useSafeAreaStyle()
   const { metaColor } = useMetaColor()
@@ -45,12 +45,7 @@ export default function Home() {
           inMiniApp={inMiniApp}
           onMiniAppAdded={handleMiniAppAdded}
         />
-        <HomeTabs
-          tab={tab}
-          onTabChange={setTab}
-          isSmartWallet={isSmartWallet}
-          onProfileDisconnected={() => setTab("home")}
-        />
+        <HomeTabs tab={tab} onTabChange={setTab} />
         <DisconnectWalletSection
           isConnected={isConnected}
           showDisconnect={!context?.user}

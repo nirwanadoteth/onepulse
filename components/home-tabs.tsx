@@ -4,22 +4,14 @@ import { useMiniKit } from "@coinbase/onchainkit/minikit"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
-import { Profile } from "@/components/profile"
 import { RewardsBase } from "@/components/rewards-base"
 
 interface HomeTabsProps {
   tab: string
   onTabChange: (tab: string) => void
-  isSmartWallet: boolean
-  onProfileDisconnected: () => void
 }
 
-export function HomeTabs({
-  tab,
-  onTabChange,
-  isSmartWallet,
-  onProfileDisconnected,
-}: HomeTabsProps) {
+export function HomeTabs({ tab, onTabChange }: HomeTabsProps) {
   const { context } = useMiniKit()
   const isInMiniApp = !!context?.client
 
@@ -47,25 +39,12 @@ export function HomeTabs({
               Rewards
             </TabsTrigger>
           )}
-          <TabsTrigger
-            value="profile"
-            className="data-[state=active]:bg-accent"
-          >
-            Profile
-          </TabsTrigger>
         </TabsList>
         <TabsContent value="home">
           <GMBase sponsored={isBaseApp} allowedChainIds={allowedChainIds} />
         </TabsContent>
         <TabsContent value="rewards">
           <RewardsBase sponsored={isBaseApp} />
-        </TabsContent>
-        <TabsContent value="profile">
-          <Profile
-            isSmartWallet={isSmartWallet}
-            onDisconnected={onProfileDisconnected}
-            allowedChainIds={allowedChainIds}
-          />
         </TabsContent>
       </Tabs>
     </div>
