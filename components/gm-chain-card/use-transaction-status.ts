@@ -21,8 +21,6 @@ export function useTransactionStatus({
 
   return useCallback(
     (status: LifecycleStatus) => {
-      console.log("Transaction status:", status)
-
       const isSuccess = status.statusName === "success"
       const isError = status.statusName === "error"
 
