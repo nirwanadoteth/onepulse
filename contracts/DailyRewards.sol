@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 /// @notice Interface for DailyGM contract
 interface IDailyGM {
@@ -16,21 +17,21 @@ interface IDailyGM {
 
 /// @author OnePulse Team
 /// @title Daily DEGEN Rewards Contract
-/// @dev Contract for managing daily DEGEN rewards for Farcaster FIDs with backend-signed authorizations.
-/// @notice Uses personal_sign for universal wallet compatibility (EOA, smart wallets, passkeys, etc.)
+/// @dev Contract for managing daily DEGEN rewards for Farcaster FIDs with self-signed authorizations.
+/// @notice Uses personal_sign (EIP-191) and EIP-1271 for universal wallet compatibility
+/// @notice Supports EOA wallets, smart wallets (Coinbase Smart Wallet, Safe), and passkey-based wallets
 /// @notice Replay protection uses signature mapping instead of nonces for gas efficiency and simplicity
 contract DailyRewards is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
+    using SignatureChecker for address;
 
     IERC20 private constant DEGEN_TOKEN =
         IERC20(0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed); // DEGEN on Base
-    uint256 private constant MAX_DEADLINE_WINDOW = 1 hours; // Max signature validity window
+    uint256 private constant MAX_DEADLINE_WINDOW = 5 minutes; // Max signature validity window
     uint256 private constant MAX_BATCH_SIZE = 100; // Max FIDs per batch update to prevent gas limit DoS
     uint256 private constant SECONDS_PER_DAY = 1 days;
 
-    /// @notice Address authorized to sign claim authorizations.
-    address public immutable backendSigner;
     /// @notice Minimum DEGEN balance to maintain in the vault as reserve.
     uint256 public minVaultBalance = 100e18; // 100 DEGEN default
     /// @notice Daily reward amount per claim in DEGEN tokens.
@@ -79,6 +80,10 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     /// @dev Stores signature bytes as key to prevent signature reuse across claims
     mapping(bytes => bool) public usedSignatures;
 
+    /// @notice Mapping of claimer addresses to their current nonce for signature validation.
+    /// @dev Optional nonce system for additional front-running protection. Users can increment their nonce to invalidate old signatures.
+    mapping(address => uint256) public nonces;
+
     // Events
     /// @dev Emitted when a user successfully claims their daily DEGEN reward
     event Claimed(
@@ -115,34 +120,32 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     error BelowMinimumReserve();
     error SameValue();
 
-    /// @notice Initializes the contract with backend signer and minimum vault balance.
-    /// @dev Initializes the contract with backend signer and minimum vault balance.
-    constructor(
-        address _backendSigner,
-        address _dailyGMContract
-    ) payable Ownable(msg.sender) {
-        if (_backendSigner == address(0)) revert ZeroAddress();
+    /// @notice Initializes the contract with the DailyGM contract address.
+    /// @dev Initializes the contract with the DailyGM contract address.
+    constructor(address _dailyGMContract) payable Ownable(msg.sender) {
         if (_dailyGMContract == address(0)) revert ZeroAddress();
         _self = address(this);
-        backendSigner = _backendSigner;
         dailyGMContract = _dailyGMContract;
     }
 
-    /// @dev Allows anyone to claim daily rewards with a backend-signed authorization.
-    /// @notice Claims daily rewards using a backend-signed authorization. Works with any wallet type.
+    /// @dev Allows anyone to claim daily rewards with their own signature.
+    /// @notice Claims daily rewards using a self-signed authorization. Works with any wallet type.
     /// @param claimer The address that will receive the DEGEN rewards
     /// @param fid The Farcaster FID associated with this claim
+    /// @param nonce The nonce for this claim (must match claimer's current nonce)
     /// @param deadline The timestamp when this signature expires (max 1 hour from creation)
-    /// @param signature The backend-signed authorization signature
+    /// @param signature The claimer's signature authorizing this claim
     function claim(
         address claimer,
         uint256 fid,
+        uint256 nonce,
         uint256 deadline,
         bytes calldata signature
     ) external nonReentrant {
         // Input validation
         if (claimer == address(0)) revert ZeroAddress();
         if (fid == 0) revert InvalidFID();
+        if (nonce != nonces[claimer]) revert InvalidSignature(); // Nonce must match
 
         // Cache block.timestamp to save gas
         uint256 timestamp = block.timestamp;
@@ -157,21 +160,31 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
         // Replay protection
         if (usedSignatures[signature]) revert SignatureAlreadyUsed();
 
-        // Signature verification
+        // Signature verification - verify the claimer signed the message with nonce
         bytes32 messageHash = keccak256(
-            abi.encodePacked(claimer, fid, deadline, _self)
+            abi.encodePacked(claimer, fid, nonce, deadline, _self)
         );
 
-        // Add Ethereum Signed Message prefix and recover signer
-        // Using OpenZeppelin's ECDSA library to prevent signature malleability attacks
-        address signer = MessageHashUtils
-            .toEthSignedMessageHash(messageHash)
-            .recover(signature);
+        // Add Ethereum Signed Message prefix
+        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
+            messageHash
+        );
 
-        if (signer != backendSigner) revert InvalidSignature();
+        // Use SignatureChecker to support both EOA (ECDSA) and Smart Wallet (EIP-1271) signatures
+        // This works with passkeys, Coinbase Smart Wallet, Safe, and all EIP-1271 compliant wallets
+        bool isValidSignature = SignatureChecker.isValidSignatureNow(
+            claimer,
+            ethSignedMessageHash,
+            signature
+        );
 
-        // Mark signature as used
+        if (!isValidSignature) revert InvalidSignature();
+
+        // Mark signature as used and increment nonce
         usedSignatures[signature] = true;
+        unchecked {
+            nonces[claimer]++; // Safe: would take billions of years to overflow
+        }
 
         // Validate eligibility (inlined and optimized)
         uint48 currentDay = uint48(timestamp / SECONDS_PER_DAY);
@@ -212,9 +225,17 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     /// @dev Deposits DEGEN tokens into the vault for rewards.
     /// @notice Deposits DEGEN tokens into the vault.
     /// @param amount The amount of DEGEN tokens to deposit (must be non-zero)
-    function deposit(uint256 amount) external onlyOwner nonReentrant {
+    function deposit(uint256 amount) external payable onlyOwner nonReentrant {
         if (amount == 0) revert ZeroAmount();
         DEGEN_TOKEN.safeTransferFrom(msg.sender, _self, amount);
+    }
+
+    /// @notice Allows a user to invalidate all their pending signatures by incrementing their nonce.
+    /// @dev Anyone can call this to invalidate their own pending signatures (useful if signature is compromised).
+    function invalidatePendingSignatures() external {
+        unchecked {
+            nonces[msg.sender]++; // Safe: would take billions of years to overflow
+        }
     }
 
     /// @dev Returns the current vault balance, minimum reserve, and available amount for claims.
@@ -334,7 +355,7 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     /// @dev Allows owner to withdraw excess DEGEN while maintaining minimum reserve.
     /// @notice Withdraws excess DEGEN while maintaining minimum reserve.
     /// @param amount The amount of DEGEN to withdraw (must leave minimum reserve intact)
-    function emergencyWithdraw(uint256 amount) external onlyOwner nonReentrant {
+    function emergencyWithdraw(uint256 amount) external payable onlyOwner nonReentrant {
         if (amount == 0) revert ZeroAmount();
         if (DEGEN_TOKEN.balanceOf(_self) < amount + minVaultBalance)
             revert BelowMinimumReserve();
