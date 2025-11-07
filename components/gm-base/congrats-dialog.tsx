@@ -36,6 +36,10 @@ export const CongratsDialog = React.memo(function CongratsDialog({
   onOpenChange,
   confettiRef,
 }: CongratsDialogProps) {
+  const handleClose = React.useCallback(() => {
+    onOpenChange(false)
+  }, [onOpenChange])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="text-center sm:max-w-md">
@@ -55,7 +59,7 @@ export const CongratsDialog = React.memo(function CongratsDialog({
         </div>
 
         <DialogFooter>
-          <Button className="w-full" onClick={() => onOpenChange(false)}>
+          <Button className="w-full" onClick={handleClose}>
             Close
           </Button>
         </DialogFooter>
