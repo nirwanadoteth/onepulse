@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AlertTriangle, ChevronLeft } from "lucide-react"
@@ -8,6 +9,11 @@ import { Button, buttonVariants } from "@/components/ui/button"
 
 export default function NotFound() {
   const router = useRouter()
+
+  const handleGoBack = React.useCallback(() => {
+    router.back()
+  }, [router])
+
   return (
     <section>
       <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center px-6 py-12">
@@ -24,7 +30,7 @@ export default function NotFound() {
 
           <div className="group mt-6 flex w-full shrink-0 items-center gap-x-3 sm:w-auto">
             <Button
-              onClick={() => router.back()}
+              onClick={handleGoBack}
               className={buttonVariants({ variant: "secondary" })}
             >
               <ChevronLeft className="size-4 transition-transform group-hover:-translate-x-1" />
