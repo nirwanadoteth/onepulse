@@ -10,7 +10,7 @@ import { DegenRewardCard } from "@/components/degen-reward-card"
 import { HowItWorksCard } from "@/components/how-it-works-card"
 import { VerifyingIdentityCard } from "@/components/verifying-identity-card"
 
-export const RewardsBase= React.memo(function GMBase({
+export const RewardsBase = React.memo(function GMBase({
   sponsored,
 }: {
   sponsored?: boolean

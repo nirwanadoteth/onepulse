@@ -91,7 +91,12 @@ interface RewardCardProps {
   isCheckingEligibility: boolean
 }
 
-function RewardCard({ fid, sponsored, state, isCheckingEligibility }: RewardCardProps) {
+function RewardCard({
+  fid,
+  sponsored,
+  state,
+  isCheckingEligibility,
+}: RewardCardProps) {
   const config = getStatusConfig(state)
 
   return (
@@ -119,7 +124,11 @@ function RewardCard({ fid, sponsored, state, isCheckingEligibility }: RewardCard
         </div>
       </CardHeader>
       <CardContent>
-        <DegenClaimTransaction fid={fid} sponsored={sponsored} disabled={!state.isEligible} />
+        <DegenClaimTransaction
+          fid={fid}
+          sponsored={sponsored}
+          disabled={!state.isEligible}
+        />
 
         {isCheckingEligibility && (
           <div className="text-muted-foreground mt-4 flex items-center gap-2 text-xs">
@@ -201,7 +210,7 @@ function WrongNetworkCard() {
 
 export const DegenRewardCard = React.memo(function DegenRewardCard({
   fid,
-  sponsored
+  sponsored,
 }: DegenRewardCardProps) {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
