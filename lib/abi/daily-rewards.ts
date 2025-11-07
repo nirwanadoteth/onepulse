@@ -1,6 +1,7 @@
 export const dailyRewardsAbi = [
   {
     inputs: [
+      { internalType: "address", name: "_backendSigner", type: "address" },
       { internalType: "address", name: "_dailyGMContract", type: "address" },
     ],
     stateMutability: "payable",
@@ -11,6 +12,17 @@ export const dailyRewardsAbi = [
   { inputs: [], name: "BatchTooLarge", type: "error" },
   { inputs: [], name: "BelowMinimumReserve", type: "error" },
   { inputs: [], name: "DeadlineTooLong", type: "error" },
+  { inputs: [], name: "ECDSAInvalidSignature", type: "error" },
+  {
+    inputs: [{ internalType: "uint256", name: "length", type: "uint256" }],
+    name: "ECDSAInvalidSignatureLength",
+    type: "error",
+  },
+  {
+    inputs: [{ internalType: "bytes32", name: "s", type: "bytes32" }],
+    name: "ECDSAInvalidSignatureS",
+    type: "error",
+  },
   { inputs: [], name: "FIDBlacklisted", type: "error" },
   { inputs: [], name: "InsufficientVaultBalance", type: "error" },
   { inputs: [], name: "InvalidFID", type: "error" },
@@ -176,6 +188,13 @@ export const dailyRewardsAbi = [
     name: "acceptOwnership",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "backendSigner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
     type: "function",
   },
   {
