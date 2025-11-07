@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 /// @notice Interface for DailyGM contract
 interface IDailyGM {
@@ -17,14 +16,12 @@ interface IDailyGM {
 
 /// @author OnePulse Team
 /// @title Daily DEGEN Rewards Contract
-/// @dev Contract for managing daily DEGEN rewards for Farcaster FIDs with self-signed authorizations.
-/// @notice Uses personal_sign (EIP-191) and EIP-1271 for universal wallet compatibility
-/// @notice Supports EOA wallets, smart wallets (Coinbase Smart Wallet, Safe), and passkey-based wallets
+/// @dev Contract for managing daily DEGEN rewards for Farcaster FIDs with backend-signed authorizations.
+/// @notice Uses personal_sign for universal wallet compatibility (EOA, smart wallets, passkeys, etc.)
 /// @notice Replay protection uses signature mapping instead of nonces for gas efficiency and simplicity
 contract DailyRewards is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
-    using SignatureChecker for address;
 
     IERC20 private constant DEGEN_TOKEN =
         IERC20(0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed); // DEGEN on Base
@@ -32,6 +29,8 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     uint256 private constant MAX_BATCH_SIZE = 100; // Max FIDs per batch update to prevent gas limit DoS
     uint256 private constant SECONDS_PER_DAY = 1 days;
 
+    /// @notice Address authorized to sign claim authorizations.
+    address public immutable backendSigner;
     /// @notice Minimum DEGEN balance to maintain in the vault as reserve.
     uint256 public minVaultBalance = 100e18; // 100 DEGEN default
     /// @notice Daily reward amount per claim in DEGEN tokens.
@@ -81,7 +80,7 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     mapping(bytes => bool) public usedSignatures;
 
     /// @notice Mapping of claimer addresses to their current nonce for signature validation.
-    /// @dev Optional nonce system for additional front-running protection. Users can increment their nonce to invalidate old signatures.
+    /// @dev Nonce system for additional front-running protection. Users can increment their nonce to invalidate old signatures.
     mapping(address => uint256) public nonces;
 
     // Events
@@ -120,21 +119,26 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
     error BelowMinimumReserve();
     error SameValue();
 
-    /// @notice Initializes the contract with the DailyGM contract address.
-    /// @dev Initializes the contract with the DailyGM contract address.
-    constructor(address _dailyGMContract) payable Ownable(msg.sender) {
+    /// @notice Initializes the contract with backend signer and minimum vault balance.
+    /// @dev Initializes the contract with backend signer and minimum vault balance.
+    constructor(
+        address _backendSigner,
+        address _dailyGMContract
+    ) payable Ownable(msg.sender) {
+        if (_backendSigner == address(0)) revert ZeroAddress();
         if (_dailyGMContract == address(0)) revert ZeroAddress();
         _self = address(this);
+        backendSigner = _backendSigner;
         dailyGMContract = _dailyGMContract;
     }
 
-    /// @dev Allows anyone to claim daily rewards with their own signature.
-    /// @notice Claims daily rewards using a self-signed authorization. Works with any wallet type.
+    /// @dev Allows anyone to claim daily rewards with a backend-signed authorization.
+    /// @notice Claims daily rewards using a backend-signed authorization. Works with any wallet type.
     /// @param claimer The address that will receive the DEGEN rewards
     /// @param fid The Farcaster FID associated with this claim
     /// @param nonce The nonce for this claim (must match claimer's current nonce)
-    /// @param deadline The timestamp when this signature expires (max 1 hour from creation)
-    /// @param signature The claimer's signature authorizing this claim
+    /// @param deadline The timestamp when this signature expires (max 5 minutes from creation)
+    /// @param signature The backend-signed authorization signature
     function claim(
         address claimer,
         uint256 fid,
@@ -160,31 +164,25 @@ contract DailyRewards is Ownable2Step, ReentrancyGuard {
         // Replay protection
         if (usedSignatures[signature]) revert SignatureAlreadyUsed();
 
-        // Signature verification - verify the claimer signed the message with nonce
+        // Signature verification - backend signs message with nonce
         bytes32 messageHash = keccak256(
             abi.encodePacked(claimer, fid, nonce, deadline, _self)
         );
 
-        // Add Ethereum Signed Message prefix
-        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(
-            messageHash
-        );
+        // Add Ethereum Signed Message prefix and recover signer
+        // Using OpenZeppelin's ECDSA library to prevent signature malleability attacks
+        address signer = MessageHashUtils
+            .toEthSignedMessageHash(messageHash)
+            .recover(signature);
 
-        // Use SignatureChecker to support both EOA (ECDSA) and Smart Wallet (EIP-1271) signatures
-        // This works with passkeys, Coinbase Smart Wallet, Safe, and all EIP-1271 compliant wallets
-        bool isValidSignature = SignatureChecker.isValidSignatureNow(
-            claimer,
-            ethSignedMessageHash,
-            signature
-        );
-
-        if (!isValidSignature) revert InvalidSignature();
+        if (signer != backendSigner) revert InvalidSignature();
 
         // Mark signature as used and increment nonce
         usedSignatures[signature] = true;
         unchecked {
             nonces[claimer]++; // Safe: would take billions of years to overflow
         }
+        usedSignatures[signature] = true;
 
         // Validate eligibility (inlined and optimized)
         uint48 currentDay = uint48(timestamp / SECONDS_PER_DAY);
