@@ -1,19 +1,21 @@
 "use client"
 
-import { ReactNode } from "react"
+import { type ReactNode } from "react"
 import { OnchainKitProvider } from "@coinbase/onchainkit"
+import { ThemeProvider } from "next-themes"
 import { base } from "wagmi/chains"
 
+import { ColorSchemeSync } from "@/components/providers/color-scheme-sync"
+import { SpacetimeDBProvider } from "@/components/providers/spacetimedb-provider"
 import Provider from "@/components/providers/wagmi-provider"
 
 import "./onchainkit.css"
 
-import { ThemeProvider } from "next-themes"
-
-import { ColorSchemeSync } from "@/components/providers/color-scheme-sync"
-import { SpacetimeDBProvider } from "@/components/providers/spacetimedb-provider"
-
-export function RootProvider({ children }: { children: ReactNode }) {
+export function RootProvider({
+  children,
+}: Readonly<{
+  children: ReactNode
+}>) {
   return (
     <ThemeProvider
       attribute="class"
