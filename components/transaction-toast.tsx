@@ -145,8 +145,8 @@ function useToastCreation(
 function useToastResolution(
   state: string,
   errorMessage: string | undefined,
-  toastCreatedRef: React.MutableRefObject<boolean>,
-  toastControllerRef: React.MutableRefObject<{
+  toastCreatedRef: React.RefObject<boolean>,
+  toastControllerRef: React.RefObject<{
     resolve?: (value: { name: string }) => void
     reject?: (reason?: unknown) => void
   }>
