@@ -24,8 +24,8 @@ interface ClaimEligibility {
 
 const CHAIN_ID = 8453
 const SIGNATURE_DEADLINE_SECONDS = 300 // 5 minutes
-const REFETCH_ELIGIBILITY_MS = 10000 // 10 seconds
-const REFETCH_VAULT_MS = 30000 // 30 seconds
+const REFETCH_ELIGIBILITY_MS = 60000 // 60 seconds (reduced from 10s to minimize server load)
+const REFETCH_VAULT_MS = 120000 // 120 seconds (reduced from 30s)
 
 function formatClaimEligibility(claimStatus: ClaimEligibility | undefined) {
   return {
