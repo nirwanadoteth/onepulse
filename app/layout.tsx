@@ -3,8 +3,6 @@ import type { Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { minikitConfig } from "@/minikit.config"
 import { SafeArea } from "@coinbase/onchainkit/minikit"
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -96,8 +94,6 @@ export default async function RootLayout({
             <SafeArea>
               <Toaster position="top-center" richColors closeButton />
               {children}
-              <Analytics />
-              <SpeedInsights />
             </SafeArea>
           </TooltipProvider>
         </RootProvider>
