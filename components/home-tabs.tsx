@@ -1,10 +1,10 @@
 "use client"
 
-import { useMiniKit } from "@coinbase/onchainkit/minikit"
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GMBase } from "@/components/gm-base"
 import { RewardsBase } from "@/components/rewards-base"
+
+import { useMiniAppContext } from "./providers/miniapp-provider"
 
 interface HomeTabsProps {
   tab: string
@@ -12,11 +12,11 @@ interface HomeTabsProps {
 }
 
 export function HomeTabs({ tab, onTabChange }: HomeTabsProps) {
-  const { context } = useMiniKit()
-  const isInMiniApp = !!context?.client
+  const miniAppContext = useMiniAppContext()
 
-  const isBaseApp = context?.client?.clientFid === 309857
-  const isFarcaster = context?.client?.clientFid === 1
+  const isInMiniApp = !!miniAppContext?.isInMiniApp
+  const isBaseApp = miniAppContext?.context?.client.clientFid === 309857
+  const isFarcaster = miniAppContext?.context?.client.clientFid === 1
 
   const allowedChainIds = isFarcaster
     ? [8453, 42220, 10]
