@@ -241,7 +241,6 @@ export const DegenRewardCard = React.memo(function DegenRewardCard({
     return <DisconnectedCard />
   }
 
-  // Check if user is on Base network (chainId 8453)
   if (chainId !== base.id) {
     return <WrongNetworkCard />
   }

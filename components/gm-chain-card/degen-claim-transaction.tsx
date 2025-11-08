@@ -44,7 +44,6 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
     refetch: refetchEligibility,
   } = useClaimEligibility({ fid })
 
-  // Get backend-signed authorization for claim
   const getClaimContracts = useClaimContracts({
     address,
     fid,
@@ -75,12 +74,10 @@ export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
     canClaim
   )
 
-  // Show fallback UI if needed
   if (buttonState.showFallback) {
     return <ClaimFallbackUI type={buttonState.showFallback} />
   }
 
-  // Main transaction UI
   return (
     <div className="relative w-full">
       <Transaction

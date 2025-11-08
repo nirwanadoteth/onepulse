@@ -48,7 +48,6 @@ export const GMTransaction = React.memo(function GMTransaction({
   onClose,
   setProcessing,
 }: GMTransactionProps) {
-  // Build transaction calls based on type
   const getCalls = () => {
     if (transactionType === "gm") {
       return [

@@ -45,7 +45,6 @@ export const GMBase = React.memo(function GMBase({
     (() => Promise<unknown>) | undefined
   >(undefined)
 
-  // Get filtered chain list
   const chains = useMemo(() => getChainList(allowedChainIds), [allowedChainIds])
   const chainIds = useMemo(() => chains.map((c) => c.id), [chains])
 
@@ -66,10 +65,8 @@ export const GMBase = React.memo(function GMBase({
   // Manage congratulations day persistently
   const { lastCongratsDay, setLastCongratsDay } = useLastCongratsDay()
 
-  // Control confetti animation
   const { confettiRef } = useConfettiControl(false, isConnected)
 
-  // Show congratulations dialog when all done
   const { showCongrats, setShowCongrats } = useCongratsLogic({
     allDone,
     isConnected,
@@ -175,7 +172,6 @@ const ChainSlide = React.memo(function ChainSlide({
   }) => void
   onOpenModal: (refetch: () => Promise<unknown>) => void
 }) {
-  // Get stats filtered by this specific chain
   const { stats, isReady } = useGmStats(address, chainId)
 
   const handleOpenModal = React.useCallback(

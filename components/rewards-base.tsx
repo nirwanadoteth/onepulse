@@ -18,7 +18,6 @@ export const RewardsBase = React.memo(function GMBase({
   const { isConnected } = useAccount()
   const miniAppContextData = useMiniAppContext()
 
-  // Get FID from context - Farcaster provides this
   const fid = miniAppContextData?.context?.user?.fid
     ? BigInt(miniAppContextData.context.user.fid)
     : undefined

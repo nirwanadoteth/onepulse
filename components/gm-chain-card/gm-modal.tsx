@@ -58,7 +58,6 @@ export const GMModal = React.memo(function GMModal({
     if (!processing) handleClose()
   }, [processing, handleClose])
 
-  // Use custom hooks for focus trap and scroll prevention
   const dialogRef = useFocusTrap({
     isOpen,
     isProcessing: processing,

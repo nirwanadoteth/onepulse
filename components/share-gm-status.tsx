@@ -26,7 +26,6 @@ interface ShareGMStatusProps {
   claimedToday?: boolean
 }
 
-// Utility functions for GM sharing
 const getUsername = (user: UserContext | null) =>
   user?.username || user?.displayName || "Anonymous"
 
@@ -70,7 +69,6 @@ const createShareMetadata = (
   })
 }
 
-// Custom hook for GM sharing logic
 function useGMSharing(claimedToday: boolean) {
   const miniAppContextData = useMiniAppContext()
   const { stats: gmStats } = useGmStats()
@@ -98,7 +96,6 @@ function useGMSharing(claimedToday: boolean) {
   }
 }
 
-// Platform-specific sharing functions
 const shareToTwitter = (
   shareText: string,
   shareUrl: string,

@@ -152,7 +152,6 @@ export const GMChainCard = React.memo(function GMChainCard({
   const currentChainId = useChainId()
   const onCorrectChain = currentChainId === chainId
 
-  // Fetch on-chain last GM day
   const {
     data: lastGmDayData,
     isPending: isPendingLastGm,
@@ -166,7 +165,6 @@ export const GMChainCard = React.memo(function GMChainCard({
     query: { enabled: Boolean(address && contractAddress) },
   })
 
-  // Compute GM state
   const { hasGmToday, gmDisabled, targetSec } = useMemo(
     () =>
       computeGMState(
@@ -179,12 +177,10 @@ export const GMChainCard = React.memo(function GMChainCard({
     [address, contractAddress, isConnected, lastGmDayData, isPendingLastGm]
   )
 
-  // Notify parent of status changes
   useEffect(() => {
     onStatusChange?.({ chainId, hasGmToday, targetSec })
   }, [chainId, hasGmToday, targetSec, onStatusChange])
 
-  // Get chain-specific styling
   const chainBtnClasses = useMemo(
     () => getChainBtnClasses(chainId, name),
     [chainId, name]

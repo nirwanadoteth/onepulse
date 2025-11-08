@@ -45,7 +45,6 @@ export function useClaimContracts({
 
     const { signature, nonce: backendNonce } = await response.json()
 
-    // Return contract call with backend signature and nonce
     return [
       {
         address: contractAddress as `0x${string}`,

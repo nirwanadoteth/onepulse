@@ -25,7 +25,6 @@ export function generateGMStatusOGUrl(params: {
     { key: "claimedToday", value: params.claimedToday?.toString() },
   ]
 
-  // Add parameters to search params if they have values
   paramMappings.forEach(({ key, value }) => {
     if (value !== undefined) {
       searchParams.set(key, value)

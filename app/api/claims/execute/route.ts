@@ -87,7 +87,6 @@ async function generateClaimAuthorization(params: {
     throw new Error("Contract address not configured")
   }
 
-  // Get current nonce for the claimer
   const nonce = await publicClient.readContract({
     address: contractAddress as `0x${string}`,
     abi: dailyRewardsAbi,

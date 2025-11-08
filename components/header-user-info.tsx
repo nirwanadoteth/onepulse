@@ -12,6 +12,7 @@ import { useAccount } from "wagmi"
 import { truncateAddress } from "@/lib/ens-utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+
 import { UserContext } from "./providers/miniapp-provider"
 
 interface HeaderUserInfoProps {
@@ -158,7 +159,6 @@ const determineDisplayState = (
   return "miniapp"
 }
 
-// Map state to renderer
 const renderByState = (
   state: DisplayState,
   user: HeaderUserInfoProps["user"],

@@ -60,7 +60,6 @@ export const AnimatedThemeToggler = ({
     const vt = document.startViewTransition(() => {
       flushSync(() => {
         setIsDark(nextTheme === "dark")
-        // Set class deterministically to avoid double toggles
         document.documentElement.classList.toggle("dark", nextTheme === "dark")
       })
     })

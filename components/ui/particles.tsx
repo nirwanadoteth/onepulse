@@ -215,7 +215,6 @@ export const Particles: React.FC<ParticlesProps> = ({
     function frame() {
       clearContext()
       circles.current.forEach((circle: Circle, i: number) => {
-        // Handle the alpha value
         const edge = [
           circle.x + circle.translateX - circle.size, // distance from left edge
           canvasSize.current.w - circle.x - circle.translateX - circle.size, // distance from right edge
@@ -254,9 +253,7 @@ export const Particles: React.FC<ParticlesProps> = ({
           circle.y < -circle.size ||
           circle.y > canvasSize.current.h + circle.size
         ) {
-          // remove the circle from the array
           circles.current.splice(i, 1)
-          // create a new circle
           const newCircle = circleParams()
           drawCircle(newCircle)
         }
