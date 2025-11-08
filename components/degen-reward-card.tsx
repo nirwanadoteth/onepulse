@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { DegenClaimTransaction } from "@/components/gm-chain-card/degen-claim-transaction"
+import { ShareGMStatus } from "@/components/share-gm-status"
 
 interface DegenRewardCardProps {
   fid: bigint | undefined
@@ -89,6 +90,8 @@ interface RewardCardProps {
   sponsored: boolean
   state: ClaimState
   isCheckingEligibility: boolean
+  hasClaimedToday: boolean
+  onClaimSuccess: () => void
 }
 
 function RewardCard({
@@ -96,6 +99,8 @@ function RewardCard({
   sponsored,
   state,
   isCheckingEligibility,
+  hasClaimedToday,
+  onClaimSuccess,
 }: RewardCardProps) {
   const config = getStatusConfig(state)
 
@@ -128,7 +133,14 @@ function RewardCard({
           fid={fid}
           sponsored={sponsored}
           disabled={!state.isEligible}
+          onSuccess={onClaimSuccess}
         />
+
+        {hasClaimedToday && (
+          <div className="mt-4">
+            <ShareGMStatus className="justify-center" claimedToday={true} />
+          </div>
+        )}
 
         {isCheckingEligibility && (
           <div className="text-muted-foreground mt-4 flex items-center gap-2 text-xs">
@@ -212,6 +224,7 @@ export const DegenRewardCard = React.memo(function DegenRewardCard({
   fid,
   sponsored,
 }: DegenRewardCardProps) {
+  const [hasClaimedToday, setHasClaimedToday] = React.useState(false)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const {
@@ -244,6 +257,8 @@ export const DegenRewardCard = React.memo(function DegenRewardCard({
       sponsored={sponsored}
       state={claimState}
       isCheckingEligibility={isCheckingEligibility}
+      hasClaimedToday={hasClaimedToday}
+      onClaimSuccess={() => setHasClaimedToday(true)}
     />
   )
 })
