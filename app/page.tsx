@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 import dynamic from "next/dynamic"
-import { useMiniKit } from "@coinbase/onchainkit/minikit"
 
 import { useFrameInitialization } from "@/hooks/use-frame-initialization"
 import { useMetaColor } from "@/hooks/use-meta-color"
@@ -15,6 +14,7 @@ import { DisconnectWalletSection } from "@/components/disconnect-wallet-section"
 import { HomeHeader } from "@/components/home-header"
 import { HomeTabs } from "@/components/home-tabs"
 import { OnboardingModal } from "@/components/onboarding-modal"
+import { useMiniAppContext } from "@/components/providers/miniapp-provider"
 
 const Particles = dynamic(
   () =>
@@ -38,7 +38,7 @@ interface HomeContentProps {
   isFrameReady: boolean
   inMiniApp: boolean
   isConnected: boolean
-  context: ReturnType<typeof useMiniKit>["context"]
+  showDisconnect: boolean
   handleMiniAppAdded: () => void
   tab: string
   setTab: (tab: string) => void
@@ -48,7 +48,7 @@ function HomeContent({
   isFrameReady,
   inMiniApp,
   isConnected,
-  context,
+  showDisconnect,
   handleMiniAppAdded,
   tab,
   setTab,
@@ -64,7 +64,7 @@ function HomeContent({
         <HomeTabs tab={tab} onTabChange={setTab} />
         <DisconnectWalletSection
           isConnected={isConnected}
-          showDisconnect={!context?.user}
+          showDisconnect={showDisconnect}
           onTabChange={setTab}
         />
       </div>
@@ -101,7 +101,7 @@ function HomeBackground({
 }
 
 export default function Home() {
-  const { isFrameReady, context } = useMiniKit()
+  const miniAppContextData = useMiniAppContext()
   const { inMiniApp, isConnected } = usePageState()
   const { showParticles, prefersReducedMotion } = useParticlesAnimation()
   const safeAreaStyle = useSafeAreaStyle()
@@ -119,10 +119,13 @@ export default function Home() {
     return window.innerWidth < 768 ? 50 : 100
   }, [])
 
+  const isFrameReady = miniAppContextData?.context !== null
+  const clientAdded = miniAppContextData?.context?.client?.added
+
   const onboardingSaveHandler = determineOnboardingSaveHandler(
     isFrameReady,
     inMiniApp,
-    context?.client?.added,
+    clientAdded,
     handleMiniAppAdded
   )
 
@@ -132,7 +135,7 @@ export default function Home() {
         isFrameReady={isFrameReady}
         inMiniApp={inMiniApp}
         isConnected={isConnected}
-        context={context}
+        showDisconnect={!miniAppContextData?.isInMiniApp}
         handleMiniAppAdded={handleMiniAppAdded}
         tab={tab}
         setTab={setTab}
