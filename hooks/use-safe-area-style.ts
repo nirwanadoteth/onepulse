@@ -1,9 +1,10 @@
 import { useMemo } from "react"
-import { useMiniKit } from "@coinbase/onchainkit/minikit"
+
+import { useMiniAppContext } from "@/components/providers/miniapp-provider"
 
 export function useSafeAreaStyle() {
-  const { context } = useMiniKit()
-  const insets = context?.client?.safeAreaInsets
+  const miniAppContext = useMiniAppContext()
+  const insets = miniAppContext?.context?.client.safeAreaInsets
 
   return useMemo(
     () => ({
