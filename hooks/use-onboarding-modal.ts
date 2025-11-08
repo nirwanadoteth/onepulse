@@ -6,8 +6,7 @@ export function useOnboardingModal() {
   const { isFrameReady, context } = useMiniKit()
   const { showOnboardingModal, dismissOnboarding } = useOnboarding()
 
-  const shouldShowOnboarding = (isConnected: boolean) =>
-    isConnected && showOnboardingModal
+  const shouldShowOnboarding = () => showOnboardingModal
 
   const canSaveApp = (inMiniApp: boolean) =>
     Boolean(isFrameReady && inMiniApp && context?.client?.added !== true)

@@ -144,7 +144,7 @@ export default function Home() {
         metaColor={metaColor}
       />
       <OnboardingModal
-        open={shouldShowOnboarding(isConnected)}
+        open={shouldShowOnboarding()}
         onClose={dismissOnboarding}
         canSave={canSaveApp(inMiniApp)}
         onSave={onboardingSaveHandler}

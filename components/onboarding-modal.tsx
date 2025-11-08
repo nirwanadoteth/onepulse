@@ -52,7 +52,7 @@ export const OnboardingModal = React.memo(function OnboardingModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} type="button">
+          <Button variant="ghost" onClick={onClose} type="button">
             Got it
           </Button>
           {canSave && onSave && (
