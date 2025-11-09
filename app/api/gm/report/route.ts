@@ -12,10 +12,15 @@ export const runtime = "nodejs";
 function validateAddress(
   address: unknown
 ): { error: string; status: number } | { value: string } {
-  if (typeof address !== "string")
+  if (typeof address !== "string") {
     return { error: "address is required", status: 400 };
-  if (!address) return { error: "address is required", status: 400 };
-  if (!isAddress(address)) return { error: "invalid address", status: 400 };
+  }
+  if (!address) {
+    return { error: "address is required", status: 400 };
+  }
+  if (!isAddress(address)) {
+    return { error: "invalid address", status: 400 };
+  }
   return { value: address };
 }
 
@@ -23,8 +28,9 @@ function validateContractAddress(
   chainId: number
 ): { error: string; status: number } | { value: string } {
   const contractAddress = getDailyGmAddress(chainId);
-  if (!contractAddress)
+  if (!contractAddress) {
     return { error: "DAILY_GM_ADDRESS not configured", status: 500 };
+  }
   return { value: contractAddress };
 }
 
@@ -40,11 +46,15 @@ function extractOptionalFields(body: Record<string, unknown>) {
 
 function validateReportGmRequest(body: Record<string, unknown>) {
   const addressResult = validateAddress(body.address);
-  if ("error" in addressResult) return addressResult;
+  if ("error" in addressResult) {
+    return addressResult;
+  }
 
   const chainId = typeof body.chainId === "number" ? body.chainId : 8453;
   const contractResult = validateContractAddress(chainId);
-  if ("error" in contractResult) return contractResult;
+  if ("error" in contractResult) {
+    return contractResult;
+  }
 
   return {
     address: addressResult.value,
@@ -55,8 +65,12 @@ function validateReportGmRequest(body: Record<string, unknown>) {
 }
 
 function resolveChain(chainId: number) {
-  if (chainId === celo.id) return celo;
-  if (chainId === optimism.id) return optimism;
+  if (chainId === celo.id) {
+    return celo;
+  }
+  if (chainId === optimism.id) {
+    return optimism;
+  }
   return base;
 }
 
