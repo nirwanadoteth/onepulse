@@ -59,8 +59,8 @@ const handleTabKey = (
   const first = focusables[0];
   const last = focusables.at(-1);
   const active = (document.activeElement as HTMLElement) ?? null;
-  const boundary = e.shiftKey ? first : last;
-  const target = e.shiftKey ? last : first;
+  const boundary = e.shiftKey ? first : (last as HTMLElement);
+  const target = e.shiftKey ? (last as HTMLElement) : first;
 
   if (shouldMoveFocus(active, boundary, container)) {
     e.preventDefault();
