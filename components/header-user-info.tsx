@@ -14,10 +14,10 @@ import { truncateAddress } from "@/lib/ens-utils";
 
 import type { UserContext } from "./providers/miniapp-provider";
 
-interface HeaderUserInfoProps {
+type HeaderUserInfoProps = {
   user?: UserContext;
   address?: Address | string;
-}
+};
 
 // Determine which avatar to display
 const getAvatarUrl = (
@@ -33,57 +33,57 @@ const getDisplayName = (
 ): string => userDisplayName || ensName || truncateAddress(address);
 
 // Subcomponent for avatar display
-const UserAvatar = React.memo(function UserAvatar({
-  url: avatarUrl,
-  name: displayName,
-}: {
-  url: string | undefined;
-  name: string;
-}) {
-  return (
+const UserAvatar = React.memo(
+  ({
+    url: avatarUrl,
+    name: displayName,
+  }: {
+    url: string | undefined;
+    name: string;
+  }) => (
     <Avatar className="size-8">
       <AvatarImage alt={displayName} src={avatarUrl} />
       <AvatarFallback className="text-xs">
         {displayName.slice(0, 2).toUpperCase()}
       </AvatarFallback>
     </Avatar>
-  );
-});
+  )
+);
 
 // Subcomponent for user info text
-const UserInfo = React.memo(function UserInfo({
-  displayName,
-  username,
-  address,
-}: {
-  displayName: string;
-  username?: string;
-  address?: string;
-}) {
-  const showUsername = username && address === undefined;
-  return (
-    <div className="flex flex-col">
-      <span className="font-medium text-sm leading-none">{displayName}</span>
-      {showUsername ? (
-        <span className="text-muted-foreground text-xs">@{username}</span>
-      ) : (
-        <span className="text-muted-foreground text-xs">
-          {truncateAddress(address)}
-        </span>
-      )}
-    </div>
-  );
-});
+const UserInfo = React.memo(
+  ({
+    displayName,
+    username,
+    address,
+  }: {
+    displayName: string;
+    username?: string;
+    address?: string;
+  }) => {
+    const showUsername = username && address === undefined;
+    return (
+      <div className="flex flex-col">
+        <span className="font-medium text-sm leading-none">{displayName}</span>
+        {showUsername ? (
+          <span className="text-muted-foreground text-xs">@{username}</span>
+        ) : (
+          <span className="text-muted-foreground text-xs">
+            {truncateAddress(address)}
+          </span>
+        )}
+      </div>
+    );
+  }
+);
 
 // Skeleton loader for user info
-const UserInfoSkeleton = React.memo(function UserInfoSkeleton() {
-  return (
-    <div className="flex flex-col gap-1">
-      <Skeleton className="h-4 w-20 rounded" />
-      <Skeleton className="h-3 w-16 rounded" />
-    </div>
-  );
-});
+const UserInfoSkeleton = React.memo(() => (
+  <div className="flex flex-col gap-1">
+    <Skeleton className="h-4 w-20 rounded" />
+    <Skeleton className="h-3 w-16 rounded" />
+  </div>
+));
 
 // Extract display data for MiniApp user without wallet
 const getMiniAppUserDisplay = (user: HeaderUserInfoProps["user"]) => ({
@@ -152,39 +152,55 @@ const determineDisplayState = (
   address: Address | undefined,
   isLoading: boolean
 ): DisplayState => {
-  if (!(user || address)) return "hidden";
-  if ((address || user) && isLoading) return "loading";
-  if (address && !user) return "wallet";
+  if (!(user || address)) {
+    return "hidden";
+  }
+  if ((address || user) && isLoading) {
+    return "loading";
+  }
+  if (address && !user) {
+    return "wallet";
+  }
   return "miniapp";
 };
 
-const renderByState = (
-  state: DisplayState,
-  user: HeaderUserInfoProps["user"],
-  address: Address | undefined,
-  ensName: GetNameReturnType | undefined,
-  ensAvatar: string | null | undefined
-): React.ReactNode => {
-  if (state === "hidden") return null;
-  if (state === "miniapp") return renderMiniAppUser(user);
-  if (state === "loading") return renderWalletLoading();
-  return renderWalletConnected(user, address!, ensName, ensAvatar);
+const renderByState = (params: {
+  state: DisplayState;
+  user: HeaderUserInfoProps["user"];
+  address: Address;
+  ensName: GetNameReturnType | undefined;
+  ensAvatar: string | null | undefined;
+}): React.ReactNode => {
+  if (params.state === "hidden") {
+    return null;
+  }
+  if (params.state === "miniapp") {
+    return renderMiniAppUser(params.user);
+  }
+  if (params.state === "loading") {
+    return renderWalletLoading();
+  }
+  return renderWalletConnected(
+    params.user,
+    params.address,
+    params.ensName,
+    params.ensAvatar
+  );
 };
 
-export const HeaderUserInfo = React.memo(function HeaderUserInfo({
-  user,
-  address: addressProp,
-}: HeaderUserInfoProps) {
-  const { address: connectedAddress } = useAccount();
-  const address = (addressProp || connectedAddress) as Address | undefined;
+export const HeaderUserInfo = React.memo(
+  ({ user, address: addressProp }: HeaderUserInfoProps) => {
+    const { address: connectedAddress } = useAccount();
+    const address = (addressProp || connectedAddress) as Address;
 
-  const { data: ensName, isLoading: isNameLoading } = useName({ address });
-  const { data: ensAvatar, isLoading: isAvatarLoading } = useAvatar({
-    ensName: ensName || "",
-  });
+    const { data: ensName, isLoading: isNameLoading } = useName({ address });
+    const { data: ensAvatar, isLoading: isAvatarLoading } = useAvatar({
+      ensName: ensName || "",
+    });
 
-  const isLoading = isNameLoading || isAvatarLoading;
-  const state = determineDisplayState(user, address, isLoading);
+    const isLoading = isNameLoading || isAvatarLoading;
+    const state = determineDisplayState(user, address, isLoading);
 
-  return renderByState(state, user, address, ensName, ensAvatar);
-});
+    return renderByState({ state, user, address, ensName, ensAvatar });
+  }
+);
