@@ -7,7 +7,8 @@ import {
   useEffect,
   useState,
 } from "react"
-import { useIsInMiniApp, useMiniKit } from "@coinbase/onchainkit/minikit"
+import { useMiniKit } from "@coinbase/onchainkit/minikit"
+import { sdk } from "@farcaster/miniapp-sdk"
 
 export type MiniAppNotificationDetails = {
   url: string
@@ -117,17 +118,16 @@ export const useMiniAppContext = () => useContext(MiniAppContext)
 export function MiniAppProvider({ children }: { children: ReactNode }) {
   const [miniAppContext, setMiniAppContext] = useState<MiniAppContextType>(null)
   const { context } = useMiniKit()
-  const { isInMiniApp } = useIsInMiniApp()
 
   useEffect(() => {
     const init = async () => {
       try {
-        // Small delay to ensure context is fully loaded
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        // Use Farcaster MiniApp SDK's built-in detection utility
+        const inMiniApp = await sdk.isInMiniApp()
 
         setMiniAppContext({
           context: context,
-          isInMiniApp: isInMiniApp ?? false,
+          isInMiniApp: inMiniApp,
         })
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -140,7 +140,7 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
     }
 
     init()
-  }, [context, isInMiniApp])
+  }, [context])
 
   return (
     <MiniAppContext.Provider value={miniAppContext}>
