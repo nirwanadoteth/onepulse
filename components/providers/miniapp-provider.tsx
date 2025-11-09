@@ -21,7 +21,7 @@ export type MiniAppUser = {
   displayName?: string;
   pfpUrl?: string;
 };
-export interface MiniAppCast {
+export type MiniAppCast = {
   author: MiniAppUser;
   hash: string;
   parentHash?: string;
@@ -31,7 +31,7 @@ export interface MiniAppCast {
   text: string;
   embeds?: string[];
   channelKey?: string;
-}
+};
 export type CastEmbedLocationContext = {
   type: "cast_embed";
   embed: string;
@@ -130,9 +130,8 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
           context,
           isInMiniApp: inMiniApp,
         });
-
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
+        console.error("Error initializing MiniApp context:", error);
         setMiniAppContext({
           context: null,
           isInMiniApp: false,

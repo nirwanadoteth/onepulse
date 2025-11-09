@@ -35,7 +35,7 @@ export function OnchainKitProvider({
         autoConnect: true,
         notificationProxyUrl: undefined,
       }}
-      projectId={process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_ID!}
+      projectId={process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_ID}
     >
       {children}
     </Provider>
