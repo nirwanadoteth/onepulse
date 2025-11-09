@@ -2,11 +2,11 @@
 
 import { DisconnectWallet } from "@/components/wallet";
 
-interface DisconnectWalletSectionProps {
+type DisconnectWalletSectionProps = {
   isConnected: boolean;
   showDisconnect: boolean;
   onTabChange: (tab: string) => void;
-}
+};
 
 export function DisconnectWalletSection({
   isConnected,
