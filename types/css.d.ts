@@ -1,14 +1,9 @@
 declare module "*.css" {
-  declare module "*.css" {
-    const content: never;
-    const classes: { readonly [key: string]: string };
-
-    export default content;
-    export default classes
-  }
+  const classes: { readonly [key: string]: string };
+  export default classes;
 }
 
 declare module "*.scss" {
-  const content: never;
+  const content: { readonly [key: string]: string };
   export default content;
 }
