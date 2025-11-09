@@ -8,7 +8,11 @@ export function truncateAddress(
   address: string | undefined,
   chars = 4
 ): string {
-  if (!address) return "";
-  if (address.length < 10) return address;
+  if (!address) {
+    return "";
+  }
+  if (address.length < 10) {
+    return address;
+  }
   return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
 }

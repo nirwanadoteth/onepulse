@@ -19,7 +19,9 @@ export const DAILY_GM_ADDRESS =
   process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS || DAILY_GM_ADDRESSES[8453] || "";
 
 export function getDailyGmAddress(chainId?: number): `0x${string}` | "" {
-  if (!chainId) return DAILY_GM_ADDRESS as `0x${string}` | "";
+  if (!chainId) {
+    return DAILY_GM_ADDRESS as `0x${string}` | "";
+  }
   return DAILY_GM_ADDRESSES[chainId] || ("" as const);
 }
 
@@ -30,6 +32,8 @@ export const DAILY_REWARDS_ADDRESSES: Record<number, `0x${string}`> = {
 };
 
 export function getDailyRewardsAddress(chainId?: number): `0x${string}` | "" {
-  if (!chainId) return DAILY_REWARDS_ADDRESSES[8453] || ("" as const);
+  if (!chainId) {
+    return DAILY_REWARDS_ADDRESSES[8453] || ("" as const);
+  }
   return DAILY_REWARDS_ADDRESSES[chainId] || ("" as const);
 }

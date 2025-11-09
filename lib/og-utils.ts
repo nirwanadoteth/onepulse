@@ -25,11 +25,11 @@ export function generateGMStatusOGUrl(params: {
     { key: "claimedToday", value: params.claimedToday?.toString() },
   ];
 
-  paramMappings.forEach(({ key, value }) => {
+  for (const { key, value } of paramMappings) {
     if (value !== undefined) {
       searchParams.set(key, value);
     }
-  });
+  }
 
   return `${baseUrl}/api/og/gm-status?${searchParams.toString()}`;
 }
