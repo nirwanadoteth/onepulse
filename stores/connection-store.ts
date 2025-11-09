@@ -1,12 +1,10 @@
-import type { DbConnection } from "@/lib/module_bindings";
 import {
   connectionStatus,
   onConnectionChange,
 } from "@/lib/spacetimedb/connection-events";
 
 class ConnectionStore {
-  private listeners: Set<() => void> = new Set();
-  private connection: DbConnection | null = null;
+  private readonly listeners: Set<() => void> = new Set();
 
   constructor() {
     onConnectionChange(() => {
@@ -14,7 +12,7 @@ class ConnectionStore {
     });
   }
 
-  public subscribe(onStoreChange: () => void) {
+  subscribe(onStoreChange: () => void) {
     this.listeners.add(onStoreChange);
     return () => {
       // Cleanup on unmount
@@ -22,11 +20,11 @@ class ConnectionStore {
     };
   }
 
-  public getSnapshot() {
+  getSnapshot() {
     return connectionStatus;
   }
 
-  public getServerSnapshot() {
+  getServerSnapshot() {
     return connectionStatus;
   }
 

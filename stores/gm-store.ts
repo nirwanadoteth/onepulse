@@ -2,7 +2,7 @@ import type { DbConnection, GmStatsByAddress } from "@/lib/module_bindings";
 import { getDbConnection } from "@/lib/spacetimedb/connection-factory";
 import { onSubscriptionChange } from "@/lib/spacetimedb/subscription-events";
 
-interface ReportGmParams {
+type ReportGmParams = {
   address: string;
   chainId: number;
   lastGmDay: number;
@@ -10,13 +10,13 @@ interface ReportGmParams {
   fid: bigint;
   displayName: string;
   username: string;
-}
+};
 
 class GmStatsByAddressStore {
-  private listeners: Set<() => void> = new Set();
+  private readonly listeners: Set<() => void> = new Set();
   private connection: DbConnection | null = null;
   private cachedSnapshot: GmStatsByAddress[] = [];
-  private serverSnapshot: GmStatsByAddress[] = [];
+  private readonly serverSnapshot: GmStatsByAddress[] = [];
   private subscribedAddress: string | null = null;
   private subscriptionReady = false;
 
@@ -28,7 +28,7 @@ class GmStatsByAddressStore {
     });
   }
 
-  public subscribe(onStoreChange: () => void) {
+  subscribe(onStoreChange: () => void) {
     this.listeners.add(onStoreChange);
     return () => {
       // Cleanup on unmount
@@ -36,7 +36,7 @@ class GmStatsByAddressStore {
     };
   }
 
-  public getSnapshot() {
+  getSnapshot() {
     try {
       this.getConnection();
       return this.cachedSnapshot;
@@ -50,21 +50,25 @@ class GmStatsByAddressStore {
     }
   }
 
-  public getServerSnapshot() {
+  getServerSnapshot() {
     // Return the same reference to prevent unnecessary SSR re-renders
     return this.serverSnapshot;
   }
 
-  public isSubscribedForAddress(address?: string | null) {
-    if (!address) return false;
+  isSubscribedForAddress(address?: string | null) {
+    if (!address) {
+      return false;
+    }
     return (
       this.subscriptionReady &&
       this.subscribedAddress?.toLowerCase() === address.toLowerCase()
     );
   }
 
-  public async refreshForAddress(address?: string | null) {
-    if (!address) return;
+  async refreshForAddress(address?: string | null) {
+    if (!address) {
+      return;
+    }
 
     // Signal to all listeners that they should clear their fallback cache
     this.emitRefreshEvent(address);
@@ -94,7 +98,7 @@ class GmStatsByAddressStore {
 
   private refreshListeners: Array<(address: string) => void> = [];
 
-  public onRefresh(callback: (address: string) => void) {
+  onRefresh(callback: (address: string) => void) {
     this.refreshListeners.push(callback);
     return () => {
       this.refreshListeners = this.refreshListeners.filter(
@@ -113,8 +117,10 @@ class GmStatsByAddressStore {
     }
   }
 
-  public async subscribeToAddress(address?: string | null) {
-    if (!address) return;
+  async subscribeToAddress(address?: string | null) {
+    if (!address) {
+      return;
+    }
     const addr = address.toLowerCase();
 
     // If already subscribed to this address, do nothing
@@ -161,7 +167,7 @@ class GmStatsByAddressStore {
     }
   }
 
-  public reportGm(params: ReportGmParams) {
+  reportGm(params: ReportGmParams) {
     if (this.connection) {
       this.connection.reducers.reportGm(
         params.address,
