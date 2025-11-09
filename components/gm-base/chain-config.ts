@@ -26,7 +26,9 @@ export const areAllChainsComplete = (
   chainIds: number[],
   statusMap: Record<number, { hasGmToday: boolean; targetSec: number }>
 ): boolean => {
-  if (chainIds.some((id) => statusMap[id] == null)) return false;
+  if (chainIds.some((id) => statusMap[id] == null)) {
+    return false;
+  }
   return chainIds.every((id) => statusMap[id]?.hasGmToday);
 };
 

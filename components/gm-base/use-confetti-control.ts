@@ -19,9 +19,13 @@ export function useConfettiControl(
 
   // Trigger confetti after congratulations dialog is shown (only when connected)
   useEffect(() => {
-    if (!(showCongrats && isConnected)) return;
+    if (!(showCongrats && isConnected)) {
+      return;
+    }
     const today = getCurrentDay();
-    if (confettiTriggeredRef.current === today) return;
+    if (confettiTriggeredRef.current === today) {
+      return;
+    }
 
     confettiTriggeredRef.current = today;
     const rafId = window.requestAnimationFrame(() => {
@@ -29,7 +33,9 @@ export function useConfettiControl(
     });
 
     return () => {
-      if (rafId) cancelAnimationFrame(rafId);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [showCongrats, isConnected]);
 

@@ -10,17 +10,25 @@ const CONGRATS_KEY = "onepulse:last-congrats-day";
  */
 export function useLastCongratsDay() {
   const [lastCongratsDay, setLastCongratsDay] = useState<number | null>(() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined") {
+      return null;
+    }
     const stored = window.localStorage.getItem(CONGRATS_KEY);
-    if (!stored) return null;
+    if (!stored) {
+      return null;
+    }
     const parsed = Number.parseInt(stored, 10);
     return Number.isNaN(parsed) ? null : parsed;
   });
 
   // Persist to localStorage when value changes
   useEffect(() => {
-    if (lastCongratsDay == null) return;
-    if (typeof window === "undefined") return;
+    if (lastCongratsDay == null) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
     try {
       window.localStorage.setItem(CONGRATS_KEY, String(lastCongratsDay));
     } catch {

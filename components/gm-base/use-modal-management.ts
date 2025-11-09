@@ -1,12 +1,12 @@
 import { useState } from "react";
 
-export interface ModalState {
+export type ModalState = {
   activeModalChainId: number | null;
   processing: boolean;
   setActiveModalChainId: (id: number | null) => void;
   setProcessing: (value: boolean) => void;
   closeModal: () => void;
-}
+};
 
 export function useModalManagement(): ModalState {
   const [activeModalChainId, setActiveModalChainId] = useState<number | null>(
