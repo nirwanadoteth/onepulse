@@ -23,6 +23,7 @@ import { useCongratsLogic } from "./gm-base/use-congrats-logic";
 import { useLastCongratsDay } from "./gm-base/use-last-congrats-day";
 import { useModalManagement } from "./gm-base/use-modal-management";
 import { usePerChainStatus } from "./gm-base/use-per-chain-status";
+import { minikitConfig } from "@/minikit.config";
 
 export const GMBase = React.memo(
   ({
@@ -89,7 +90,7 @@ export const GMBase = React.memo(
         <div className="space-y-2">
           <h2 className="font-semibold text-lg">Daily GM</h2>
           <p className="text-muted-foreground text-sm">
-            Send GM daily on each chain to earn rewards
+            {minikitConfig.miniapp.description}
           </p>
         </div>
 
