@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { useAccount } from "wagmi";
-import { GMChainCard } from "@/components/gm-chain-card";
+import { GMChainCard } from "@/components/gm-chain-card/gm-chain-card";
 import {
   Carousel,
   CarouselContent,
