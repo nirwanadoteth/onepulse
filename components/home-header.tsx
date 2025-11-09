@@ -15,11 +15,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { minikitConfig } from "@/minikit.config";
 
-interface HomeHeaderProps {
+type HomeHeaderProps = {
   isFrameReady: boolean;
   inMiniApp: boolean;
   onMiniAppAdded: () => void;
-}
+};
 
 // Extract user from context
 const extractUserFromContext = (
@@ -58,16 +58,13 @@ const handleAddMiniAppAction = async (onMiniAppAdded: () => void) => {
 };
 
 // Subcomponent for right side (save button & theme toggle)
-interface HeaderRightProps {
+type HeaderRightProps = {
   showSaveButton: boolean;
   onSaveClick: () => void;
-}
+};
 
-const HeaderRight = React.memo(function HeaderRight({
-  showSaveButton,
-  onSaveClick,
-}: HeaderRightProps) {
-  return (
+const HeaderRight = React.memo(
+  ({ showSaveButton, onSaveClick }: HeaderRightProps) => (
     <div>
       {showSaveButton && (
         <Button
@@ -82,8 +79,8 @@ const HeaderRight = React.memo(function HeaderRight({
       )}
       <ModeToggle />
     </div>
-  );
-});
+  )
+);
 
 export function HomeHeader({
   isFrameReady,
