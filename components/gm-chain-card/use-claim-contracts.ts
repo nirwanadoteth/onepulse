@@ -3,11 +3,11 @@ import type { ContractFunctionParameters } from "viem";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
 
-interface UseClaimContractsProps {
+type UseClaimContractsProps = {
   address?: string;
   fid?: bigint;
   contractAddress?: string;
-}
+};
 
 /**
  * Hook to generate backend-signed claim contract calls.

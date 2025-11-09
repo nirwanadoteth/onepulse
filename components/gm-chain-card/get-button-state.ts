@@ -1,9 +1,9 @@
 // Helper to determine button state and label
-export interface ButtonState {
+export type ButtonState = {
   label: string;
   disabled: boolean;
   showFallback: "wallet" | "gm-first" | null;
-}
+};
 
 /**
  * Determines the button state based on eligibility and connection status.

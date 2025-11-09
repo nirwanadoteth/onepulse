@@ -14,85 +14,87 @@ import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
 import { useTransactionStatus } from "./use-transaction-status";
 
-interface DegenClaimTransactionProps {
+type DegenClaimTransactionProps = {
   fid: bigint | undefined;
   sponsored: boolean;
   onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
   disabled?: boolean;
-}
+};
 
 /**
  * Component for claiming daily DEGEN rewards using OnchainKit Transaction with sponsorship.
  * Backend signs the claim authorization, user submits sponsored transaction.
  */
-export const DegenClaimTransaction = React.memo(function DegenClaimTransaction({
-  fid,
-  sponsored,
-  onSuccess,
-  onError,
-  disabled = false,
-}: DegenClaimTransactionProps) {
-  const { address } = useAccount();
-  const chainId = useChainId();
-  const contractAddress = getDailyRewardsAddress(chainId);
-  const {
-    canClaim,
-    hasSentGMToday,
-    isPending: isEligibilityPending,
-    refetch: refetchEligibility,
-  } = useClaimEligibility({ fid });
-
-  const getClaimContracts = useClaimContracts({
-    address,
+export const DegenClaimTransaction = React.memo(
+  ({
     fid,
-    contractAddress,
-  });
-
-  // Handle transaction status updates
-  const handleStatus = useTransactionStatus({
+    sponsored,
     onSuccess,
     onError,
-    refetchEligibility,
-  });
+    disabled = false,
+  }: DegenClaimTransactionProps) => {
+    const { address } = useAccount();
+    const chainId = useChainId();
+    const contractAddress = getDailyRewardsAddress(chainId);
+    const {
+      canClaim,
+      hasSentGMToday,
+      isPending: isEligibilityPending,
+      refetch: refetchEligibility,
+    } = useClaimEligibility({ fid });
 
-  const isDisabled =
-    disabled ||
-    !address ||
-    !fid ||
-    !contractAddress ||
-    !canClaim ||
-    !hasSentGMToday ||
-    isEligibilityPending;
+    const getClaimContracts = useClaimContracts({
+      address,
+      fid,
+      contractAddress,
+    });
 
-  // Determine button state and fallback UI
-  const buttonState = getButtonState(
-    Boolean(address),
-    isEligibilityPending,
-    hasSentGMToday,
-    canClaim
-  );
+    // Handle transaction status updates
+    const handleStatus = useTransactionStatus({
+      onSuccess,
+      onError,
+      refetchEligibility,
+    });
 
-  if (buttonState.showFallback) {
-    return <ClaimFallbackUI type={buttonState.showFallback} />;
+    const isDisabled =
+      disabled ||
+      !address ||
+      !fid ||
+      !contractAddress ||
+      !canClaim ||
+      !hasSentGMToday ||
+      isEligibilityPending;
+
+    // Determine button state and fallback UI
+    const buttonState = getButtonState(
+      Boolean(address),
+      isEligibilityPending,
+      hasSentGMToday,
+      canClaim
+    );
+
+    if (buttonState.showFallback) {
+      return <ClaimFallbackUI type={buttonState.showFallback} />;
+    }
+
+    return (
+      <div className="relative w-full">
+        <Transaction
+          calls={getClaimContracts}
+          chainId={chainId}
+          isSponsored={sponsored}
+          onStatus={handleStatus}
+        >
+          <TransactionButton
+            className="w-full"
+            disabled={isDisabled}
+            text={buttonState.label}
+          />
+          {sponsored && <TransactionSponsor />}
+          <TransactionToast />
+        </Transaction>
+      </div>
+    );
   }
-
-  return (
-    <div className="relative w-full">
-      <Transaction
-        calls={getClaimContracts}
-        chainId={chainId}
-        isSponsored={sponsored}
-        onStatus={handleStatus}
-      >
-        <TransactionButton
-          className="w-full"
-          disabled={isDisabled}
-          text={buttonState.label}
-        />
-        {sponsored && <TransactionSponsor />}
-        <TransactionToast />
-      </Transaction>
-    </div>
-  );
-});
+);

@@ -2,11 +2,11 @@ import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-interface UseTransactionStatusProps {
+type UseTransactionStatusProps = {
   onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
   refetchEligibility: () => void;
-}
+};
 
 /**
  * Hook to handle transaction lifecycle status updates.
@@ -29,7 +29,9 @@ export function useTransactionStatus({
         queryClient.invalidateQueries({ queryKey: ["useReadContract"] });
         const txHash =
           status.statusData.transactionReceipts[0]?.transactionHash;
-        if (txHash && onSuccess) onSuccess(txHash);
+        if (txHash && onSuccess) {
+          onSuccess(txHash);
+        }
       }
 
       if (isError && onError) {

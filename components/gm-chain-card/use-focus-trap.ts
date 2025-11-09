@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from "react";
 
-interface UseFocusTrapOptions {
+type UseFocusTrapOptions = {
   isOpen: boolean;
   isProcessing: boolean;
   onClose: () => void;
-}
+};
 
 const isElementHidden = (el: HTMLElement) => {
   const style = window.getComputedStyle(el);
@@ -57,7 +57,7 @@ const handleTabKey = (
   }
 
   const first = focusables[0];
-  const last = focusables[focusables.length - 1];
+  const last = focusables.at(-1);
   const active = (document.activeElement as HTMLElement) ?? null;
   const boundary = e.shiftKey ? first : last;
   const target = e.shiftKey ? last : first;
@@ -77,9 +77,13 @@ export function useFocusTrap({
   const lastActiveRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     const container = dialogRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     lastActiveRef.current = (document.activeElement as HTMLElement) ?? null;
 
@@ -94,7 +98,9 @@ export function useFocusTrap({
         return;
       }
 
-      if (e.key !== "Tab") return;
+      if (e.key !== "Tab") {
+        return;
+      }
       handleTabKey(e, container, getFocusableElements(container));
     };
 

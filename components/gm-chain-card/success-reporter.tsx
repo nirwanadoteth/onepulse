@@ -7,14 +7,14 @@ import type { MiniAppUser } from "@/components/providers/miniapp-provider";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
 
-interface SuccessReporterProps {
+type SuccessReporterProps = {
   status: string;
   onReported?: () => void;
   address?: string;
   refetchLastGmDay?: () => Promise<unknown>;
   chainId: number;
   txHash?: string;
-}
+};
 
 async function reportToApi({
   address,
@@ -109,43 +109,47 @@ async function performGmReporting({
   onReported?.();
 }
 
-export const SuccessReporter = React.memo(function SuccessReporter({
-  status,
-  onReported,
-  address,
-  refetchLastGmDay,
-  chainId,
-  txHash,
-}: SuccessReporterProps) {
-  const didReport = useRef(false);
-  const queryClient = useQueryClient();
-  const miniAppContextData = useMiniAppContext();
-  const user = miniAppContextData?.context?.user;
-
-  useEffect(() => {
-    if (status !== "success" || !address || didReport.current) return;
-
-    didReport.current = true;
-
-    void performGmReporting({
-      address,
-      chainId,
-      txHash,
-      user,
-      queryClient,
-      refetchLastGmDay,
-      onReported,
-    });
-  }, [
+export const SuccessReporter = React.memo(
+  ({
     status,
-    address,
     onReported,
-    queryClient,
+    address,
     refetchLastGmDay,
     chainId,
     txHash,
-    user,
-  ]);
+  }: SuccessReporterProps) => {
+    const didReport = useRef(false);
+    const queryClient = useQueryClient();
+    const miniAppContextData = useMiniAppContext();
+    const user = miniAppContextData?.context?.user;
 
-  return null;
-});
+    useEffect(() => {
+      if (status !== "success" || !address || didReport.current) {
+        return;
+      }
+
+      didReport.current = true;
+
+      performGmReporting({
+        address,
+        chainId,
+        txHash,
+        user,
+        queryClient,
+        refetchLastGmDay,
+        onReported,
+      });
+    }, [
+      status,
+      address,
+      onReported,
+      queryClient,
+      refetchLastGmDay,
+      chainId,
+      txHash,
+      user,
+    ]);
+
+    return null;
+  }
+);

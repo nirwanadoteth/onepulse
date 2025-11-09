@@ -22,13 +22,20 @@ import { ActionButton } from "./action-button";
 import { CountdownText } from "./countdown-text";
 
 // Helper functions - extracted for clarity and testability
-const computeGMState = (
-  address: string | undefined,
-  contractAddress: `0x${string}`,
-  isConnected: boolean,
-  lastGmDayData: unknown,
-  isPendingLastGm: boolean
-) => {
+const computeGMState = (params: {
+  address: string | undefined;
+  contractAddress: `0x${string}`;
+  isConnected: boolean;
+  lastGmDayData: unknown;
+  isPendingLastGm: boolean;
+}) => {
+  const {
+    address,
+    contractAddress,
+    isConnected,
+    lastGmDayData,
+    isPendingLastGm,
+  } = params;
   if (!(address && contractAddress)) {
     return { hasGmToday: false, gmDisabled: !isConnected, targetSec: 0 };
   }
@@ -54,71 +61,74 @@ const getChainBtnClasses = (chainId: number, name: string): string => {
   const isCelo = name.toLowerCase() === "celo" || chainId === 42_220;
   const isOptimism = name.toLowerCase() === "optimism" || chainId === 10;
 
-  if (isCelo)
+  if (isCelo) {
     return "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90";
-  if (isOptimism) return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
+  }
+  if (isOptimism) {
+    return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
+  }
   return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
 };
 
 const getChainIconName = (chainId: number, name: string): string => {
-  if (name.toLowerCase() === "optimism" || chainId === 10) return "optimism";
-  if (name.toLowerCase() === "celo" || chainId === 42_220) return "celo";
+  if (name.toLowerCase() === "optimism" || chainId === 10) {
+    return "optimism";
+  }
+  if (name.toLowerCase() === "celo" || chainId === 42_220) {
+    return "celo";
+  }
   return "base";
 };
 
 // Separate stats display component to reduce complexity
-const StatsDisplay = React.memo(function StatsDisplay({
-  stats,
-  isConnected,
-  isStatsReady,
-}: {
-  stats: GmStats;
-  isConnected: boolean;
-  isStatsReady: boolean;
-}) {
-  if (!(isConnected && stats)) {
+const StatsDisplay = React.memo(
+  ({
+    stats,
+    isConnected,
+    isStatsReady,
+  }: {
+    stats: GmStats;
+    isConnected: boolean;
+    isStatsReady: boolean;
+  }) => {
+    if (!(isConnected && stats)) {
+      return (
+        <div className="text-muted-foreground text-xs">
+          Connect wallet to see stats
+        </div>
+      );
+    }
+
     return (
-      <div className="text-muted-foreground text-xs">
-        Connect wallet to see stats
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <StatColumn
+          label="Current"
+          value={isStatsReady ? stats.currentStreak : undefined}
+        />
+        <StatColumn
+          label="Highest"
+          value={isStatsReady ? stats.highestStreak : undefined}
+        />
+        <StatColumn
+          label="All-Time"
+          value={isStatsReady ? stats.allTimeGmCount : undefined}
+        />
       </div>
     );
   }
-
-  return (
-    <div className="grid grid-cols-3 gap-3 text-center">
-      <StatColumn
-        label="Current"
-        value={isStatsReady ? stats.currentStreak : undefined}
-      />
-      <StatColumn
-        label="Highest"
-        value={isStatsReady ? stats.highestStreak : undefined}
-      />
-      <StatColumn
-        label="All-Time"
-        value={isStatsReady ? stats.allTimeGmCount : undefined}
-      />
-    </div>
-  );
-});
+);
 
 // Individual stat column to reduce repetition
-const StatColumn = React.memo(function StatColumn({
-  value,
-  label,
-}: {
-  value: number | undefined;
-  label: string;
-}) {
-  return (
+const StatColumn = React.memo(
+  ({ value, label }: { value: number | undefined; label: string }) => (
     <div className="flex flex-col items-center gap-1">
       <span className="font-bold text-2xl tracking-tight">
         {value !== undefined ? value : <Spinner className="inline h-6 w-6" />}
       </span>
       <span className="font-medium text-muted-foreground text-xs">{label}</span>
     </div>
-  );
-});
+  )
+);
 
 export type GMChainCardProps = {
   chainId: number;
@@ -137,68 +147,68 @@ export type GMChainCardProps = {
   onOpenModal?: (refetch: () => Promise<unknown>) => void;
 };
 
-export const GMChainCard = React.memo(function GMChainCard({
-  chainId,
-  name,
-  contractAddress,
-  isConnected,
-  address,
-  onStatusChange,
-  stats,
-  isStatsReady,
-  onOpenModal,
-}: GMChainCardProps) {
-  const currentChainId = useChainId();
-  const onCorrectChain = currentChainId === chainId;
+export const GMChainCard = React.memo(
+  ({
+    chainId,
+    name,
+    contractAddress,
+    isConnected,
+    address,
+    onStatusChange,
+    stats,
+    isStatsReady,
+    onOpenModal,
+  }: GMChainCardProps) => {
+    const currentChainId = useChainId();
+    const onCorrectChain = currentChainId === chainId;
 
-  const {
-    data: lastGmDayData,
-    isPending: isPendingLastGm,
-    refetch: refetchLastGmDay,
-  } = useReadContract({
-    chainId: chainId as typeof base.id | typeof celo.id | typeof optimism.id,
-    abi: dailyGMAbi,
-    address: contractAddress,
-    functionName: "lastGMDay",
-    args: address ? [address as Address] : undefined,
-    query: { enabled: Boolean(address && contractAddress) },
-  });
+    const {
+      data: lastGmDayData,
+      isPending: isPendingLastGm,
+      refetch: refetchLastGmDay,
+    } = useReadContract({
+      chainId: chainId as typeof base.id | typeof celo.id | typeof optimism.id,
+      abi: dailyGMAbi,
+      address: contractAddress,
+      functionName: "lastGMDay",
+      args: address ? [address as Address] : undefined,
+      query: { enabled: Boolean(address && contractAddress) },
+    });
 
-  const { hasGmToday, gmDisabled, targetSec } = useMemo(
-    () =>
-      computeGMState(
-        address,
-        contractAddress,
-        isConnected,
-        lastGmDayData,
-        isPendingLastGm
-      ),
-    [address, contractAddress, isConnected, lastGmDayData, isPendingLastGm]
-  );
+    const { hasGmToday, gmDisabled, targetSec } = useMemo(
+      () =>
+        computeGMState({
+          address,
+          contractAddress,
+          isConnected,
+          lastGmDayData,
+          isPendingLastGm,
+        }),
+      [address, contractAddress, isConnected, lastGmDayData, isPendingLastGm]
+    );
 
-  useEffect(() => {
-    onStatusChange?.({ chainId, hasGmToday, targetSec });
-  }, [chainId, hasGmToday, targetSec, onStatusChange]);
+    useEffect(() => {
+      onStatusChange?.({ chainId, hasGmToday, targetSec });
+    }, [chainId, hasGmToday, targetSec, onStatusChange]);
 
-  const chainBtnClasses = useMemo(
-    () => getChainBtnClasses(chainId, name),
-    [chainId, name]
-  );
+    const chainBtnClasses = useMemo(
+      () => getChainBtnClasses(chainId, name),
+      [chainId, name]
+    );
 
-  const chainIconName = useMemo(
-    () => getChainIconName(chainId, name),
-    [chainId, name]
-  );
+    const chainIconName = useMemo(
+      () => getChainIconName(chainId, name),
+      [chainId, name]
+    );
 
-  // Callback to open modal with refetch function
-  const handleOpenModal = React.useCallback(() => {
-    if (onOpenModal) {
-      onOpenModal(refetchLastGmDay);
-    }
-  }, [onOpenModal, refetchLastGmDay]);
+    // Callback to open modal with refetch function
+    const handleOpenModal = React.useCallback(() => {
+      if (onOpenModal) {
+        onOpenModal(refetchLastGmDay);
+      }
+    }, [onOpenModal, refetchLastGmDay]);
 
-  return (
-    <>
+    return (
       <Item variant="outline">
         <ItemContent>
           <ItemMedia>
@@ -239,6 +249,6 @@ export const GMChainCard = React.memo(function GMChainCard({
           />
         </ItemFooter>
       </Item>
-    </>
-  );
-});
+    );
+  }
+);

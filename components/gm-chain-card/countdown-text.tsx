@@ -2,13 +2,11 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-interface CountdownTextProps {
+type CountdownTextProps = {
   targetSec: number;
-}
+};
 
-export const CountdownText = React.memo(function CountdownText({
-  targetSec,
-}: CountdownTextProps) {
+export const CountdownText = React.memo(({ targetSec }: CountdownTextProps) => {
   const [text, setText] = useState("GM in --:--:--");
   const rafRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);
@@ -23,7 +21,9 @@ export const CountdownText = React.memo(function CountdownText({
   }, []);
 
   useEffect(() => {
-    if (!targetSec) return;
+    if (!targetSec) {
+      return;
+    }
 
     const update = () => {
       const nowSec = Math.floor(Date.now() / 1000);
@@ -36,8 +36,12 @@ export const CountdownText = React.memo(function CountdownText({
     intervalRef.current = window.setInterval(update, 1000);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, [targetSec, format]);
 
