@@ -12,20 +12,20 @@ import {
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
 
-interface DegenRewardCardProps {
+type DegenRewardCardProps = {
   fid: bigint | undefined;
   sponsored: boolean;
-}
+};
 
-interface ClaimState {
+type ClaimState = {
   isEligible: boolean;
   hasAlreadyClaimed: boolean;
   isFidBlacklisted: boolean;
   hasSentGMToday: boolean;
   reward: bigint;
-}
+};
 
-interface ClaimEligibility {
+type ClaimEligibility = {
   ok: boolean;
   fidIsBlacklisted: boolean;
   fidClaimedToday: boolean;
@@ -33,7 +33,7 @@ interface ClaimEligibility {
   reward: bigint;
   vaultBalance: bigint;
   minReserve: bigint;
-}
+};
 
 function extractClaimState(
   claimStatus: ClaimEligibility | undefined,
@@ -84,14 +84,14 @@ function getStatusConfig(state: ClaimState) {
   };
 }
 
-interface RewardCardProps {
+type RewardCardProps = {
   fid: bigint | undefined;
   sponsored: boolean;
   state: ClaimState;
   isCheckingEligibility: boolean;
   hasClaimedToday: boolean;
   onClaimSuccess: () => void;
-}
+};
 
 function RewardCard({
   fid,
@@ -152,11 +152,11 @@ function RewardCard({
   );
 }
 
-interface StatusCardProps {
+type StatusCardProps = {
   title: string;
   description: string;
   titleClassName?: string;
-}
+};
 
 function StatusCard({ title, description, titleClassName }: StatusCardProps) {
   return (
@@ -219,44 +219,43 @@ function WrongNetworkCard() {
   );
 }
 
-export const DegenRewardCard = React.memo(function DegenRewardCard({
-  fid,
-  sponsored,
-}: DegenRewardCardProps) {
-  const [hasClaimedToday, setHasClaimedToday] = React.useState(false);
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
-  const {
-    claimStatus,
-    hasSentGMToday,
-    isPending: isCheckingEligibility,
-  } = useClaimEligibility({
-    fid,
-    enabled: isConnected,
-  });
-  const { hasRewards } = useRewardVaultStatus();
+export const DegenRewardCard = React.memo(
+  ({ fid, sponsored }: DegenRewardCardProps) => {
+    const [hasClaimedToday, setHasClaimedToday] = React.useState(false);
+    const { address, isConnected } = useAccount();
+    const chainId = useChainId();
+    const {
+      claimStatus,
+      hasSentGMToday,
+      isPending: isCheckingEligibility,
+    } = useClaimEligibility({
+      fid,
+      enabled: isConnected,
+    });
+    const { hasRewards } = useRewardVaultStatus();
 
-  if (!(isConnected && address)) {
-    return <DisconnectedCard />;
+    if (!(isConnected && address)) {
+      return <DisconnectedCard />;
+    }
+
+    if (chainId !== base.id) {
+      return <WrongNetworkCard />;
+    }
+
+    if (!hasRewards) {
+      return <DepletedVaultCard />;
+    }
+
+    const claimState = extractClaimState(claimStatus, hasSentGMToday);
+    return (
+      <RewardCard
+        fid={fid}
+        hasClaimedToday={hasClaimedToday}
+        isCheckingEligibility={isCheckingEligibility}
+        onClaimSuccess={() => setHasClaimedToday(true)}
+        sponsored={sponsored}
+        state={claimState}
+      />
+    );
   }
-
-  if (chainId !== base.id) {
-    return <WrongNetworkCard />;
-  }
-
-  if (!hasRewards) {
-    return <DepletedVaultCard />;
-  }
-
-  const claimState = extractClaimState(claimStatus, hasSentGMToday);
-  return (
-    <RewardCard
-      fid={fid}
-      hasClaimedToday={hasClaimedToday}
-      isCheckingEligibility={isCheckingEligibility}
-      onClaimSuccess={() => setHasClaimedToday(true)}
-      sponsored={sponsored}
-      state={claimState}
-    />
-  );
-});
+);
