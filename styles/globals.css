@@ -173,8 +173,8 @@
     @apply opacity-60 md:opacity-100;
   }
 
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-old(:root),
+  ::view-transition-new(:root) {
     animation: none;
     mix-blend-mode: normal;
   }
