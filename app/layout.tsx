@@ -9,7 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 
 import { RootProvider } from "./root-provider"
 
-import "./globals.css"
+import "@/styles/globals.css"
 
 import { cn } from "@/lib/utils"
 

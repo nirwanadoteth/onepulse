@@ -1,7 +1,7 @@
 import { OnchainKitProvider as Provider } from "@coinbase/onchainkit"
 import { base } from "wagmi/chains"
 
-import "./onchainkit.css"
+import "@/styles/onchainkit.css"
 
 export function OnchainKitProvider({
   children,
