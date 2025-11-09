@@ -35,7 +35,9 @@ export function useGmStats(address?: string | null, chainId?: number) {
   const snapshot = useGmStatsSubscription(address);
   const rowsByAddress = useMemo(() => groupRowsByAddress(snapshot), [snapshot]);
   const rowsForAddress = useMemo(() => {
-    if (!normalizedAddress) return EMPTY_ROWS;
+    if (!normalizedAddress) {
+      return EMPTY_ROWS;
+    }
     return rowsByAddress.get(normalizedAddress) ?? EMPTY_ROWS;
   }, [normalizedAddress, rowsByAddress]);
   const fallbackStats = useGmStatsFallback(rowsForAddress, address, chainId);

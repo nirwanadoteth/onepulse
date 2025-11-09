@@ -6,12 +6,12 @@ import { useAccount, useReadContract } from "wagmi";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
 import { getDailyRewardsAddress } from "@/lib/constants";
 
-interface UseClaimEligibilityProps {
+type UseClaimEligibilityProps = {
   fid: bigint | undefined;
   enabled?: boolean;
-}
+};
 
-interface ClaimEligibility {
+type ClaimEligibility = {
   ok: boolean;
   fidIsBlacklisted: boolean;
   fidClaimedToday: boolean;
@@ -20,7 +20,7 @@ interface ClaimEligibility {
   reward: bigint;
   vaultBalance: bigint;
   minReserve: bigint;
-}
+};
 
 const CHAIN_ID = 8453;
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
@@ -41,7 +41,9 @@ function buildClaimEligibilityArgs(
   fid: bigint | undefined,
   contractAddress: string
 ): readonly [`0x${string}`, bigint] | undefined {
-  if (!(address && fid && contractAddress)) return;
+  if (!(address && fid && contractAddress)) {
+    return;
+  }
   return [address as `0x${string}`, fid as bigint];
 }
 
@@ -99,7 +101,9 @@ export function useClaimEligibility({
  */
 export function useClaimDeadline(customDeadline?: bigint): bigint {
   return useMemo(() => {
-    if (customDeadline) return customDeadline;
+    if (customDeadline) {
+      return customDeadline;
+    }
     return BigInt(Math.floor(Date.now() / 1000) + SIGNATURE_DEADLINE_SECONDS);
   }, [customDeadline]);
 }

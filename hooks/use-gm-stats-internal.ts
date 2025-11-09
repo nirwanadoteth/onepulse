@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
 
 import { normalizeAddress } from "./gm-stats-helpers";
@@ -6,7 +12,9 @@ import type { GmStats } from "./use-gm-stats";
 
 export function useGmStatsSubscription(address?: string | null) {
   useEffect(() => {
-    if (!address) return;
+    if (!address) {
+      return;
+    }
     gmStatsByAddressStore.subscribeToAddress(address);
   }, [address]);
 
@@ -23,7 +31,7 @@ export function useGmStatsFallback(
   address?: string | null,
   chainId?: number
 ) {
-  const [fallbackStats, setFallbackStats] = useState<
+  const [_fallbackStats, setFallbackStats] = useState<
     | {
         key: string;
         stats: GmStats;
@@ -37,7 +45,9 @@ export function useGmStatsFallback(
 
   // Listen for refresh events and clear fallback cache for this address
   useEffect(() => {
-    if (!(address && normalizedAddress)) return;
+    if (!(address && normalizedAddress)) {
+      return;
+    }
 
     const unsubscribe = gmStatsByAddressStore.onRefresh((refreshedAddress) => {
       if (refreshedAddress.toLowerCase() === normalizedAddress) {
@@ -49,59 +59,70 @@ export function useGmStatsFallback(
     return unsubscribe;
   }, [address, normalizedAddress]);
 
-  useEffect(() => {
-    if (!(address && normalizedAddress)) return;
+  const checkHasSubscriptionData = useCallback(
+    (rows: typeof rowsForAddress, chainIdParam?: number) =>
+      typeof chainIdParam === "number"
+        ? rows.some((r) => r.chainId === chainIdParam)
+        : rows.length > 0,
+    []
+  );
 
-    const key = `${address}:${chainId ?? "all"}`;
-    const subReady = gmStatsByAddressStore.isSubscribedForAddress(address);
-    const hasSubData =
-      typeof chainId === "number"
-        ? rowsForAddress.some((r) => r.chainId === chainId)
-        : rowsForAddress.length > 0;
-
-    if (subReady && hasSubData) {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      abortControllerRef.current?.abort();
-      return;
+  const cleanupTimeoutAndAbort = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     abortControllerRef.current?.abort();
-    abortControllerRef.current = new AbortController();
+  }, []);
 
-    timeoutRef.current = setTimeout(async () => {
+  const shouldSkipFetch = useCallback(
+    (latestRows: typeof rowsForAddress) => {
+      if (!address) {
+        return true;
+      }
+      const latestReady = gmStatsByAddressStore.isSubscribedForAddress(address);
+      const latestHasData = checkHasSubscriptionData(latestRows, chainId);
+
+      if (latestReady && latestHasData) {
+        return true;
+      }
+
+      // Don't fetch more than once every 2 seconds to prevent stale overwrites
+      const now = Date.now();
+      return now - lastFetchTime < 2000;
+    },
+    [address, chainId, checkHasSubscriptionData, lastFetchTime]
+  );
+
+  const buildStatsUrl = useCallback(() => {
+    if (!address) {
+      throw new Error("Address is required for stats URL");
+    }
+    const url = new URL("/api/gm/stats", window.location.origin);
+    url.searchParams.set("address", address);
+    if (typeof chainId === "number") {
+      url.searchParams.set("chainId", String(chainId));
+    }
+    return url.toString();
+  }, [address, chainId]);
+
+  const fetchFallbackStats = useCallback(
+    async (key: string) => {
       try {
         const latestRows = gmStatsByAddressStore
           .getSnapshot()
           .filter((r) => r.address.toLowerCase() === normalizedAddress);
-        const latestReady =
-          gmStatsByAddressStore.isSubscribedForAddress(address);
-        const latestHasData =
-          typeof chainId === "number"
-            ? latestRows.some((r) => r.chainId === chainId)
-            : latestRows.length > 0;
 
-        if (latestReady && latestHasData) {
+        if (shouldSkipFetch(latestRows)) {
           return;
         }
 
-        // Don't fetch more than once every 2 seconds to prevent stale overwrites
-        const now = Date.now();
-        if (now - lastFetchTime < 2000) {
-          return;
-        }
-
-        const url = new URL("/api/gm/stats", window.location.origin);
-        url.searchParams.set("address", address!);
-        if (typeof chainId === "number")
-          url.searchParams.set("chainId", String(chainId));
-
-        const res = await fetch(url.toString(), {
+        const res = await fetch(buildStatsUrl(), {
           signal: abortControllerRef.current?.signal,
         });
+
         if (res.ok) {
           const json = (await res.json()) as Partial<GmStats>;
-          setLastFetchTime(now);
+          setLastFetchTime(Date.now());
           setFallbackStats({
             key,
             stats: {
@@ -118,13 +139,37 @@ export function useGmStatsFallback(
         }
         console.error("[useGmStatsFallback] Fallback fetch failed:", error);
       }
-    }, 500);
+    },
+    [normalizedAddress, shouldSkipFetch, buildStatsUrl]
+  );
 
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      abortControllerRef.current?.abort();
-    };
-  }, [address, chainId, normalizedAddress, rowsForAddress, lastFetchTime]);
+  useEffect(() => {
+    if (!(address && normalizedAddress)) {
+      return;
+    }
 
-  return fallbackStats;
+    const key = `${address}:${chainId ?? "all"}`;
+    const subReady = gmStatsByAddressStore.isSubscribedForAddress(address);
+    const hasSubData = checkHasSubscriptionData(rowsForAddress, chainId);
+
+    if (subReady && hasSubData) {
+      cleanupTimeoutAndAbort();
+      return;
+    }
+
+    cleanupTimeoutAndAbort();
+    abortControllerRef.current = new AbortController();
+
+    timeoutRef.current = setTimeout(() => fetchFallbackStats(key), 500);
+
+    return () => cleanupTimeoutAndAbort();
+  }, [
+    address,
+    chainId,
+    normalizedAddress,
+    rowsForAddress,
+    checkHasSubscriptionData,
+    cleanupTimeoutAndAbort,
+    fetchFallbackStats,
+  ]);
 }

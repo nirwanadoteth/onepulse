@@ -3,11 +3,11 @@
 import { useAddress } from "@coinbase/onchainkit/identity";
 import { isAddress } from "viem";
 
-interface ResolverResult {
+type ResolverResult = {
   address: string | null;
   isLoading: boolean;
   isError: boolean;
-}
+};
 
 export function useEnsBasenameResolver(input: string): ResolverResult {
   const trimmed = input.trim();

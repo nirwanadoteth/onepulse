@@ -10,7 +10,9 @@ export function usePageState() {
   const inMiniApp = miniAppContextData?.isInMiniApp ?? false;
 
   useEffect(() => {
-    if (!(isConnected && address)) return;
+    if (!(isConnected && address)) {
+      return;
+    }
     (async () => {
       const result = await detectCoinbaseSmartWallet(address as `0x${string}`);
       setIsSmartWallet(result);

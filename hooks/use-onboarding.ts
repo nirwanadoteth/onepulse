@@ -18,7 +18,9 @@ function subscribeOnboarding(listener: () => void) {
 
 function getOnboardingSnapshot() {
   try {
-    if (typeof window === "undefined") return false;
+    if (typeof window === "undefined") {
+      return false;
+    }
     return !window.localStorage.getItem(ONBOARDING_KEY);
   } catch {
     return false;
@@ -39,7 +41,9 @@ export function useOnboarding() {
   const dismissOnboarding = () => {
     try {
       window.localStorage.setItem(ONBOARDING_KEY, "1");
-      onboardingLocalListeners.forEach((l) => l());
+      for (const listener of onboardingLocalListeners) {
+        listener();
+      }
     } catch {
       // Handle error silently
     }

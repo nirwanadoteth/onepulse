@@ -28,7 +28,9 @@ export function deriveStatsForAddress(
   zero: GmStats,
   chainId?: number
 ): GmStats | undefined {
-  if (!address || rows.length === 0) return;
+  if (!address || rows.length === 0) {
+    return;
+  }
   if (typeof chainId === "number") {
     const row = rows.find((r) => r.chainId === chainId);
     return row
