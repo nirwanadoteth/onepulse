@@ -9,7 +9,7 @@ import {
   useMiniAppContext,
 } from "@/components/providers/miniapp-provider";
 import { Button } from "@/components/ui/button";
-import { type GmStats, useGmStats } from "@/hooks/use-gm-stats";
+import type { GmStats } from "@/hooks/use-gm-stats";
 import { generateGMStatusMetadata } from "@/lib/og-utils";
 
 type ComposeCastParams<TClose extends boolean | undefined = undefined> = {
@@ -54,6 +54,7 @@ type ShareGMStatusProps = {
     | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
   claimedToday?: boolean;
+  gmStats?: GmStats;
 };
 
 const getUsername = (user: UserContext | null) =>
@@ -214,9 +215,8 @@ const createShareMetadata = (options: {
     claimedToday: options.claimedToday,
   });
 
-function useGMSharing(claimedToday: boolean) {
+function useGMSharing(claimedToday: boolean, gmStats?: GmStats) {
   const miniAppContextData = useMiniAppContext();
-  const { stats: gmStats } = useGmStats();
   const { composeCast } = useComposeCast();
   const openUrl = useOpenUrl();
 
@@ -284,9 +284,12 @@ export function ShareGMStatus({
   variant = "outline",
   size = "default",
   claimedToday = false,
+  gmStats,
 }: ShareGMStatusProps) {
-  const { shareText, shareUrl, composeCast, openUrl } =
-    useGMSharing(claimedToday);
+  const { shareText, shareUrl, composeCast, openUrl } = useGMSharing(
+    claimedToday,
+    gmStats
+  );
 
   const handleShare = async (platform: "twitter" | "cast" | "copy") => {
     switch (platform) {

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/carousel";
 import { useGmStats } from "@/hooks/use-gm-stats";
 import { DAILY_GM_ADDRESSES } from "@/lib/constants";
-
+import { minikitConfig } from "@/minikit.config";
 import {
   areAllChainsComplete,
   getChainList,
@@ -23,7 +23,6 @@ import { useCongratsLogic } from "./gm-base/use-congrats-logic";
 import { useLastCongratsDay } from "./gm-base/use-last-congrats-day";
 import { useModalManagement } from "./gm-base/use-modal-management";
 import { usePerChainStatus } from "./gm-base/use-per-chain-status";
-import { minikitConfig } from "@/minikit.config";
 
 export const GMBase = React.memo(
   ({

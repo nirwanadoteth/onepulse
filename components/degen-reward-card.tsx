@@ -11,6 +11,7 @@ import {
   useClaimEligibility,
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
+import { useGmStats } from "@/hooks/use-gm-stats";
 
 type DegenRewardCardProps = {
   fid: bigint | undefined;
@@ -102,6 +103,7 @@ function RewardCard({
   onClaimSuccess,
 }: RewardCardProps) {
   const config = getStatusConfig(state);
+  const { stats } = useGmStats();
 
   return (
     <Card className="border-border/50">
@@ -137,7 +139,11 @@ function RewardCard({
 
         {hasClaimedToday && (
           <div className="mt-4">
-            <ShareGMStatus claimedToday={true} className="justify-center" />
+            <ShareGMStatus
+              claimedToday={true}
+              className="justify-center"
+              gmStats={stats}
+            />
           </div>
         )}
 
