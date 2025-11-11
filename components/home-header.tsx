@@ -2,7 +2,7 @@
 
 import { sdk } from "@farcaster/miniapp-sdk";
 import { Bookmark } from "lucide-react";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { HeaderUserInfo } from "@/components/header-user-info";
@@ -41,22 +41,6 @@ const shouldShowSaveButton = (
   clientAdded: boolean | undefined
 ): boolean => isFrameReady && inMiniApp && clientAdded !== true;
 
-// Handle mini app addition with notifications
-const handleAddMiniAppAction = async (onMiniAppAdded: () => void) => {
-  try {
-    const response = await sdk.actions.addMiniApp();
-
-    if (response.notificationDetails) {
-      toast.success("Mini App added");
-    } else {
-      toast.success("Mini App added without");
-    }
-    onMiniAppAdded();
-  } catch (error) {
-    toast.error(`Error: ${error}`);
-  }
-};
-
 // Subcomponent for right side (save button & theme toggle)
 type HeaderRightProps = {
   showSaveButton: boolean;
@@ -89,18 +73,31 @@ export function HomeHeader({
 }: HomeHeaderProps) {
   const miniAppContextData = useMiniAppContext();
   const { address } = useAccount();
+  const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
 
-  const handleAddMiniApp = useCallback(
-    () => handleAddMiniAppAction(onMiniAppAdded),
-    [onMiniAppAdded]
-  );
+  const handleAddMiniApp = useCallback(async () => {
+    try {
+      const response = await sdk.actions.addMiniApp();
+
+      if (response.notificationDetails) {
+        toast.success("Saved");
+      } else {
+        toast.success("Saved without notification");
+      }
+
+      // Update local state immediately
+      setMiniAppAddedLocally(true);
+      onMiniAppAdded();
+    } catch (error) {
+      toast.error(`Error: ${error}`);
+    }
+  }, [onMiniAppAdded]);
 
   const user = extractUserFromContext(miniAppContextData?.context);
-  const showSaveButton = shouldShowSaveButton(
-    isFrameReady,
-    inMiniApp,
-    miniAppContextData?.context?.client?.added
-  );
+  const clientAdded = miniAppContextData?.context?.client?.added;
+  const showSaveButton =
+    shouldShowSaveButton(isFrameReady, inMiniApp, clientAdded) &&
+    !miniAppAddedLocally;
 
   // Show user info if user exists from Farcaster context OR if wallet is connected
   // Otherwise show app name
