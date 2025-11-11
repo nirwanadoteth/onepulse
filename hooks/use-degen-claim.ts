@@ -115,6 +115,7 @@ export function useRewardVaultStatus() {
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
     functionName: "getVaultStatus",
+    chainId: CHAIN_ID, // Always read from Base network
     query: {
       enabled: contractAddress !== "",
       refetchInterval: REFETCH_VAULT_MS,
