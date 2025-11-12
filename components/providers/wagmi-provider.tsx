@@ -23,6 +23,9 @@ export const config = createConfig({
     baseAccount({
       appName: minikitConfig.miniapp.name,
       appLogoUrl: minikitConfig.miniapp.iconUrl,
+      preference: {
+        telemetry: false,
+      },
     }),
     injected(),
   ],
