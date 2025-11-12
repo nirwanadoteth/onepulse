@@ -96,7 +96,7 @@ export function About() {
             Rewards
           </h2>
           <p className="not-first:mt-4 text-sm leading-4">
-            Earn 5 DEGEN tokens per successful daily GM on Base. Rewards reset
+            Earn 7 DEGEN tokens per successful daily GM on Base. Rewards reset
             daily and are subject to change.
           </p>
 
