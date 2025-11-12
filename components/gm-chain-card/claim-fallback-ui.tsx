@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 
 type FallbackUIProps = {
   type: "wallet" | "gm-first";
@@ -7,7 +7,7 @@ type FallbackUIProps = {
 /**
  * Fallback UI shown when user cannot claim due to missing prerequisites.
  */
-export const ClaimFallbackUI = React.memo(({ type }: FallbackUIProps) => {
+export const ClaimFallbackUI = memo(({ type }: FallbackUIProps) => {
   const message =
     type === "wallet"
       ? "Connect your wallet to claim rewards"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo } from "react";
 import type { Address } from "viem";
 import { useChainId, useReadContract } from "wagmi";
 import type { base, celo, optimism } from "wagmi/chains";
@@ -79,7 +79,7 @@ const getChainIconName = (chainId: number, name: string): string => {
   return "base";
 };
 
-const StatsDisplay = React.memo(
+const StatsDisplay = memo(
   ({
     stats,
     isConnected,
@@ -116,7 +116,7 @@ const StatsDisplay = React.memo(
   }
 );
 
-const StatColumn = React.memo(
+const StatColumn = memo(
   ({ value, label }: { value: number | undefined; label: string }) => (
     <div className="flex flex-col items-center gap-1">
       <span className="font-bold text-2xl tracking-tight">
@@ -144,7 +144,7 @@ export type GMChainCardProps = {
   onOpenModal?: (refetch: () => Promise<unknown>) => void;
 };
 
-export const GMChainCard = React.memo(
+export const GMChainCard = memo(
   ({
     chainId,
     name,
@@ -198,7 +198,7 @@ export const GMChainCard = React.memo(
       [chainId, name]
     );
 
-    const handleOpenModal = React.useCallback(() => {
+    const handleOpenModal = useCallback(() => {
       if (onOpenModal) {
         onOpenModal(refetchLastGmDay);
       }

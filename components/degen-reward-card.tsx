@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { memo, useState } from "react";
 import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { base } from "wagmi/chains";
 import { DegenClaimTransaction } from "@/components/gm-chain-card/degen-claim-transaction";
@@ -229,9 +229,9 @@ function WrongNetworkCard() {
   );
 }
 
-export const DegenRewardCard = React.memo(
+export const DegenRewardCard = memo(
   ({ fid, sponsored }: DegenRewardCardProps) => {
-    const [hasClaimedToday, setHasClaimedToday] = React.useState(false);
+    const [hasClaimedToday, setHasClaimedToday] = useState(false);
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
     const {

@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 import { GMModal } from "@/components/gm-chain-card/gm-modal";
 import { DAILY_GM_ADDRESSES } from "@/lib/constants";
 
@@ -23,7 +23,7 @@ const getChainBtnClassesForId = (chainId: number): string => {
   return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
 };
 
-export const ModalRenderer = React.memo(
+export const ModalRenderer = memo(
   ({
     activeModalChainId,
     chains,

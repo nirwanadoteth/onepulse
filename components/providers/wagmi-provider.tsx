@@ -2,7 +2,7 @@
 
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { base, celo, optimism } from "viem/chains";
 import {
   cookieStorage,
@@ -41,7 +41,7 @@ export function WagmiProvider({
   children,
   initialState,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   initialState?: State;
 }) {
   const [queryClient] = useState(() => new QueryClient());

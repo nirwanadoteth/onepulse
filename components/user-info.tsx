@@ -5,7 +5,7 @@ import {
   useAvatar,
   useName,
 } from "@coinbase/onchainkit/identity";
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import type { Address } from "viem";
 import { useAccount, useDisconnect } from "wagmi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -184,7 +184,7 @@ const renderByState = (params: {
   address: Address;
   ensName: GetNameReturnType | undefined;
   ensAvatar: string | null | undefined;
-}): React.ReactNode => {
+}): ReactNode => {
   if (params.state === "hidden") {
     return null;
   }

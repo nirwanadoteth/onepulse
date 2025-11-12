@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 
 import {
   disconnectDbConnection,
   getDbConnection,
 } from "@/lib/spacetimedb/connection-factory";
 
-export const SpacetimeDBProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const SpacetimeDBProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     getDbConnection();
 

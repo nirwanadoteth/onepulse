@@ -1,5 +1,5 @@
 import { useTransactionContext } from "@coinbase/onchainkit/transaction";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useChainId } from "wagmi";
 
@@ -97,7 +97,7 @@ function createErrorAction(onSubmit: (() => void) | undefined): ReactNode {
 function useToastVisibility(
   state: string,
   errorMessage: string | undefined,
-  toastCreatedRef: React.RefObject<boolean>
+  toastCreatedRef: RefObject<boolean>
 ) {
   useEffect(() => {
     if (state === "hidden" && toastCreatedRef.current && !errorMessage) {
@@ -112,9 +112,9 @@ function useToastCreation(options: {
   accountChainId: number;
   errorMessage: string | undefined;
   onSubmit: (() => void) | undefined;
-  txHashRef: React.RefObject<string | undefined>;
-  toastCreatedRef: React.RefObject<boolean>;
-  toastControllerRef: React.RefObject<{
+  txHashRef: RefObject<string | undefined>;
+  toastCreatedRef: RefObject<boolean>;
+  toastControllerRef: RefObject<{
     resolve?: (value: { name: string }) => void;
     reject?: (reason?: unknown) => void;
   }>;
@@ -166,8 +166,8 @@ function useToastCreation(options: {
 function useToastResolution(
   state: string,
   errorMessage: string | undefined,
-  toastCreatedRef: React.RefObject<boolean>,
-  toastControllerRef: React.RefObject<{
+  toastCreatedRef: RefObject<boolean>,
+  toastControllerRef: RefObject<{
     resolve?: (value: { name: string }) => void;
     reject?: (reason?: unknown) => void;
   }>

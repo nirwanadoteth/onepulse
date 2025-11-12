@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import type { MiniAppUser } from "@/components/providers/miniapp-provider";
 
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
@@ -109,7 +109,7 @@ async function performGmReporting({
   onReported?.();
 }
 
-export const SuccessReporter = React.memo(
+export const SuccessReporter = memo(
   ({
     status,
     onReported,

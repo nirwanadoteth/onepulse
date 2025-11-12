@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React from "react";
+import { memo, type RefObject, useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { ConfettiRef } from "@/components/ui/confetti";
@@ -23,16 +23,16 @@ type CongratsDialogProps = {
   open: boolean;
   nextTargetSec: number;
   onOpenChange: (open: boolean) => void;
-  confettiRef: React.RefObject<ConfettiRef>;
+  confettiRef: RefObject<ConfettiRef>;
 };
 
 /**
  * Congratulations dialog shown when all chains are completed
  * Displays countdown to next GM time and triggers confetti animation
  */
-export const CongratsDialog = React.memo(
+export const CongratsDialog = memo(
   ({ open, nextTargetSec, onOpenChange, confettiRef }: CongratsDialogProps) => {
-    const handleClose = React.useCallback(() => {
+    const handleClose = useCallback(() => {
       onOpenChange(false);
     }, [onOpenChange]);
 
@@ -69,9 +69,9 @@ export const CongratsDialog = React.memo(
   }
 );
 
-const CountdownValue = React.memo(({ targetSec }: { targetSec: number }) => {
-  const [text, setText] = React.useState("--:--:--");
-  React.useEffect(() => {
+const CountdownValue = memo(({ targetSec }: { targetSec: number }) => {
+  const [text, setText] = useState("--:--:--");
+  useEffect(() => {
     if (!targetSec) {
       return;
     }

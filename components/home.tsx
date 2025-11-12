@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
 import { GMChainCard } from "@/components/gm-chain-card/gm-chain-card";
 import {
@@ -24,7 +24,7 @@ import { useLastCongratsDay } from "./home/use-last-congrats-day";
 import { useModalManagement } from "./home/use-modal-management";
 import { usePerChainStatus } from "./home/use-per-chain-status";
 
-export const Home = React.memo(
+export const Home = memo(
   ({
     sponsored,
     allowedChainIds,
@@ -40,7 +40,7 @@ export const Home = React.memo(
       setProcessing,
     } = useModalManagement();
 
-    const [activeRefetchFn, setActiveRefetchFn] = React.useState<
+    const [activeRefetchFn, setActiveRefetchFn] = useState<
       (() => Promise<unknown>) | undefined
     >(undefined);
 
@@ -73,7 +73,7 @@ export const Home = React.memo(
       onLastCongratsDayUpdate: setLastCongratsDay,
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
       if (showCongrats) {
         confettiRef.current?.fire?.();
       }
@@ -148,7 +148,7 @@ export const Home = React.memo(
   }
 );
 
-const ChainSlide = React.memo(
+const ChainSlide = memo(
   ({
     chainId,
     chainName,
@@ -174,7 +174,7 @@ const ChainSlide = React.memo(
   }) => {
     const { stats, isReady } = useGmStats(address, chainId);
 
-    const handleOpenModal = React.useCallback(
+    const handleOpenModal = useCallback(
       (refetch: () => Promise<unknown>) => {
         onOpenModal(refetch);
       },

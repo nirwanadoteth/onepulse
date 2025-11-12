@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { memo, useEffect } from "react";
 
 type TransactionStatus = "default" | "success" | "error" | "pending";
 
@@ -9,7 +9,7 @@ type ProcessingMirrorProps = {
   onChange: (pending: boolean) => void;
 };
 
-export const ProcessingMirror = React.memo(
+export const ProcessingMirror = memo(
   ({ status, onChange }: ProcessingMirrorProps) => {
     useEffect(() => {
       onChange(status === "pending");

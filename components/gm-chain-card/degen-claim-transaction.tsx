@@ -3,7 +3,7 @@ import {
   TransactionButton,
   TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
-import React from "react";
+import { memo } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { useClaimEligibility } from "@/hooks/use-degen-claim";
 import { getDailyRewardsAddress } from "@/lib/constants";
@@ -26,7 +26,7 @@ type DegenClaimTransactionProps = {
  * Component for claiming daily DEGEN rewards using OnchainKit Transaction with sponsorship.
  * Backend signs the claim authorization, user submits sponsored transaction.
  */
-export const DegenClaimTransaction = React.memo(
+export const DegenClaimTransaction = memo(
   ({
     fid,
     sponsored,

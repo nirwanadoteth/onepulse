@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { memo, type ReactNode, useCallback } from "react";
 import { useSwitchChain } from "wagmi";
 
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,10 @@ type ActionButtonProps = {
   targetSec: number;
   chainBtnClasses: string;
   onOpenModal: () => void;
-  renderCountdown: (targetSec: number) => React.ReactNode;
+  renderCountdown: (targetSec: number) => ReactNode;
 };
 
-export const ActionButton = React.memo(
+export const ActionButton = memo(
   ({
     isConnected,
     chainId,

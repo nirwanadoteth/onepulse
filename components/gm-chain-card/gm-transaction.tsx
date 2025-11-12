@@ -5,7 +5,7 @@ import {
   TransactionButton,
   TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
-import React from "react";
+import { memo } from "react";
 import { type Address, isAddress } from "viem";
 import { ProcessingMirror } from "@/components/gm-chain-card/processing-mirror";
 import { SuccessReporter } from "@/components/gm-chain-card/success-reporter";
@@ -30,7 +30,7 @@ type GMTransactionProps = {
   setProcessing: (value: boolean) => void;
 };
 
-export const GMTransaction = React.memo(
+export const GMTransaction = memo(
   ({
     chainId,
     contractAddress,

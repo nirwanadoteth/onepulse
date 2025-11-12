@@ -3,14 +3,14 @@
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
+import { useCallback } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   const router = useRouter();
 
-  const handleGoBack = React.useCallback(() => {
+  const handleGoBack = useCallback(() => {
     router.back();
   }, [router]);
 

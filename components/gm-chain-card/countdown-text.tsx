@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 type CountdownTextProps = {
   targetSec: number;
 };
 
-export const CountdownText = React.memo(({ targetSec }: CountdownTextProps) => {
+export const CountdownText = memo(({ targetSec }: CountdownTextProps) => {
   const [text, setText] = useState("GM in --:--:--");
   const rafRef = useRef<number | null>(null);
   const intervalRef = useRef<number | null>(null);

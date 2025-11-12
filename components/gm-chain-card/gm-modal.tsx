@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { memo, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,7 +30,7 @@ type GMModalProps = {
   setProcessing: (value: boolean) => void;
 };
 
-export const GMModal = React.memo(
+export const GMModal = memo(
   ({
     isOpen,
     chainId,
@@ -44,8 +44,8 @@ export const GMModal = React.memo(
     onClose,
     setProcessing,
   }: GMModalProps) => {
-    const [mode, setMode] = React.useState<"main" | "gmTo">("main");
-    const [recipient, setRecipient] = React.useState("");
+    const [mode, setMode] = useState<"main" | "gmTo">("main");
+    const [recipient, setRecipient] = useState("");
 
     const handleClose = useCallback(() => {
       setMode("main");
@@ -146,7 +146,7 @@ type MainModeProps = {
   onSwitchToGmTo: () => void;
 };
 
-const MainMode = React.memo(
+const MainMode = memo(
   ({
     chainId,
     contractAddress,
@@ -240,7 +240,7 @@ const shouldShowErrorMessage = (
 ): boolean =>
   sanitizedRecipient.length > 0 && !isRecipientValid && !isResolving;
 
-const InputFeedback = React.memo(
+const InputFeedback = memo(
   ({
     sanitizedRecipient,
     isRecipientValid,
@@ -295,7 +295,7 @@ const isPlaceholderButtonDisabled = (
   processing: boolean
 ): boolean => !(sanitizedRecipient && isContractReady) || processing;
 
-const ActionButtons = React.memo(
+const ActionButtons = memo(
   ({
     isRecipientValid,
     isContractReady,
@@ -355,7 +355,7 @@ const ActionButtons = React.memo(
   )
 );
 
-const GmToMode = React.memo(
+const GmToMode = memo(
   ({
     chainId,
     contractAddress,

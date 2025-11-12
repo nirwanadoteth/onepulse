@@ -9,6 +9,7 @@ import { RootProvider } from "./root-provider";
 
 import "@/styles/globals.css";
 
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({
@@ -78,7 +79,7 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html className="no-scrollbar" lang="en" suppressHydrationWarning>

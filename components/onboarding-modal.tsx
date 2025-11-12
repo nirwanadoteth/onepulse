@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { memo, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +19,9 @@ type OnboardingModalProps = {
   onSave?: () => void;
 };
 
-export const OnboardingModal = React.memo(
+export const OnboardingModal = memo(
   ({ open, onClose, canSave, onSave }: OnboardingModalProps) => {
-    const handleSaveAndClose = React.useCallback(() => {
+    const handleSaveAndClose = useCallback(() => {
       onSave?.();
       onClose();
     }, [onSave, onClose]);
