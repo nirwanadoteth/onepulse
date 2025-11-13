@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# lock files (project uses bun)
+package-lock.json
+
 # testing
 /coverage
 
