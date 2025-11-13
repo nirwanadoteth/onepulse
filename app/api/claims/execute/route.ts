@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       message: "Claim authorization generated successfully",
     });
   } catch (error) {
-    console.error("Error generating claim authorization:", error);
+    // Claim authorization generation failed - returning error response
     return NextResponse.json(
       {
         error: "Failed to generate claim authorization",

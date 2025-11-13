@@ -135,7 +135,7 @@ export function useGmStatsFallback(
         if (error instanceof Error && error.name === "AbortError") {
           return;
         }
-        console.error("[useGmStatsFallback] Fallback fetch failed:", error);
+        // Fallback fetch failure handled silently
       }
     },
     [normalizedAddress, shouldSkipFetch, buildStatsUrl]
@@ -145,7 +145,6 @@ export function useGmStatsFallback(
     if (!(address && normalizedAddress)) {
       return;
     }
-
     const key = `${address}:${chainId ?? "all"}`;
     const subReady = gmStatsByAddressStore.isSubscribedForAddress(address);
     const hasSubData = checkHasSubscriptionData(rowsForAddress, chainId);

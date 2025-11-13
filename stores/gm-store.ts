@@ -38,11 +38,8 @@ class GmStatsByAddressStore {
     try {
       this.getConnection();
       return this.cachedSnapshot;
-    } catch (error) {
-      const isNotSSR = typeof window !== "undefined";
-      if (isNotSSR) {
-        console.error("Unexpected error while obtaining snapshot:", error);
-      }
+    } catch {
+      // Snapshot error handled gracefully by returning server snapshot
       return this.serverSnapshot;
     }
   }
@@ -76,11 +73,8 @@ class GmStatsByAddressStore {
       this.updateSnapshot();
       this.subscriptionReady = true;
       this.emitChange();
-    } catch (error) {
-      console.error(
-        "[gmStatsByAddressStore] ❌ Failed to refresh snapshot:",
-        error
-      );
+    } catch {
+      // Snapshot refresh failure handled, continuing with refresh
       this.subscriptionReady = true;
       this.emitChange();
     }
@@ -101,8 +95,8 @@ class GmStatsByAddressStore {
     for (const listener of this.refreshListeners) {
       try {
         listener(address);
-      } catch (e) {
-        console.error("[gmStatsByAddressStore] Error in refresh listener:", e);
+      } catch {
+        // Listener error handled silently
       }
     }
   }
@@ -143,11 +137,8 @@ class GmStatsByAddressStore {
         .subscribe([
           `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`,
         ]);
-    } catch (error) {
-      console.error(
-        `[gmStatsByAddressStore] Subscription setup failed for ${addr}:`,
-        error
-      );
+    } catch {
+      // Subscription setup failed - fallback to empty stats with retry on next request
       this.subscriptionReady = false;
       this.emitChange();
     }

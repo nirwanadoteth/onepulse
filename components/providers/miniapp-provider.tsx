@@ -129,8 +129,8 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
           context,
           isInMiniApp: inMiniApp,
         });
-      } catch (error) {
-        console.error("Error initializing MiniApp context:", error);
+      } catch {
+        // MiniApp initialization failure handled gracefully
         setMiniAppContext({
           context: null,
           isInMiniApp: false,

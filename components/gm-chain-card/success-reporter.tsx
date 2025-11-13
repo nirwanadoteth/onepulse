@@ -44,8 +44,8 @@ async function reportToApi({
         username,
       }),
     });
-  } catch (error) {
-    console.error("[SuccessReporter] Report POST failed:", error);
+  } catch {
+    // Report failure handled silently
   }
 }
 
@@ -55,24 +55,24 @@ async function refreshStats(
 ) {
   try {
     await gmStatsByAddressStore.refreshForAddress(address);
-  } catch (error) {
-    console.error("[SuccessReporter] refreshForAddress() failed:", error);
+  } catch {
+    // Store refresh failure handled silently
   }
 
   try {
     await queryClient.invalidateQueries({
       queryKey: ["gm-stats", address],
     });
-  } catch (error) {
-    console.error("[SuccessReporter] Query cache invalidation failed:", error);
+  } catch {
+    // Query cache invalidation failure handled silently
   }
 }
 
 async function refetchOnChainState(refetchLastGmDay?: () => Promise<unknown>) {
   try {
     await refetchLastGmDay?.();
-  } catch (error) {
-    console.error("[SuccessReporter] refetchLastGmDay() failed:", error);
+  } catch {
+    // On-chain state refetch failure handled silently
   }
 }
 

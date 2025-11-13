@@ -272,9 +272,8 @@ export function GET(request: NextRequest) {
       width: 1200,
       height: 630,
     });
-  } catch (error) {
-    console.error("Error generating OG image:", error);
-
+  } catch {
+    // OG image generation failed - returning fallback image
     return new ImageResponse(generateFallbackImage(), {
       width: 1200,
       height: 630,

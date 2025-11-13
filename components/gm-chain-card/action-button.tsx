@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, type ReactNode, useCallback } from "react";
+import { toast } from "sonner";
 import { useSwitchChain } from "wagmi";
 
 import { Button } from "@/components/ui/button";
@@ -40,8 +41,8 @@ export const ActionButton = memo(
         switchChain({
           chainId: chainId as 10 | 8453 | 42220,
         });
-      } catch (e) {
-        console.error("Failed to switch chain", e);
+      } catch {
+        toast.error("Failed to switch network. Please try again.");
       }
     }, [switchChain, chainId]);
 

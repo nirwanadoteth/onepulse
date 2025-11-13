@@ -264,8 +264,8 @@ const shareToCast = async (
       text: `${shareText}`,
       embeds: [shareUrl],
     });
-  } catch (error) {
-    console.error("Failed to compose cast:", error);
+  } catch {
+    // Cast composition failure handled by copying to clipboard
     navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
   }
 };
