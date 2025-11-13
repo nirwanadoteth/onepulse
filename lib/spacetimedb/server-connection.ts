@@ -6,7 +6,7 @@ function getSpacetimeDbConfig() {
     uri:
       process.env.SPACETIMEDB_HOST ||
       process.env.SPACETIMEDB_HOST_URL ||
-      "ws://127.0.0.1:3000",
+      "wss://maincloud.spacetimedb.com",
     moduleName: process.env.SPACETIMEDB_MODULE || "onepulse",
     token: process.env.SPACETIMEDB_TOKEN || "",
   };
@@ -32,7 +32,7 @@ export function buildServerDbConnection(): DbConnection {
   const uri =
     process.env.SPACETIMEDB_HOST ||
     process.env.SPACETIMEDB_HOST_URL ||
-    "ws://127.0.0.1:3000";
+    "wss://maincloud.spacetimedb.com";
   const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse";
   const token = process.env.SPACETIMEDB_TOKEN || "";
   const builder = DbConnection.builder()

@@ -35,7 +35,7 @@ const buildDbConnection = () => {
   const uri =
     process.env.SPACETIMEDB_HOST ||
     process.env.SPACETIMEDB_HOST_URL ||
-    "ws://127.0.0.1:3000";
+    "wss://maincloud.spacetimedb.com";
   const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse";
   
   // SEC-001: Enforce WSS (WebSocket Secure) in production environments
