@@ -14,6 +14,10 @@ import {
   notifyConnectionEstablished,
 } from "@/lib/spacetimedb/connection-events";
 import {
+  startAutoReconnect,
+  stopAutoReconnect,
+} from "@/lib/spacetimedb/connection-factory";
+import {
   notifySubscriptionApplied,
   notifySubscriptionError,
 } from "@/lib/spacetimedb/subscription-events";
@@ -23,26 +27,43 @@ export const onConnect = (
   identity: Identity,
   token: string
 ) => {
+  console.log("[SpacetimeDB] Connection established");
+  
+  // Stop auto-reconnect on successful connection
+  stopAutoReconnect();
+  
   connectionStatus.isConnected = true;
   connectionStatus.error = null;
   connectionStatus.identity = identity;
   localStorage.setItem("auth_token", token);
 
   notifyConnectionEstablished();
+  
+  // Re-establish subscriptions after reconnection
   subscribeToQueries(conn, ["SELECT * FROM gm_stats_by_address"]);
 };
 
 export const onDisconnect = () => {
+  console.log("[SpacetimeDB] Connection disconnected");
+  
   connectionStatus.isConnected = false;
   connectionStatus.isSubscribed = false;
   notifyConnectionDisconnected();
+  
+  // Start auto-reconnect when connection is lost
+  startAutoReconnect();
 };
 
 export const onConnectError = (_ctx: ErrorContext, error: Error) => {
+  console.error("[SpacetimeDB] Connection error:", error);
+  
   connectionStatus.isConnected = false;
   connectionStatus.isSubscribed = false;
   connectionStatus.error = error;
   notifyConnectionError();
+  
+  // Trigger reconnection on connection error
+  startAutoReconnect();
 };
 
 export const subscribeToQueries = (conn: DbConnection, queries: string[]) => {

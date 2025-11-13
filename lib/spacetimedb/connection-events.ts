@@ -3,6 +3,8 @@ import type { Identity } from "spacetimedb";
 export const connectionStatus = {
   isConnected: false,
   isSubscribed: false,
+  isReconnecting: false,
+  reconnectAttempts: 0,
   error: null as Error | null,
   identity: null as Identity | null,
 };

@@ -1,15 +1,21 @@
 "use client";
 
 import { DbConnection } from "@/lib/module_bindings";
-import { cleanupConnectionListener } from "@/lib/spacetimedb/connection-events";
+import {
+  cleanupConnectionListener,
+  connectionStatus,
+} from "@/lib/spacetimedb/connection-events";
 import {
   onConnect,
   onConnectError,
   onDisconnect,
 } from "@/lib/spacetimedb/connection-handlers";
+import { ExponentialBackoffReconnectionStrategy } from "@/lib/spacetimedb/reconnection-strategy";
 import { cleanupSubscriptionListener } from "@/lib/spacetimedb/subscription-events";
 
 let singletonConnection: DbConnection | null = null;
+let reconnectionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+const reconnectionStrategy = new ExponentialBackoffReconnectionStrategy();
 
 export const getDbConnection = (): DbConnection => {
   const isSSR = typeof window === "undefined";
@@ -67,7 +73,85 @@ const buildDbConnection = () => {
 
 const getAuthToken = () => process.env.SPACETIMEDB_TOKEN || "";
 
+/**
+ * Attempt to reconnect to SpacetimeDB with exponential backoff.
+ * Implements RES-004 requirement for automatic reconnection.
+ */
+const attemptReconnect = () => {
+  if (!reconnectionStrategy.canRetry()) {
+    console.error("[SpacetimeDB] Max reconnection attempts reached");
+    connectionStatus.isReconnecting = false;
+    return;
+  }
+
+  const delay = reconnectionStrategy.getNextDelay();
+  const attemptCount = reconnectionStrategy.getAttemptCount();
+  
+  console.log(
+    `[SpacetimeDB] Attempting reconnection (attempt ${attemptCount}) in ${delay}ms...`
+  );
+
+  connectionStatus.isReconnecting = true;
+  connectionStatus.reconnectAttempts = attemptCount;
+
+  // Clear any existing timeout to prevent memory leaks
+  if (reconnectionTimeoutId) {
+    clearTimeout(reconnectionTimeoutId);
+    reconnectionTimeoutId = null;
+  }
+
+  reconnectionTimeoutId = setTimeout(() => {
+    try {
+      console.log(`[SpacetimeDB] Executing reconnection attempt ${attemptCount}`);
+      
+      // Clean up existing connection to prevent multiple connections
+      if (singletonConnection) {
+        singletonConnection.disconnect();
+        singletonConnection = null;
+      }
+
+      // Create new connection (which will trigger onConnect or onConnectError)
+      singletonConnection = buildDbConnection();
+    } catch (error) {
+      console.error("[SpacetimeDB] Reconnection attempt failed:", error);
+      // If connection creation fails, schedule next attempt
+      attemptReconnect();
+    }
+  }, delay);
+};
+
+/**
+ * Start the automatic reconnection process.
+ * Called when connection is lost (from onDisconnect handler).
+ */
+export const startAutoReconnect = () => {
+  console.log("[SpacetimeDB] Starting auto-reconnect");
+  attemptReconnect();
+};
+
+/**
+ * Stop the automatic reconnection process and reset the strategy.
+ * Called when connection is successfully established.
+ */
+export const stopAutoReconnect = () => {
+  console.log("[SpacetimeDB] Stopping auto-reconnect");
+  
+  // Clear timeout to prevent memory leaks
+  if (reconnectionTimeoutId) {
+    clearTimeout(reconnectionTimeoutId);
+    reconnectionTimeoutId = null;
+  }
+
+  // Reset reconnection state
+  reconnectionStrategy.reset();
+  connectionStatus.isReconnecting = false;
+  connectionStatus.reconnectAttempts = 0;
+};
+
 export const disconnectDbConnection = () => {
+  // Stop auto-reconnect when manually disconnecting
+  stopAutoReconnect();
+  
   if (singletonConnection) {
     singletonConnection.disconnect();
     singletonConnection = null;
