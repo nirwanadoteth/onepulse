@@ -1,4 +1,6 @@
-import { ConnectWallet as Connect } from "@coinbase/onchainkit/wallet";
+"use client";
+
+import { useAppKit } from "@reown/appkit/react";
 import type { VariantProps } from "class-variance-authority";
 import { Unplug } from "lucide-react";
 import { memo, useCallback } from "react";
@@ -15,15 +17,19 @@ function ConnectWallet({
   size?: ButtonSize;
   className?: string;
 }) {
+  const { open } = useAppKit();
   const buttonSize = size === "lg" ? "size-lg" : "size-sm";
   return (
     <div className="mx-auto w-full">
-      <Connect
+      <Button
         aria-label="Connect wallet"
         className={cn(className, buttonSize)}
+        onClick={() => {
+          open({ view: "Connect", namespace: "eip155" });
+        }}
       >
         Connect Wallet
-      </Connect>
+      </Button>
     </div>
   );
 }
