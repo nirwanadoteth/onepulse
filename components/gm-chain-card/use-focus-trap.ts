@@ -52,12 +52,12 @@ const handleTabKey = (
 ) => {
   if (focusables.length === 0) {
     e.preventDefault();
-    (container as HTMLElement).focus();
+    container.focus();
     return;
   }
 
-  const first = focusables[0];
-  const last = focusables.at(-1);
+  const first = focusables[0] as HTMLElement;
+  const last = focusables.at(-1) as HTMLElement;
   const active = (document.activeElement as HTMLElement) ?? null;
   const boundary = e.shiftKey ? first : (last as HTMLElement);
   const target = e.shiftKey ? (last as HTMLElement) : first;
@@ -88,8 +88,8 @@ export function useFocusTrap({
     lastActiveRef.current = (document.activeElement as HTMLElement) ?? null;
 
     const focusables = getFocusableElements(container);
-    const target = focusables[0] ?? container;
-    (target as HTMLElement).focus();
+    const target: HTMLElement = focusables[0] ?? container;
+    target.focus();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isProcessing) {
