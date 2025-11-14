@@ -1,9 +1,10 @@
-import { OnchainKitProvider as Provider } from "@coinbase/onchainkit";
-import { base } from "wagmi/chains";
+"use client";
 
-import "@/styles/onchainkit.css";
+import { OnchainKitProvider as Provider } from "@coinbase/onchainkit";
 import type { ReactNode } from "react";
+import { base } from "wagmi/chains";
 import { minikitConfig } from "@/minikit.config";
+import "@/styles/onchainkit.css";
 
 export function OnchainKitProvider({ children }: { children: ReactNode }) {
   return (
