@@ -35,7 +35,11 @@ export const onConnect = (
   connectionStatus.isConnected = true;
   connectionStatus.error = null;
   connectionStatus.identity = identity;
-  localStorage.setItem("auth_token", token);
+
+  // Only access localStorage in browser environment
+  if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+    localStorage.setItem("auth_token", token);
+  }
 
   notifyConnectionEstablished();
 

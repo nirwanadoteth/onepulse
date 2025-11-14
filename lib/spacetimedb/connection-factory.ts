@@ -81,7 +81,20 @@ const buildDbConnection = () => {
   return builder.build();
 };
 
-const getAuthToken = () => process.env.SPACETIMEDB_TOKEN || "";
+const getAuthToken = () => {
+  // Prioritize environment token
+  const envToken = process.env.SPACETIMEDB_TOKEN;
+  if (envToken) {
+    return envToken;
+  }
+
+  // Only access localStorage in browser environment
+  if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+    return localStorage.getItem("auth_token") || "";
+  }
+
+  return "";
+};
 
 /**
  * Attempt to reconnect to SpacetimeDB with exponential backoff.
