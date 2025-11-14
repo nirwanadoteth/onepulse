@@ -1,6 +1,7 @@
 "use client";
 
-import { useComposeCast, useOpenUrl } from "@coinbase/onchainkit/minikit";
+import { useOpenUrl } from "@coinbase/onchainkit/minikit";
+import { sdk } from "@farcaster/miniapp-sdk";
 import { Copy, MessageCircle } from "lucide-react";
 import { Icons } from "@/components/icons";
 import {
@@ -182,7 +183,6 @@ const createShareMetadata = (options: {
 
 function useGMSharing(claimedToday: boolean, gmStats?: GmStats) {
   const miniAppContextData = useMiniAppContext();
-  const { composeCast } = useComposeCast();
   const openUrl = useOpenUrl();
 
   const username = getUsername(miniAppContextData?.context?.user ?? null);
@@ -206,7 +206,6 @@ function useGMSharing(claimedToday: boolean, gmStats?: GmStats) {
   return {
     shareText,
     shareUrl: metadata.url,
-    composeCast,
     openUrl,
   };
 }
@@ -222,21 +221,9 @@ const shareToTwitter = (
   openUrl(twitterUrl);
 };
 
-type ComposeCastFn = (params: {
-  text?: string;
-  embeds?: [] | [string] | [string, string];
-  parent?: { type: "cast"; hash: string };
-  close?: boolean;
-  channelKey?: string;
-}) => Promise<{ cast: unknown | null }>;
-
-const shareToCast = async (
-  composeCast: ComposeCastFn,
-  shareText: string,
-  shareUrl: string
-) => {
+const shareToCast = async (shareText: string, shareUrl: string) => {
   try {
-    await composeCast({
+    await sdk.actions.composeCast({
       text: `${shareText}`,
       embeds: [shareUrl],
     });
@@ -258,10 +245,7 @@ export function ShareGMStatus({
   claimedToday = false,
   gmStats,
 }: ShareGMStatusProps) {
-  const { shareText, shareUrl, composeCast, openUrl } = useGMSharing(
-    claimedToday,
-    gmStats
-  );
+  const { shareText, shareUrl, openUrl } = useGMSharing(claimedToday, gmStats);
 
   const handleShare = async (platform: "twitter" | "cast" | "copy") => {
     switch (platform) {
@@ -269,7 +253,7 @@ export function ShareGMStatus({
         shareToTwitter(shareText, shareUrl, openUrl);
         break;
       case "cast":
-        await shareToCast(composeCast as ComposeCastFn, shareText, shareUrl);
+        await shareToCast(shareText, shareUrl);
         break;
       case "copy":
         shareToClipboard(shareText, shareUrl);
