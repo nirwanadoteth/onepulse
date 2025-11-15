@@ -1,10 +1,13 @@
 "use client";
 
-import { useAppKit } from "@reown/appkit/react";
+import {
+  useAppKit,
+  useAppKitAccount,
+  useDisconnect,
+} from "@reown/appkit/react";
 import type { VariantProps } from "class-variance-authority";
 import { Unplug } from "lucide-react";
 import { memo, useCallback } from "react";
-import { useAccount, useDisconnect } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { Button, type buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,12 +39,12 @@ function ConnectWallet({
 
 const DisconnectWallet = memo(
   ({ onDisconnected }: { onDisconnected?: () => void }) => {
-    const { isConnected } = useAccount();
+    const { isConnected } = useAppKitAccount();
     const { disconnect } = useDisconnect();
     const miniAppContextData = useMiniAppContext();
 
-    const handleDisconnect = useCallback(() => {
-      disconnect();
+    const handleDisconnect = useCallback(async () => {
+      await disconnect({ namespace: "eip155" });
       onDisconnected?.();
     }, [disconnect, onDisconnected]);
 
