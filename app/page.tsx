@@ -104,7 +104,9 @@ export default function Home() {
     useOnboardingModal();
   const [tab, setTab] = useState("home");
 
-  useMiniAppInitialization();
+  // Call useMiniKit once and pass to initialization hook
+  const { isMiniAppReady, setMiniAppReady } = useMiniKit();
+  useMiniAppInitialization({ isMiniAppReady, setMiniAppReady });
 
   // Optimize particle count based on screen size for better mobile performance
   const particleQuantity = useMemo(() => {
@@ -113,8 +115,6 @@ export default function Home() {
     }
     return window.innerWidth < 768 ? 50 : 100;
   }, []);
-
-  const { isMiniAppReady } = useMiniKit();
   const clientAdded = miniAppContextData?.context?.client?.added;
 
   const onboardingSaveHandler = determineOnboardingSaveHandler(

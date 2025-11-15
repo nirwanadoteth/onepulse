@@ -1,9 +1,14 @@
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useEffect } from "react";
 
-export function useMiniAppInitialization() {
-  const { isMiniAppReady, setMiniAppReady } = useMiniKit();
+type UseMiniAppInitializationProps = {
+  isMiniAppReady: boolean;
+  setMiniAppReady: () => void;
+};
 
+export function useMiniAppInitialization({
+  isMiniAppReady,
+  setMiniAppReady,
+}: UseMiniAppInitializationProps) {
   useEffect(() => {
     if (!isMiniAppReady) {
       setMiniAppReady();
