@@ -1,9 +1,8 @@
 import { useTransactionContext } from "@coinbase/onchainkit/transaction";
+import { useAppKitState } from "@reown/appkit/react";
 import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useChainId } from "wagmi";
-
-import { cn, getChainExplorer } from "@/lib/utils";
+import { cn, getChainExplorer, parseEip155NetworkId } from "@/lib/utils";
 
 function useSafeTransactionContext() {
   const context = useTransactionContext();
@@ -57,9 +56,13 @@ function getTransactionState(params: {
 
 function createSuccessAction(
   txHash: string | undefined,
-  accountChainId: number
+  accountChainId: number | undefined
 ): ReactNode {
+  const isValidChain = typeof accountChainId === "number" && accountChainId > 0;
   if (!txHash) {
+    return null;
+  }
+  if (!isValidChain) {
     return null;
   }
   const chainExplorer = getChainExplorer(accountChainId);
@@ -201,7 +204,8 @@ export function TransactionToast() {
     onSubmit,
   } = context;
 
-  const accountChainId = useChainId();
+  const { selectedNetworkId } = useAppKitState();
+  const accountChainId = parseEip155NetworkId(selectedNetworkId);
 
   const toastCreatedRef = useRef<boolean>(false);
   const toastControllerRef = useRef<{
@@ -227,7 +231,7 @@ export function TransactionToast() {
   useToastVisibility(state, errorMessage, toastCreatedRef);
   useToastCreation({
     state,
-    accountChainId,
+    accountChainId: accountChainId ?? 0,
     errorMessage,
     onSubmit,
     txHashRef,

@@ -10,6 +10,7 @@ import {
 import { base, celo, optimism } from "viem/chains";
 
 const digitRegex = /^\d+$/;
+const EIP155_REGEX = /^eip155:(\d+)$/;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -74,4 +75,26 @@ export function normalizeChainId(input: unknown): number | undefined {
     return parsed > 0 ? parsed : undefined;
   }
   return;
+}
+
+export function parseEip155NetworkId(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    if (Number.isInteger(value) && value > 0) {
+      return value;
+    }
+    return; // invalid numeric id
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    const match = EIP155_REGEX.exec(trimmed);
+    if (!match) {
+      return; // not an eip155 pattern
+    }
+    const parsed = Number(match[1]);
+    if (Number.isSafeInteger(parsed) && parsed > 0) {
+      return parsed;
+    }
+    return; // invalid parsed number
+  }
+  return; // unsupported type
 }
