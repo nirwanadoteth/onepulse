@@ -1,10 +1,10 @@
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { detectCoinbaseSmartWallet } from "@/lib/utils";
 
 export function usePageState() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useAppKitAccount({ namespace: "eip155" });
   const [isSmartWallet, setIsSmartWallet] = useState(false);
   const miniAppContextData = useMiniAppContext();
   const inMiniApp = miniAppContextData?.isInMiniApp ?? false;
