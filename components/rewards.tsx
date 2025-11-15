@@ -1,7 +1,7 @@
 "use client";
 
+import { useAppKitAccount } from "@reown/appkit/react";
 import { memo } from "react";
-import { useAccount } from "wagmi";
 import { ConnectWalletCard } from "@/components/connect-wallet-card";
 import { DegenRewardCard } from "@/components/degen-reward-card";
 import { HowItWorksCard } from "@/components/how-it-works-card";
@@ -14,7 +14,7 @@ export const Rewards = memo(function GMBase({
 }: {
   sponsored?: boolean;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContextData = useMiniAppContext();
 
   const fid = miniAppContextData?.context?.user?.fid
