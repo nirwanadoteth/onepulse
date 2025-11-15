@@ -16,7 +16,7 @@ import { UserInfo } from "@/components/user-info";
 import { minikitConfig } from "@/minikit.config";
 
 type HeaderProps = {
-  isFrameReady: boolean;
+  isMiniAppReady: boolean;
   inMiniApp: boolean;
   onMiniAppAdded: () => void;
 };
@@ -34,10 +34,10 @@ const extractUserFromContext = (
     : undefined;
 
 const shouldShowSaveButton = (
-  isFrameReady: boolean,
+  isMiniAppReady: boolean,
   inMiniApp: boolean,
   clientAdded: boolean | undefined
-): boolean => isFrameReady && inMiniApp && clientAdded !== true;
+): boolean => isMiniAppReady && inMiniApp && clientAdded !== true;
 
 type HeaderRightProps = {
   showSaveButton: boolean;
@@ -65,7 +65,7 @@ const HeaderRight = memo(
 );
 
 export function Header({
-  isFrameReady,
+  isMiniAppReady,
   inMiniApp,
   onMiniAppAdded,
 }: HeaderProps) {
@@ -93,7 +93,7 @@ export function Header({
   const user = extractUserFromContext(miniAppContextData?.context);
   const clientAdded = miniAppContextData?.context?.client?.added;
   const showSaveButton =
-    shouldShowSaveButton(isFrameReady, inMiniApp, clientAdded) &&
+    shouldShowSaveButton(isMiniAppReady, inMiniApp, clientAdded) &&
     !miniAppAddedLocally;
 
   const shouldShowUserInfo = !!user || !!address;
