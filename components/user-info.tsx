@@ -10,11 +10,11 @@ import { memo, type ReactNode } from "react";
 import type { Address } from "viem";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAsyncOperation } from "@/hooks/use-async-operation";
 import { truncateAddress } from "@/lib/ens-utils";
 import {
   ERROR_MESSAGES,
-  handleError,
-  handleSuccess,
+  LOADING_MESSAGES,
   SUCCESS_MESSAGES,
 } from "@/lib/error-handling";
 
@@ -54,6 +54,15 @@ const UserAvatar = memo(
     isConnected: boolean;
   }) => {
     const { disconnect } = useDisconnect();
+    const { execute: disconnectWallet, isLoading } = useAsyncOperation(
+      () => disconnect({ namespace: "eip155" }),
+      {
+        loadingMessage: LOADING_MESSAGES.WALLET_DISCONNECTING,
+        successMessage: SUCCESS_MESSAGES.WALLET_DISCONNECTED,
+        errorMessage: ERROR_MESSAGES.WALLET_DISCONNECT,
+        context: { operation: "dropdown-disconnect" },
+      }
+    );
 
     if (!isConnected) {
       return (
@@ -80,16 +89,10 @@ const UserAvatar = memo(
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-40">
           <DropdownMenuItem
+            disabled={isLoading}
             inset
-            onSelect={async () => {
-              try {
-                await disconnect({ namespace: "eip155" });
-                handleSuccess(SUCCESS_MESSAGES.WALLET_DISCONNECTED);
-              } catch (error) {
-                handleError(error, ERROR_MESSAGES.WALLET_DISCONNECT, {
-                  operation: "dropdown-disconnect",
-                });
-              }
+            onSelect={() => {
+              disconnectWallet();
             }}
             variant="destructive"
           >
