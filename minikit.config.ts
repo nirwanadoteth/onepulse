@@ -23,7 +23,7 @@ export const minikitConfig = {
     subtitle: "Say GM, earn rewards",
     description: "Build streaks and get rewarded",
     screenshotUrls: [`${ROOT_URL}/screenshot.png`],
-    iconUrl: `${ROOT_URL}/icon.png`,
+    iconUrl: `${ROOT_URL}/icon-dark.png`,
     splashImageUrl: `${ROOT_URL}/splash.png`,
     splashBackgroundColor: "#FFFFFF",
     homeUrl: ROOT_URL,
