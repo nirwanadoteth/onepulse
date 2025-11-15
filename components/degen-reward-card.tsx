@@ -1,9 +1,9 @@
 "use client";
 
-import { useAppKitAccount } from "@reown/appkit/react";
+import { base } from "@reown/appkit/networks";
+import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { memo, useState } from "react";
-import { useChainId, useSwitchChain } from "wagmi";
-import { base } from "wagmi/chains";
+import { useSwitchChain } from "wagmi";
 import { DegenClaimTransaction } from "@/components/gm-chain-card/degen-claim-transaction";
 import { ShareGMStatus } from "@/components/share-gm-status";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
 import { useGmStats } from "@/hooks/use-gm-stats";
+import { normalizeChainId } from "@/lib/utils";
 
 type DegenRewardCardProps = {
   fid: bigint | undefined;
@@ -234,7 +235,8 @@ export const DegenRewardCard = memo(
   ({ fid, sponsored }: DegenRewardCardProps) => {
     const [hasClaimedToday, setHasClaimedToday] = useState(false);
     const { address, isConnected } = useAppKitAccount({ namespace: "eip155" });
-    const chainId = useChainId();
+    const { chainId } = useAppKitNetwork();
+    const numbericChainId = normalizeChainId(chainId);
     const {
       claimStatus,
       hasSentGMToday,
@@ -249,7 +251,7 @@ export const DegenRewardCard = memo(
       return <DisconnectedCard />;
     }
 
-    if (chainId !== base.id) {
+    if (numbericChainId !== base.id) {
       return <WrongNetworkCard />;
     }
 
@@ -261,7 +263,7 @@ export const DegenRewardCard = memo(
     return (
       <RewardCard
         address={address}
-        chainId={chainId}
+        chainId={numbericChainId}
         fid={fid}
         hasClaimedToday={hasClaimedToday}
         isCheckingEligibility={isCheckingEligibility}
