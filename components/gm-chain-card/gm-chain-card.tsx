@@ -1,8 +1,9 @@
 "use client";
 
+import { useAppKitNetwork } from "@reown/appkit/react";
 import { memo, useCallback, useEffect, useMemo } from "react";
 import type { Address } from "viem";
-import { useChainId, useReadContract } from "wagmi";
+import { useReadContract } from "wagmi";
 import type { base, celo, optimism } from "wagmi/chains";
 import { Icons } from "@/components/icons";
 import {
@@ -16,7 +17,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { GmStats } from "@/hooks/use-gm-stats";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
-
+import { normalizeChainId } from "@/lib/utils";
 import { CarouselNext, CarouselPrevious } from "../ui/carousel";
 import { ActionButton } from "./action-button";
 import { CountdownText } from "./countdown-text";
@@ -156,8 +157,9 @@ export const GMChainCard = memo(
     isStatsReady,
     onOpenModal,
   }: GMChainCardProps) => {
-    const currentChainId = useChainId();
-    const onCorrectChain = currentChainId === chainId;
+    const { chainId: curentChainId } = useAppKitNetwork();
+    const numericChainId = normalizeChainId(curentChainId);
+    const onCorrectChain = numericChainId === chainId;
 
     const {
       data: lastGmDayData,
