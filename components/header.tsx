@@ -1,10 +1,10 @@
 "use client";
 
 import { sdk } from "@farcaster/miniapp-sdk";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Bookmark } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   type MiniAppContext,
@@ -70,7 +70,7 @@ export function Header({
   onMiniAppAdded,
 }: HeaderProps) {
   const miniAppContextData = useMiniAppContext();
-  const { address } = useAccount();
+  const { address } = useAppKitAccount({ namespace: "eip155" });
   const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
 
   const handleAddMiniApp = useCallback(async () => {
