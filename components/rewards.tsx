@@ -5,9 +5,9 @@ import { memo } from "react";
 import { ConnectWalletCard } from "@/components/connect-wallet-card";
 import { DegenRewardCard } from "@/components/degen-reward-card";
 import { HowItWorksCard } from "@/components/how-it-works-card";
+import { MiniAppRequiredCard } from "@/components/mini-app-required-card";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { VaultBalanceCard } from "@/components/vault-balance-card";
-import { VerifyingIdentityCard } from "@/components/verifying-identity-card";
 
 export const Rewards = memo(function GMBase({
   sponsored,
@@ -29,7 +29,7 @@ export const Rewards = memo(function GMBase({
         fid ? (
           <DegenRewardCard fid={fid} sponsored={Boolean(sponsored)} />
         ) : (
-          <VerifyingIdentityCard />
+          <MiniAppRequiredCard />
         )
       ) : (
         <ConnectWalletCard />
