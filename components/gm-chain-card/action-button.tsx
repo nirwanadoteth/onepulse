@@ -8,7 +8,6 @@ import { ConnectWallet } from "@/components/wallet";
 import { useAsyncOperation } from "@/hooks/use-async-operation";
 import {
   ERROR_MESSAGES,
-  handleError,
   LOADING_MESSAGES,
   SUCCESS_MESSAGES,
 } from "@/lib/error-handling";
@@ -53,24 +52,21 @@ export const ActionButton = memo(
       return switchNetwork(targetNetwork);
     }, [switchNetwork, targetNetwork, chainId]);
 
-    const { execute: doSwitch, isLoading } = useAsyncOperation(op, {
-      loadingMessage: LOADING_MESSAGES.NETWORK_SWITCHING,
-      successMessage: SUCCESS_MESSAGES.NETWORK_SWITCHED,
-      errorMessage: ERROR_MESSAGES.NETWORK_SWITCH,
-      context: { operation: "network-switch", chainId },
-    });
+    const options = useMemo(
+      () => ({
+        loadingMessage: LOADING_MESSAGES.NETWORK_SWITCHING,
+        successMessage: SUCCESS_MESSAGES.NETWORK_SWITCHED,
+        errorMessage: ERROR_MESSAGES.NETWORK_SWITCH,
+        context: { operation: "network-switch", chainId },
+      }),
+      [chainId]
+    );
+
+    const { execute: doSwitch, isLoading } = useAsyncOperation(op, options);
 
     const handleSwitchChain = useCallback(() => {
-      if (!targetNetwork) {
-        handleError(
-          new Error(`Network ${chainId} not found`),
-          ERROR_MESSAGES.NETWORK_UNSUPPORTED,
-          { operation: "network-switch", chainId }
-        );
-        return;
-      }
       doSwitch();
-    }, [doSwitch, targetNetwork, chainId]);
+    }, [doSwitch]);
     const handleOpenModal = useCallback(() => {
       if (!gmDisabled) {
         onOpenModal();
