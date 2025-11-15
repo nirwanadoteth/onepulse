@@ -41,21 +41,29 @@ const UserAvatar = memo(
   ({
     url: avatarUrl,
     name: displayName,
+    isConnected,
   }: {
     url: string | undefined;
     name: string;
+    isConnected: boolean;
   }) => {
     const { disconnect } = useDisconnect();
-    const { isConnected } = useAppKitAccount({ namespace: "eip155" });
+
+    if (!isConnected) {
+      return (
+        <Avatar className="size-8">
+          <AvatarImage alt={displayName} src={avatarUrl} />
+          <AvatarFallback className="text-xs">
+            {displayName.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      );
+    }
+
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            className="rounded-full p-0"
-            disabled={!isConnected}
-            size="icon"
-            variant="outline"
-          >
+          <Button className="rounded-full p-0" size="icon" variant="outline">
             <Avatar className="size-8">
               <AvatarImage alt={displayName} src={avatarUrl} />
               <AvatarFallback className="text-xs">
@@ -127,11 +135,18 @@ const getWalletConnectedDisplay = (
   displayName: getDisplayName(user?.displayName, ensName, address),
 });
 
-const renderMiniAppUser = (user: UserInfoProps["user"]) => {
+const renderMiniAppUser = (
+  user: UserInfoProps["user"],
+  isConnected: boolean
+) => {
   const { displayName, avatarUrl, username } = getMiniAppUserDisplay(user);
   return (
     <div className="flex items-center gap-2">
-      <UserAvatar name={displayName} url={avatarUrl} />
+      <UserAvatar
+        isConnected={isConnected}
+        name={displayName}
+        url={avatarUrl}
+      />
       <UserData displayName={displayName} username={username} />
     </div>
   );
@@ -144,23 +159,28 @@ const renderWalletLoading = () => (
   </div>
 );
 
-const renderWalletConnected = (
-  user: UserInfoProps["user"],
-  address: Address,
-  ensName: GetNameReturnType | undefined,
-  ensAvatar: string | null | undefined
-) => {
+const renderWalletConnected = (params: {
+  user: UserInfoProps["user"];
+  address: Address;
+  ensName: GetNameReturnType | undefined;
+  ensAvatar: string | null | undefined;
+  isConnected: boolean;
+}) => {
   const { avatarUrl, displayName } = getWalletConnectedDisplay(
-    user,
-    address,
-    ensName,
-    ensAvatar
+    params.user,
+    params.address,
+    params.ensName,
+    params.ensAvatar
   );
 
   return (
     <div className="flex items-center gap-2">
-      <UserAvatar name={displayName} url={avatarUrl} />
-      <UserData address={address} displayName={displayName} />
+      <UserAvatar
+        isConnected={params.isConnected}
+        name={displayName}
+        url={avatarUrl}
+      />
+      <UserData address={params.address} displayName={displayName} />
     </div>
   );
 };
@@ -190,27 +210,29 @@ const renderByState = (params: {
   address: Address;
   ensName: GetNameReturnType | undefined;
   ensAvatar: string | null | undefined;
+  isConnected: boolean;
 }): ReactNode => {
   if (params.state === "hidden") {
     return null;
   }
   if (params.state === "miniapp") {
-    return renderMiniAppUser(params.user);
+    return renderMiniAppUser(params.user, params.isConnected);
   }
   if (params.state === "loading") {
     return renderWalletLoading();
   }
-  return renderWalletConnected(
-    params.user,
-    params.address,
-    params.ensName,
-    params.ensAvatar
-  );
+  return renderWalletConnected({
+    user: params.user,
+    address: params.address,
+    ensName: params.ensName,
+    ensAvatar: params.ensAvatar,
+    isConnected: params.isConnected,
+  });
 };
 
 export const UserInfo = memo(
   ({ user, address: addressProp }: UserInfoProps) => {
-    const { address: connectedAddress } = useAppKitAccount({
+    const { address: connectedAddress, isConnected } = useAppKitAccount({
       namespace: "eip155",
     });
     const address = (addressProp || connectedAddress) as Address;
@@ -223,6 +245,13 @@ export const UserInfo = memo(
     const isLoading = isNameLoading || isAvatarLoading;
     const state = determineDisplayState(user, address, isLoading);
 
-    return renderByState({ state, user, address, ensName, ensAvatar });
+    return renderByState({
+      state,
+      user,
+      address,
+      ensName,
+      ensAvatar,
+      isConnected,
+    });
   }
 );
