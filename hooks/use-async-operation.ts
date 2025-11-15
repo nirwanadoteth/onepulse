@@ -29,17 +29,29 @@ type UseAsyncOperationReturn<T> = {
 };
 
 /**
- * Custom hook for handling async operations with loading states and user feedback.
- * Provides loading state management, error handling, and toast notifications.
+ * Executes an async operation with standardized loading/success/error toasts.
+ *
+ * @remarks
+ * To avoid unnecessary re-renders, ensure `operation` is memoized with useCallback
+ * and `options` is either memoized with useMemo or declared outside the component.
  *
  * @example
+ * // Memoize operation
+ * const operation = useCallback(() => disconnectWallet(), []);
+ *
+ * // Declare options outside component or memoize
+ * const opts = useMemo(() => ({
+ *   loadingMessage: LOADING_MESSAGES.WALLET_DISCONNECTING,
+ *   successMessage: SUCCESS_MESSAGES.WALLET_DISCONNECTED,
+ *   errorMessage: ERROR_MESSAGES.WALLET_DISCONNECT,
+ *   onSuccess: onSuccessHandler,
+ *   onError: onErrorHandler,
+ *   context: ctx,
+ * }), [onSuccessHandler, onErrorHandler, ctx]);
+ *
  * const { execute, isLoading } = useAsyncOperation(
- *   () => disconnectWallet(),
- *   {
- *     loadingMessage: LOADING_MESSAGES.WALLET_DISCONNECTING,
- *     successMessage: SUCCESS_MESSAGES.WALLET_DISCONNECTED,
- *     errorMessage: ERROR_MESSAGES.WALLET_DISCONNECT,
- *   }
+ *   operation,
+ *   opts
  * );
  */
 export function useAsyncOperation<T>(
@@ -49,6 +61,16 @@ export function useAsyncOperation<T>(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<unknown | null>(null);
 
+  // Destructure options so we can list granular dependencies
+  const {
+    loadingMessage,
+    successMessage,
+    errorMessage,
+    onSuccess,
+    onError,
+    context,
+  } = options;
+
   const execute = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -56,8 +78,8 @@ export function useAsyncOperation<T>(
     let dismissLoading: (() => void) | undefined;
 
     try {
-      if (options.loadingMessage) {
-        dismissLoading = showLoading(options.loadingMessage);
+      if (loadingMessage) {
+        dismissLoading = showLoading(loadingMessage);
       }
 
       const result = await operation();
@@ -66,11 +88,11 @@ export function useAsyncOperation<T>(
         dismissLoading();
       }
 
-      if (options.successMessage) {
-        handleSuccess(options.successMessage);
+      if (successMessage) {
+        handleSuccess(successMessage);
       }
 
-      options.onSuccess?.();
+      onSuccess?.();
       return result;
     } catch (err) {
       if (dismissLoading) {
@@ -78,16 +100,24 @@ export function useAsyncOperation<T>(
       }
 
       setError(err);
-      handleError(err, options.errorMessage, {
+      handleError(err, errorMessage, {
         operation: "async-operation",
-        ...options.context,
+        ...context,
       });
 
-      options.onError?.(err);
+      onError?.(err);
     } finally {
       setIsLoading(false);
     }
-  }, [operation, options]);
+  }, [
+    operation,
+    loadingMessage,
+    successMessage,
+    errorMessage,
+    onSuccess,
+    onError,
+    context,
+  ]);
 
   const reset = useCallback(() => {
     setError(null);
