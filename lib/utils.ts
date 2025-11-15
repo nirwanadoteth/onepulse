@@ -98,3 +98,12 @@ export function parseEip155NetworkId(value: unknown): number | undefined {
   }
   return; // unsupported type
 }
+
+export function canSaveMiniApp(params: {
+  isMiniAppReady: boolean;
+  inMiniApp: boolean;
+  clientAdded: boolean | undefined;
+}): boolean {
+  const { isMiniAppReady, inMiniApp, clientAdded } = params;
+  return isMiniAppReady && inMiniApp && clientAdded !== true;
+}

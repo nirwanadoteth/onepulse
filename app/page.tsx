@@ -14,6 +14,7 @@ import { useOnboardingModal } from "@/hooks/use-onboarding-modal";
 import { usePageState } from "@/hooks/use-page-state";
 import { useParticlesAnimation } from "@/hooks/use-particles-animation";
 import { useSafeAreaStyle } from "@/hooks/use-safe-area-style";
+import { canSaveMiniApp } from "@/lib/utils";
 
 const Particles = dynamic(
   () =>
@@ -29,7 +30,11 @@ function determineOnboardingSaveHandler(
   clientAdded: boolean | undefined,
   handleMiniAppAdded: () => void
 ) {
-  const shouldEnableSave = isMiniAppReady && inMiniApp && clientAdded !== true;
+  const shouldEnableSave = canSaveMiniApp({
+    isMiniAppReady,
+    inMiniApp,
+    clientAdded,
+  });
   return shouldEnableSave ? handleMiniAppAdded : undefined;
 }
 
