@@ -10,10 +10,10 @@ import { Unplug } from "lucide-react";
 import { memo, useCallback } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { Button, type buttonVariants } from "@/components/ui/button";
+import { useAsyncOperation } from "@/hooks/use-async-operation";
 import {
   ERROR_MESSAGES,
-  handleError,
-  handleSuccess,
+  LOADING_MESSAGES,
   SUCCESS_MESSAGES,
 } from "@/lib/error-handling";
 import { cn } from "@/lib/utils";
@@ -49,18 +49,16 @@ const DisconnectWallet = memo(
     const { disconnect } = useDisconnect();
     const miniAppContextData = useMiniAppContext();
 
-    const handleDisconnect = useCallback(async () => {
-      try {
-        await disconnect({ namespace: "eip155" });
-        handleSuccess(SUCCESS_MESSAGES.WALLET_DISCONNECTED);
-      } catch (error) {
-        handleError(error, ERROR_MESSAGES.WALLET_DISCONNECT, {
-          operation: "wallet-disconnect",
-        });
-      } finally {
-        onDisconnected?.();
+    const { execute: disconnectWallet, isLoading } = useAsyncOperation(
+      useCallback(() => disconnect({ namespace: "eip155" }), [disconnect]),
+      {
+        loadingMessage: LOADING_MESSAGES.WALLET_DISCONNECTING,
+        successMessage: SUCCESS_MESSAGES.WALLET_DISCONNECTED,
+        errorMessage: ERROR_MESSAGES.WALLET_DISCONNECT,
+        context: { operation: "wallet-disconnect" },
+        onSuccess: onDisconnected,
       }
-    }, [disconnect, onDisconnected]);
+    );
     const isInMiniApp = Boolean(miniAppContextData?.isInMiniApp);
     return (
       isConnected &&
@@ -68,7 +66,8 @@ const DisconnectWallet = memo(
         <Button
           aria-label="Disconnect wallet"
           className="flex-1"
-          onClick={handleDisconnect}
+          disabled={isLoading}
+          onClick={disconnectWallet}
           size="sm"
           variant="outline"
         >
