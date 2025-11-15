@@ -1,14 +1,15 @@
 "use client";
 
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { Header } from "@/components/header";
 import { OnboardingModal } from "@/components/onboarding-modal";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { Tabs } from "@/components/tabs";
-import { useFrameInitialization } from "@/hooks/use-frame-initialization";
 import { useMetaColor } from "@/hooks/use-meta-color";
 import { useMiniAppFlow } from "@/hooks/use-miniapp-flow";
+import { useMiniAppInitialization } from "@/hooks/use-miniapp-initialization";
 import { useOnboardingModal } from "@/hooks/use-onboarding-modal";
 import { usePageState } from "@/hooks/use-page-state";
 import { useParticlesAnimation } from "@/hooks/use-particles-animation";
@@ -23,17 +24,17 @@ const Particles = dynamic(
 );
 
 function determineOnboardingSaveHandler(
-  isFrameReady: boolean,
+  isMiniAppReady: boolean,
   inMiniApp: boolean,
   clientAdded: boolean | undefined,
   handleMiniAppAdded: () => void
 ) {
-  const shouldEnableSave = isFrameReady && inMiniApp && clientAdded !== true;
+  const shouldEnableSave = isMiniAppReady && inMiniApp && clientAdded !== true;
   return shouldEnableSave ? handleMiniAppAdded : undefined;
 }
 
 type ContentProps = {
-  isFrameReady: boolean;
+  isMiniAppReady: boolean;
   inMiniApp: boolean;
   handleMiniAppAdded: () => void;
   tab: string;
@@ -41,7 +42,7 @@ type ContentProps = {
 };
 
 function Content({
-  isFrameReady,
+  isMiniAppReady,
   inMiniApp,
   handleMiniAppAdded,
   tab,
@@ -51,7 +52,7 @@ function Content({
     <div className="mx-auto w-[95%] max-w-lg px-4 py-4">
       <Header
         inMiniApp={inMiniApp}
-        isFrameReady={isFrameReady}
+        isMiniAppReady={isMiniAppReady}
         onMiniAppAdded={handleMiniAppAdded}
       />
       <Tabs onTabChange={setTab} tab={tab} />
@@ -98,7 +99,7 @@ export default function Home() {
     useOnboardingModal();
   const [tab, setTab] = useState("home");
 
-  useFrameInitialization();
+  useMiniAppInitialization();
 
   // Optimize particle count based on screen size for better mobile performance
   const particleQuantity = useMemo(() => {
@@ -108,11 +109,11 @@ export default function Home() {
     return window.innerWidth < 768 ? 50 : 100;
   }, []);
 
-  const isFrameReady = miniAppContextData?.context !== null;
+  const { isMiniAppReady } = useMiniKit();
   const clientAdded = miniAppContextData?.context?.client?.added;
 
   const onboardingSaveHandler = determineOnboardingSaveHandler(
-    isFrameReady,
+    isMiniAppReady,
     inMiniApp,
     clientAdded,
     handleMiniAppAdded
@@ -123,7 +124,7 @@ export default function Home() {
       <Content
         handleMiniAppAdded={handleMiniAppAdded}
         inMiniApp={inMiniApp}
-        isFrameReady={isFrameReady}
+        isMiniAppReady={isMiniAppReady}
         setTab={setTab}
         tab={tab}
       />
