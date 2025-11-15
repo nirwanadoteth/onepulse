@@ -39,7 +39,7 @@ function ConnectWallet({
 
 const DisconnectWallet = memo(
   ({ onDisconnected }: { onDisconnected?: () => void }) => {
-    const { isConnected } = useAppKitAccount();
+    const { isConnected } = useAppKitAccount({ namespace: "eip155" });
     const { disconnect } = useDisconnect();
     const miniAppContextData = useMiniAppContext();
 

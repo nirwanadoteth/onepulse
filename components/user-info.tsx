@@ -5,9 +5,9 @@ import {
   useAvatar,
   useName,
 } from "@coinbase/onchainkit/identity";
+import { useAppKitAccount, useDisconnect } from "@reown/appkit/react";
 import { memo, type ReactNode } from "react";
 import type { Address } from "viem";
-import { useAccount, useDisconnect } from "wagmi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { truncateAddress } from "@/lib/ens-utils";
@@ -46,10 +46,16 @@ const UserAvatar = memo(
     name: string;
   }) => {
     const { disconnect } = useDisconnect();
+    const { isConnected } = useAppKitAccount({ namespace: "eip155" });
     return (
-      <DropdownMenu modal={false}>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="rounded-full p-0" size="icon" variant="outline">
+          <Button
+            className="rounded-full p-0"
+            disabled={!isConnected}
+            size="icon"
+            variant="outline"
+          >
             <Avatar className="size-8">
               <AvatarImage alt={displayName} src={avatarUrl} />
               <AvatarFallback className="text-xs">
@@ -61,7 +67,7 @@ const UserAvatar = memo(
         <DropdownMenuContent align="start" className="w-40">
           <DropdownMenuItem
             inset
-            onSelect={() => disconnect()}
+            onSelect={async () => await disconnect({ namespace: "eip155" })}
             variant="destructive"
           >
             Disconnect
@@ -204,7 +210,9 @@ const renderByState = (params: {
 
 export const UserInfo = memo(
   ({ user, address: addressProp }: UserInfoProps) => {
-    const { address: connectedAddress } = useAccount();
+    const { address: connectedAddress } = useAppKitAccount({
+      namespace: "eip155",
+    });
     const address = (addressProp || connectedAddress) as Address;
 
     const { data: ensName, isLoading: isNameLoading } = useName({ address });
