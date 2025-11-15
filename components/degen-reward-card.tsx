@@ -235,7 +235,7 @@ export const DegenRewardCard = memo(
     const [hasClaimedToday, setHasClaimedToday] = useState(false);
     const { address, isConnected } = useAppKitAccount({ namespace: "eip155" });
     const { chainId } = useAppKitNetwork();
-    const numbericChainId = normalizeChainId(chainId);
+    const numericChainId = normalizeChainId(chainId);
     const {
       claimStatus,
       hasSentGMToday,
@@ -250,7 +250,7 @@ export const DegenRewardCard = memo(
       return <DisconnectedCard />;
     }
 
-    if (numbericChainId !== base.id) {
+    if (numericChainId !== base.id) {
       return <WrongNetworkCard />;
     }
 
@@ -262,7 +262,7 @@ export const DegenRewardCard = memo(
     return (
       <RewardCard
         address={address}
-        chainId={numbericChainId}
+        chainId={numericChainId}
         fid={fid}
         hasClaimedToday={hasClaimedToday}
         isCheckingEligibility={isCheckingEligibility}
