@@ -6,7 +6,7 @@ import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 type UseTransactionStatusProps = {
   onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
-  refetchEligibility: () => Promise<unknown> | void;
+  refetchEligibility: () => Promise<unknown> | undefined;
 };
 
 /**
