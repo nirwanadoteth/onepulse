@@ -6,7 +6,7 @@ import { deserialize, serialize } from "wagmi";
 import { getQueryClient } from "@/lib/client";
 
 const persister = createAsyncStoragePersister({
-  storage: window.localStorage,
+  storage: typeof window !== "undefined" ? window.localStorage : null,
   serialize,
   deserialize,
 });

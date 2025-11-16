@@ -1,8 +1,8 @@
 "use client";
 
+import { base } from "@reown/appkit/networks";
+import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { memo, useState } from "react";
-import { useAccount, useChainId, useSwitchChain } from "wagmi";
-import { base } from "wagmi/chains";
 import { DegenClaimTransaction } from "@/components/gm-chain-card/degen-claim-transaction";
 import { ShareGMStatus } from "@/components/share-gm-status";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
 import { useGmStats } from "@/hooks/use-gm-stats";
+import { normalizeChainId } from "@/lib/utils";
 
 type DegenRewardCardProps = {
   fid: bigint | undefined;
@@ -203,10 +204,10 @@ function DepletedVaultCard() {
 }
 
 function WrongNetworkCard() {
-  const { switchChain } = useSwitchChain();
+  const { switchNetwork } = useAppKitNetwork();
 
   const handleSwitchToBase = () => {
-    switchChain({ chainId: base.id });
+    switchNetwork(base);
   };
 
   return (
@@ -232,8 +233,9 @@ function WrongNetworkCard() {
 export const DegenRewardCard = memo(
   ({ fid, sponsored }: DegenRewardCardProps) => {
     const [hasClaimedToday, setHasClaimedToday] = useState(false);
-    const { address, isConnected } = useAccount();
-    const chainId = useChainId();
+    const { address, isConnected } = useAppKitAccount({ namespace: "eip155" });
+    const { chainId } = useAppKitNetwork();
+    const numericChainId = normalizeChainId(chainId);
     const {
       claimStatus,
       hasSentGMToday,
@@ -248,7 +250,7 @@ export const DegenRewardCard = memo(
       return <DisconnectedCard />;
     }
 
-    if (chainId !== base.id) {
+    if (numericChainId !== base.id) {
       return <WrongNetworkCard />;
     }
 
@@ -260,7 +262,7 @@ export const DegenRewardCard = memo(
     return (
       <RewardCard
         address={address}
-        chainId={chainId}
+        chainId={numericChainId}
         fid={fid}
         hasClaimedToday={hasClaimedToday}
         isCheckingEligibility={isCheckingEligibility}

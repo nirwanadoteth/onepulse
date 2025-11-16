@@ -1,6 +1,7 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
   onSuccess?: (txHash: string) => void;
@@ -36,8 +37,12 @@ export function useTransactionStatus({
 
       if (isError && onError) {
         const error = new Error(
-          status.statusData.message || "Transaction failed"
+          status.statusData.message || ERROR_MESSAGES.CLAIM_FAILED
         );
+        handleError(error, ERROR_MESSAGES.CLAIM_FAILED, {
+          operation: "degen-claim",
+          statusData: status.statusData,
+        });
         onError(error);
       }
     },

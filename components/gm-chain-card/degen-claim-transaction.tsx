@@ -3,11 +3,11 @@ import {
   TransactionButton,
   TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
+import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { memo } from "react";
-import { useAccount, useChainId } from "wagmi";
 import { useClaimEligibility } from "@/hooks/use-degen-claim";
 import { getDailyRewardsAddress } from "@/lib/constants";
-
+import { normalizeChainId } from "@/lib/utils";
 import { TransactionToast } from "../transaction-toast";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
 import { getButtonState } from "./get-button-state";
@@ -34,9 +34,12 @@ export const DegenClaimTransaction = memo(
     onError,
     disabled = false,
   }: DegenClaimTransactionProps) => {
-    const { address } = useAccount();
-    const chainId = useChainId();
-    const contractAddress = getDailyRewardsAddress(chainId);
+    const { address } = useAppKitAccount({ namespace: "eip155" });
+    const { chainId } = useAppKitNetwork();
+    const numericChainId = normalizeChainId(chainId);
+    const contractAddress = numericChainId
+      ? getDailyRewardsAddress(numericChainId)
+      : undefined;
     const {
       canClaim,
       hasSentGMToday,
@@ -80,7 +83,7 @@ export const DegenClaimTransaction = memo(
       <div className="relative w-full">
         <Transaction
           calls={getClaimContracts}
-          chainId={chainId}
+          chainId={numericChainId}
           isSponsored={sponsored}
           onStatus={handleStatus}
         >

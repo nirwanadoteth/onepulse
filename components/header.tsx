@@ -1,10 +1,9 @@
 "use client";
 
 import { sdk } from "@farcaster/miniapp-sdk";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Bookmark } from "lucide-react";
 import { memo, useCallback, useState } from "react";
-import { toast } from "sonner";
-import { useAccount } from "wagmi";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   type MiniAppContext,
@@ -13,10 +12,18 @@ import {
 } from "@/components/providers/miniapp-provider";
 import { Button } from "@/components/ui/button";
 import { UserInfo } from "@/components/user-info";
+import {
+  ERROR_MESSAGES,
+  extractErrorMessage,
+  handleError,
+  handleSuccess,
+  SUCCESS_MESSAGES,
+} from "@/lib/error-handling";
+import { canSaveMiniApp } from "@/lib/utils";
 import { minikitConfig } from "@/minikit.config";
 
 type HeaderProps = {
-  isFrameReady: boolean;
+  isMiniAppReady: boolean;
   inMiniApp: boolean;
   onMiniAppAdded: () => void;
 };
@@ -32,12 +39,6 @@ const extractUserFromContext = (
         pfpUrl: context.user.pfpUrl,
       }
     : undefined;
-
-const shouldShowSaveButton = (
-  isFrameReady: boolean,
-  inMiniApp: boolean,
-  clientAdded: boolean | undefined
-): boolean => isFrameReady && inMiniApp && clientAdded !== true;
 
 type HeaderRightProps = {
   showSaveButton: boolean;
@@ -65,12 +66,12 @@ const HeaderRight = memo(
 );
 
 export function Header({
-  isFrameReady,
+  isMiniAppReady,
   inMiniApp,
   onMiniAppAdded,
 }: HeaderProps) {
   const miniAppContextData = useMiniAppContext();
-  const { address } = useAccount();
+  const { address } = useAppKitAccount({ namespace: "eip155" });
   const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
 
   const handleAddMiniApp = useCallback(async () => {
@@ -78,23 +79,29 @@ export function Header({
       const response = await sdk.actions.addMiniApp();
 
       if (response.notificationDetails) {
-        toast.success("Saved");
+        handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED);
       } else {
-        toast.success("Saved without notification");
+        handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED_NO_NOTIF);
       }
 
       setMiniAppAddedLocally(true);
       onMiniAppAdded();
     } catch (error) {
-      toast.error(`Error: ${error}`);
+      handleError(error, ERROR_MESSAGES.MINI_APP_ADD, {
+        operation: "mini-app-add",
+        errorMessage: extractErrorMessage(error),
+      });
     }
   }, [onMiniAppAdded]);
 
   const user = extractUserFromContext(miniAppContextData?.context);
   const clientAdded = miniAppContextData?.context?.client?.added;
   const showSaveButton =
-    shouldShowSaveButton(isFrameReady, inMiniApp, clientAdded) &&
-    !miniAppAddedLocally;
+    canSaveMiniApp({
+      isMiniAppReady,
+      inMiniApp,
+      clientAdded,
+    }) && !miniAppAddedLocally;
 
   const shouldShowUserInfo = !!user || !!address;
 

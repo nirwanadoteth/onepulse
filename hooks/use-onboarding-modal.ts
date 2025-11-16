@@ -3,7 +3,7 @@ import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { useOnboarding } from "@/hooks/use-onboarding";
 
 export function useOnboardingModal() {
-  const { isFrameReady } = useMiniKit();
+  const { isMiniAppReady } = useMiniKit();
   const miniAppContext = useMiniAppContext();
   const { showOnboardingModal, dismissOnboarding } = useOnboarding();
 
@@ -11,7 +11,7 @@ export function useOnboardingModal() {
 
   const canSaveApp = (inMiniApp: boolean) =>
     Boolean(
-      isFrameReady &&
+      isMiniAppReady &&
         inMiniApp &&
         miniAppContext?.context?.client.added !== true
     );

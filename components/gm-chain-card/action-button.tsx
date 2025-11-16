@@ -1,12 +1,17 @@
 "use client";
 
-import { memo, type ReactNode, useCallback } from "react";
-import { toast } from "sonner";
-import { useSwitchChain } from "wagmi";
-
+import { useAppKitNetwork } from "@reown/appkit/react";
+import { memo, type ReactNode, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ConnectWallet } from "@/components/wallet";
+import { useAsyncOperation } from "@/hooks/use-async-operation";
+import {
+  ERROR_MESSAGES,
+  LOADING_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "@/lib/error-handling";
+import { networks } from "@/lib/wagmi";
 
 type ActionButtonProps = {
   isConnected: boolean;
@@ -34,17 +39,30 @@ export const ActionButton = memo(
     onOpenModal,
     renderCountdown,
   }: ActionButtonProps) => {
-    const { switchChain, isPending: isSwitching } = useSwitchChain();
+    const { switchNetwork } = useAppKitNetwork();
+    const targetNetwork = useMemo(
+      () => networks.find((net) => net.id === chainId),
+      [chainId]
+    );
 
-    const handleSwitchChain = useCallback(() => {
-      try {
-        switchChain({
-          chainId: chainId as 10 | 8453 | 42220,
-        });
-      } catch {
-        toast.error("Failed to switch network. Please try again.");
+    const op = useCallback(() => {
+      if (!targetNetwork) {
+        return Promise.reject(new Error(`Network ${chainId} not supported`));
       }
-    }, [switchChain, chainId]);
+      return switchNetwork(targetNetwork);
+    }, [switchNetwork, targetNetwork, chainId]);
+
+    const options = useMemo(
+      () => ({
+        loadingMessage: LOADING_MESSAGES.NETWORK_SWITCHING,
+        successMessage: SUCCESS_MESSAGES.NETWORK_SWITCHED,
+        errorMessage: ERROR_MESSAGES.NETWORK_SWITCH,
+        context: { operation: "network-switch", chainId },
+      }),
+      [chainId]
+    );
+
+    const { execute: doSwitch, isLoading } = useAsyncOperation(op, options);
 
     const handleOpenModal = useCallback(() => {
       if (!gmDisabled) {
@@ -69,13 +87,13 @@ export const ActionButton = memo(
 
       return (
         <Button
-          aria-busy={isSwitching}
+          aria-busy={isLoading}
           className={`w-full ${chainBtnClasses}`}
-          disabled={isSwitching}
-          onClick={handleSwitchChain}
+          disabled={isLoading}
+          onClick={doSwitch}
           size="lg"
         >
-          {isSwitching ? (
+          {isLoading ? (
             <>
               <Spinner /> Switching…
             </>

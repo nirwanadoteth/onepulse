@@ -1,8 +1,8 @@
 "use client";
 
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useMemo } from "react";
-import { useAccount, useReadContract } from "wagmi";
-
+import { useReadContract } from "wagmi";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
 import { getDailyRewardsAddress } from "@/lib/constants";
 
@@ -60,7 +60,7 @@ export function useClaimEligibility({
   fid,
   enabled = true,
 }: UseClaimEligibilityProps) {
-  const { address } = useAccount();
+  const { address } = useAppKitAccount({ namespace: "eip155" });
   const contractAddress = getDailyRewardsAddress(CHAIN_ID);
   const args = buildClaimEligibilityArgs(address, fid, contractAddress);
   const shouldQuery = shouldQueryEligibility(
