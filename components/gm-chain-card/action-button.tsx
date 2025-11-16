@@ -64,9 +64,6 @@ export const ActionButton = memo(
 
     const { execute: doSwitch, isLoading } = useAsyncOperation(op, options);
 
-    const handleSwitchChain = useCallback(() => {
-      doSwitch();
-    }, [doSwitch]);
     const handleOpenModal = useCallback(() => {
       if (!gmDisabled) {
         onOpenModal();
@@ -93,7 +90,7 @@ export const ActionButton = memo(
           aria-busy={isLoading}
           className={`w-full ${chainBtnClasses}`}
           disabled={isLoading}
-          onClick={handleSwitchChain}
+          onClick={doSwitch}
           size="lg"
         >
           {isLoading ? (
