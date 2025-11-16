@@ -61,11 +61,13 @@ export const Home = memo(
     const prevStatsRef = useRef<ReturnType<typeof useGmStats>["stats"] | null>(
       null
     );
+
+    const stats = gmStatsResult.stats;
+
     useEffect(() => {
       if (!onGmStatsChange) {
         return;
       }
-      const stats = gmStatsResult.stats;
       if (!stats) {
         return;
       }
@@ -81,7 +83,7 @@ export const Home = memo(
       }
       prevStatsRef.current = stats;
       onGmStatsChange(gmStatsResult);
-    }, [gmStatsResult, onGmStatsChange]);
+    }, [stats, gmStatsResult.isReady, onGmStatsChange, gmStatsResult]);
 
     const { statusMap, handleStatus } = usePerChainStatus();
 
