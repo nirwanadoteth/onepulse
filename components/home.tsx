@@ -1,7 +1,7 @@
 "use client";
 
+import { useAppKitAccount } from "@reown/appkit/react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useAccount } from "wagmi";
 import { GMChainCard } from "@/components/gm-chain-card/gm-chain-card";
 import {
   Carousel,
@@ -32,7 +32,7 @@ export const Home = memo(
     sponsored?: boolean;
     allowedChainIds?: number[];
   }) => {
-    const { isConnected, address } = useAccount();
+    const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
     const {
       activeModalChainId,
       processing,

@@ -1,20 +1,20 @@
 "use client";
 
+import { useAppKitAccount } from "@reown/appkit/react";
 import { memo } from "react";
-import { useAccount } from "wagmi";
 import { ConnectWalletCard } from "@/components/connect-wallet-card";
 import { DegenRewardCard } from "@/components/degen-reward-card";
 import { HowItWorksCard } from "@/components/how-it-works-card";
+import { MiniAppRequiredCard } from "@/components/mini-app-required-card";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { VaultBalanceCard } from "@/components/vault-balance-card";
-import { VerifyingIdentityCard } from "@/components/verifying-identity-card";
 
 export const Rewards = memo(function GMBase({
   sponsored,
 }: {
   sponsored?: boolean;
 }) {
-  const { isConnected } = useAccount();
+  const { isConnected } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContextData = useMiniAppContext();
 
   const fid = miniAppContextData?.context?.user?.fid
@@ -29,7 +29,7 @@ export const Rewards = memo(function GMBase({
         fid ? (
           <DegenRewardCard fid={fid} sponsored={Boolean(sponsored)} />
         ) : (
-          <VerifyingIdentityCard />
+          <MiniAppRequiredCard />
         )
       ) : (
         <ConnectWalletCard />

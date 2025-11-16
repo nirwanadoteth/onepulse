@@ -5,12 +5,18 @@ import {
   useAvatar,
   useName,
 } from "@coinbase/onchainkit/identity";
-import { memo, type ReactNode } from "react";
+import { useAppKitAccount, useDisconnect } from "@reown/appkit/react";
+import { memo, type ReactNode, useCallback, useMemo } from "react";
 import type { Address } from "viem";
-import { useAccount, useDisconnect } from "wagmi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAsyncOperation } from "@/hooks/use-async-operation";
 import { truncateAddress } from "@/lib/ens-utils";
+import {
+  ERROR_MESSAGES,
+  LOADING_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "@/lib/error-handling";
 
 import type { UserContext } from "./providers/miniapp-provider";
 import { Button } from "./ui/button";
@@ -41,13 +47,47 @@ const UserAvatar = memo(
   ({
     url: avatarUrl,
     name: displayName,
+    isConnected,
   }: {
     url: string | undefined;
     name: string;
+    isConnected: boolean;
   }) => {
     const { disconnect } = useDisconnect();
+
+    const op = useCallback(
+      () => disconnect({ namespace: "eip155" }),
+      [disconnect]
+    );
+
+    const options = useMemo(
+      () => ({
+        loadingMessage: LOADING_MESSAGES.WALLET_DISCONNECTING,
+        successMessage: SUCCESS_MESSAGES.WALLET_DISCONNECTED,
+        errorMessage: ERROR_MESSAGES.WALLET_DISCONNECT,
+        context: { operation: "dropdown-disconnect" },
+      }),
+      []
+    );
+
+    const { execute: disconnectWallet, isLoading } = useAsyncOperation(
+      op,
+      options
+    );
+
+    if (!isConnected) {
+      return (
+        <Avatar className="size-8">
+          <AvatarImage alt={displayName} src={avatarUrl} />
+          <AvatarFallback className="text-xs">
+            {displayName.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      );
+    }
+
     return (
-      <DropdownMenu modal={false}>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button className="rounded-full p-0" size="icon" variant="outline">
             <Avatar className="size-8">
@@ -60,8 +100,11 @@ const UserAvatar = memo(
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-40">
           <DropdownMenuItem
+            disabled={isLoading}
             inset
-            onSelect={() => disconnect()}
+            onSelect={() => {
+              disconnectWallet();
+            }}
             variant="destructive"
           >
             Disconnect
@@ -121,11 +164,18 @@ const getWalletConnectedDisplay = (
   displayName: getDisplayName(user?.displayName, ensName, address),
 });
 
-const renderMiniAppUser = (user: UserInfoProps["user"]) => {
+const renderMiniAppUser = (
+  user: UserInfoProps["user"],
+  isConnected: boolean
+) => {
   const { displayName, avatarUrl, username } = getMiniAppUserDisplay(user);
   return (
     <div className="flex items-center gap-2">
-      <UserAvatar name={displayName} url={avatarUrl} />
+      <UserAvatar
+        isConnected={isConnected}
+        name={displayName}
+        url={avatarUrl}
+      />
       <UserData displayName={displayName} username={username} />
     </div>
   );
@@ -138,23 +188,28 @@ const renderWalletLoading = () => (
   </div>
 );
 
-const renderWalletConnected = (
-  user: UserInfoProps["user"],
-  address: Address,
-  ensName: GetNameReturnType | undefined,
-  ensAvatar: string | null | undefined
-) => {
+const renderWalletConnected = (params: {
+  user: UserInfoProps["user"];
+  address: Address;
+  ensName: GetNameReturnType | undefined;
+  ensAvatar: string | null | undefined;
+  isConnected: boolean;
+}) => {
   const { avatarUrl, displayName } = getWalletConnectedDisplay(
-    user,
-    address,
-    ensName,
-    ensAvatar
+    params.user,
+    params.address,
+    params.ensName,
+    params.ensAvatar
   );
 
   return (
     <div className="flex items-center gap-2">
-      <UserAvatar name={displayName} url={avatarUrl} />
-      <UserData address={address} displayName={displayName} />
+      <UserAvatar
+        isConnected={params.isConnected}
+        name={displayName}
+        url={avatarUrl}
+      />
+      <UserData address={params.address} displayName={displayName} />
     </div>
   );
 };
@@ -184,27 +239,31 @@ const renderByState = (params: {
   address: Address;
   ensName: GetNameReturnType | undefined;
   ensAvatar: string | null | undefined;
+  isConnected: boolean;
 }): ReactNode => {
   if (params.state === "hidden") {
     return null;
   }
   if (params.state === "miniapp") {
-    return renderMiniAppUser(params.user);
+    return renderMiniAppUser(params.user, params.isConnected);
   }
   if (params.state === "loading") {
     return renderWalletLoading();
   }
-  return renderWalletConnected(
-    params.user,
-    params.address,
-    params.ensName,
-    params.ensAvatar
-  );
+  return renderWalletConnected({
+    user: params.user,
+    address: params.address,
+    ensName: params.ensName,
+    ensAvatar: params.ensAvatar,
+    isConnected: params.isConnected,
+  });
 };
 
 export const UserInfo = memo(
   ({ user, address: addressProp }: UserInfoProps) => {
-    const { address: connectedAddress } = useAccount();
+    const { address: connectedAddress, isConnected } = useAppKitAccount({
+      namespace: "eip155",
+    });
     const address = (addressProp || connectedAddress) as Address;
 
     const { data: ensName, isLoading: isNameLoading } = useName({ address });
@@ -215,6 +274,13 @@ export const UserInfo = memo(
     const isLoading = isNameLoading || isAvatarLoading;
     const state = determineDisplayState(user, address, isLoading);
 
-    return renderByState({ state, user, address, ensName, ensAvatar });
+    return renderByState({
+      state,
+      user,
+      address,
+      ensName,
+      ensAvatar,
+      isConnected,
+    });
   }
 );

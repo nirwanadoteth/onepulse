@@ -1,8 +1,11 @@
 import { useTransactionContext } from "@coinbase/onchainkit/transaction";
 import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useChainId } from "wagmi";
-
+import {
+  ERROR_MESSAGES,
+  LOADING_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "@/lib/error-handling";
 import { cn, getChainExplorer } from "@/lib/utils";
 
 function useSafeTransactionContext() {
@@ -57,12 +60,16 @@ function getTransactionState(params: {
 
 function createSuccessAction(
   txHash: string | undefined,
-  accountChainId: number
+  txChainId: number | undefined
 ): ReactNode {
+  const isValidChain = typeof txChainId === "number" && txChainId > 0;
   if (!txHash) {
     return null;
   }
-  const chainExplorer = getChainExplorer(accountChainId);
+  if (!isValidChain) {
+    return null;
+  }
+  const chainExplorer = getChainExplorer(txChainId);
   return (
     <a
       className="ml-auto"
@@ -109,7 +116,7 @@ function useToastVisibility(
 
 function useToastCreation(options: {
   state: string;
-  accountChainId: number;
+  txChainId?: number;
   errorMessage: string | undefined;
   onSubmit: (() => void) | undefined;
   txHashRef: RefObject<string | undefined>;
@@ -121,7 +128,7 @@ function useToastCreation(options: {
 }) {
   const {
     state,
-    accountChainId,
+    txChainId,
     errorMessage,
     onSubmit,
     txHashRef,
@@ -139,13 +146,13 @@ function useToastCreation(options: {
       );
 
       toast.promise(transactionPromise, {
-        loading: "Processing transaction...",
+        loading: LOADING_MESSAGES.TRANSACTION_PENDING,
         success: () => ({
-          message: "Transaction successful",
-          action: createSuccessAction(txHashRef.current, accountChainId),
+          message: SUCCESS_MESSAGES.TRANSACTION_SUCCESS,
+          action: createSuccessAction(txHashRef.current, txChainId),
         }),
         error: () => ({
-          message: errorMessage || "Something went wrong",
+          message: errorMessage || ERROR_MESSAGES.TRANSACTION_FAILED,
           action: createErrorAction(onSubmit),
         }),
       });
@@ -154,7 +161,7 @@ function useToastCreation(options: {
     }
   }, [
     state,
-    accountChainId,
+    txChainId,
     errorMessage,
     onSubmit,
     toastControllerRef,
@@ -199,9 +206,14 @@ export function TransactionToast() {
     transactionHash,
     transactionId,
     onSubmit,
+    chainId: contextChainId,
   } = context;
 
-  const accountChainId = useChainId();
+  // Prefer the transaction's own chainId from context; do not rely on global selection
+  const txChainId =
+    typeof contextChainId === "number" && contextChainId > 0
+      ? contextChainId
+      : undefined;
 
   const toastCreatedRef = useRef<boolean>(false);
   const toastControllerRef = useRef<{
@@ -227,7 +239,7 @@ export function TransactionToast() {
   useToastVisibility(state, errorMessage, toastCreatedRef);
   useToastCreation({
     state,
-    accountChainId,
+    txChainId,
     errorMessage,
     onSubmit,
     txHashRef,
