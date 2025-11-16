@@ -1,11 +1,11 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
   onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
+  onRefreshError?: (error: Error) => void;
   refetchEligibility?: () => Promise<unknown>;
 };
 
@@ -18,36 +18,41 @@ type TransactionStatusHandlers = {
  * Hook to handle transaction lifecycle status updates.
  * Returns a synchronous onStatus callback for OnchainKit and a separate
  * async handler for refreshing eligibility after success.
+ *
+ * Only refreshes the eligibility query when transaction succeeds,
+ * avoiding unnecessary invalidation of unrelated queries.
  */
 export function useTransactionStatus({
   onSuccess,
   onError,
+  onRefreshError,
   refetchEligibility,
 }: UseTransactionStatusProps): TransactionStatusHandlers {
-  const queryClient = useQueryClient();
-
   const handleRefreshAfterSuccess = useCallback(
     async (txHash: string) => {
       try {
-        await Promise.all([
-          refetchEligibility
-            ? Promise.resolve(refetchEligibility())
-            : Promise.resolve(),
-          queryClient.invalidateQueries({ queryKey: ["useReadContract"] }),
-        ]);
+        // Only refetch eligibility - no need to invalidate broad query keys
+        if (refetchEligibility) {
+          await refetchEligibility();
+        }
       } catch (error) {
         // Log but don't block success flow - transaction already succeeded
         console.error(
           "Failed to refresh eligibility after transaction:",
           error
         );
+        if (onRefreshError) {
+          onRefreshError(
+            error instanceof Error ? error : new Error(String(error))
+          );
+        }
       } finally {
         if (onSuccess) {
           onSuccess(txHash);
         }
       }
     },
-    [refetchEligibility, queryClient, onSuccess]
+    [refetchEligibility, onSuccess, onRefreshError]
   );
 
   const onStatus = useCallback(
