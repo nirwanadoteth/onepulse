@@ -66,6 +66,15 @@ export const STREAK_NARRATIVES: readonly StreakNarrative[] = [
   },
 ] as const;
 
+export const MILESTONE_CONTEXTS = [
+  { threshold: 100, text: "100+ GMs logged. That's a serious habit. 🏆" },
+  { threshold: 50, text: "50 GMs logged. Real commitment. 🔥" },
+  { threshold: 25, text: "25 GMs and still going! 💪" },
+  { threshold: 10, text: "10 GMs. Things are getting serious. ⚡" },
+  { threshold: 5, text: "5 GMs in already. Momentum building! 📈" },
+  { threshold: 1, text: "First GM logged on OnePulse! 🎉" },
+] as const;
+
 /**
  * Special milestone messages that take precedence over generic narratives.
  * Matched by streak and optionally by totalGMs for first-claim celebrations.
@@ -94,6 +103,11 @@ export const SPECIAL_MILESTONES: readonly SpecialMilestone[] = [
   },
 ] as const;
 
+export function getMilestoneContext(total: number): string {
+  const context = MILESTONE_CONTEXTS.find((c) => total >= c.threshold);
+  return context?.text || "";
+}
+
 /**
  * Lookup a special milestone by streak and optional totalGMs.
  * Returns the matching milestone or undefined if no match found.
@@ -112,5 +126,7 @@ export function getSpecialMilestone(
   }
 
   // Then, try streak-only match (for milestones without totalGMs constraint)
-  return SPECIAL_MILESTONES.find((m) => m.streak === streak && !m.totalGMs);
+  return SPECIAL_MILESTONES.find(
+    (m) => m.streak === streak && m.totalGMs === undefined
+  );
 }

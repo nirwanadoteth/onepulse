@@ -9,6 +9,7 @@ import {
   useMiniAppContext,
 } from "@/components/providers/miniapp-provider";
 import {
+  getMilestoneContext,
   getSpecialMilestone,
   STREAK_NARRATIVES,
 } from "@/components/share-narratives";
@@ -59,26 +60,6 @@ const createShareText = (
     }
 
     return claimed ? narrative.claimed(streak) : narrative.unclaimed(streak);
-  };
-
-  const getMilestoneContext = (total: number) => {
-    const contexts = [
-      { threshold: 100, text: "100+ GMs logged. That's a serious habit. 🏆" },
-      {
-        threshold: 50,
-        text: "50 GMs logged. Real commitment. 🔥",
-      },
-      { threshold: 25, text: "25 GMs and still going! 💪" },
-      {
-        threshold: 10,
-        text: "10 GMs. Things are getting serious. ⚡",
-      },
-      { threshold: 5, text: "5 GMs in already. Momentum building! 📈" },
-      { threshold: 1, text: "First GM logged on OnePulse! 🎉" },
-    ];
-
-    const context = contexts.find((c) => total >= c.threshold);
-    return context?.text || "";
   };
 
   // Check for special milestone messages (takes precedence over generic narrative)
