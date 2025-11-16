@@ -64,5 +64,5 @@ export function useGmStats(
     gmStatsByAddressStore.isSubscribedForAddress(address) ||
     Boolean(fallbackForKey);
 
-  return { stats, isReady };
+  return useMemo(() => ({ stats, isReady }), [stats, isReady]);
 }
