@@ -83,7 +83,15 @@ export const Home = memo(
       }
       prevStatsRef.current = stats;
       onGmStatsChange(gmStatsResult);
-    }, [stats, gmStatsResult.isReady, onGmStatsChange, gmStatsResult]);
+    }, [
+      stats.currentStreak,
+      stats.highestStreak,
+      stats.allTimeGmCount,
+      stats.lastGmDay,
+      stats,
+      onGmStatsChange,
+      gmStatsResult,
+    ]);
 
     const { statusMap, handleStatus } = usePerChainStatus();
 
