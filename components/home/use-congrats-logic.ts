@@ -8,7 +8,7 @@ type UseCongratsLogicProps = {
   allDone: boolean;
   isConnected: boolean;
   lastCongratsDay: number | null;
-  onLastCongratsDayUpdate: (day: number) => void;
+  onLastCongratsDayUpdateAction: (day: number) => void;
 };
 
 /**
@@ -19,7 +19,7 @@ export function useCongratsLogic({
   allDone,
   isConnected,
   lastCongratsDay,
-  onLastCongratsDayUpdate,
+  onLastCongratsDayUpdateAction,
 }: UseCongratsLogicProps) {
   const [showCongrats, setShowCongrats] = useState(false);
 
@@ -36,7 +36,7 @@ export function useCongratsLogic({
 
     timeoutId = setTimeout(() => {
       setShowCongrats(true);
-      onLastCongratsDayUpdate(today);
+      onLastCongratsDayUpdateAction(today);
     }, 0);
 
     return () => {
@@ -44,7 +44,7 @@ export function useCongratsLogic({
         clearTimeout(timeoutId);
       }
     };
-  }, [allDone, isConnected, lastCongratsDay, onLastCongratsDayUpdate]);
+  }, [allDone, isConnected, lastCongratsDay, onLastCongratsDayUpdateAction]);
 
   return { showCongrats, setShowCongrats };
 }

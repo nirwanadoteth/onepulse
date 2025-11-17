@@ -62,14 +62,14 @@ function Content({
         gmStats={gmStats?.stats}
         inMiniApp={inMiniApp}
         isMiniAppReady={isMiniAppReady}
-        onMiniAppAdded={handleMiniAppAdded}
+        onMiniAppAddedAction={handleMiniAppAdded}
       />
       <Tabs
-        onGmStatsChange={setGmStats}
-        onShareClick={() =>
+        onGmStatsChangeAction={setGmStats}
+        onShareClickAction={() =>
           window.dispatchEvent(new CustomEvent("open-share-modal"))
         }
-        onTabChange={setTab}
+        onTabChangeAction={setTab}
         tab={tab}
       />
     </div>

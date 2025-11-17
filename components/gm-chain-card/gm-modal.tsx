@@ -63,7 +63,7 @@ export const GMModal = memo(
     const dialogRef = useFocusTrap({
       isOpen,
       isProcessing: processing,
-      onClose: handleClose,
+      onCloseAction: handleClose,
     });
 
     useModalScrollPrevention(isOpen);

@@ -104,7 +104,7 @@ export const Home = memo(
       allDone,
       isConnected,
       lastCongratsDay,
-      onLastCongratsDayUpdate: setLastCongratsDay,
+      onLastCongratsDayUpdateAction: setLastCongratsDay,
     });
 
     useEffect(() => {

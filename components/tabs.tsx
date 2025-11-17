@@ -15,16 +15,16 @@ import { useMiniAppContext } from "./providers/miniapp-provider";
 
 type TabsProps = {
   tab: string;
-  onTabChange: (tab: string) => void;
-  onGmStatsChange: (stats: ReturnType<typeof useGmStats>) => void;
-  onShareClick: () => void;
+  onTabChangeAction: (tab: string) => void;
+  onGmStatsChangeAction: (stats: ReturnType<typeof useGmStats>) => void;
+  onShareClickAction: () => void;
 };
 
 export function Tabs({
   tab,
-  onTabChange,
-  onGmStatsChange,
-  onShareClick,
+  onTabChangeAction,
+  onGmStatsChangeAction,
+  onShareClickAction,
 }: TabsProps) {
   const miniAppContext = useMiniAppContext();
 
@@ -34,12 +34,12 @@ export function Tabs({
 
   return (
     <div className="my-4">
-      <TabsComponent onValueChange={onTabChange} value={tab}>
+      <TabsComponent onValueChange={onTabChangeAction} value={tab}>
         <TabsContent value="home">
           <Home
             allowedChainIds={allowedChainIds}
-            onGmStatsChange={onGmStatsChange}
-            onShareClick={onShareClick}
+            onGmStatsChange={onGmStatsChangeAction}
+            onShareClick={onShareClickAction}
             sponsored={isBaseApp}
           />
         </TabsContent>

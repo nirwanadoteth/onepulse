@@ -27,7 +27,7 @@ import { minikitConfig } from "@/minikit.config";
 type HeaderProps = {
   isMiniAppReady: boolean;
   inMiniApp: boolean;
-  onMiniAppAdded: () => void;
+  onMiniAppAddedAction: () => void;
   gmStats?: GmStats;
 };
 
@@ -90,7 +90,7 @@ const HeaderRight = memo(
 export function Header({
   isMiniAppReady,
   inMiniApp,
-  onMiniAppAdded,
+  onMiniAppAddedAction,
   gmStats,
 }: HeaderProps) {
   const miniAppContextData = useMiniAppContext();
@@ -116,14 +116,14 @@ export function Header({
       }
 
       setMiniAppAddedLocally(true);
-      onMiniAppAdded();
+      onMiniAppAddedAction();
     } catch (error) {
       handleError(error, ERROR_MESSAGES.MINI_APP_ADD, {
         operation: "mini-app-add",
         errorMessage: extractErrorMessage(error),
       });
     }
-  }, [onMiniAppAdded]);
+  }, [onMiniAppAddedAction]);
 
   const user = extractUserFromContext(miniAppContextData?.context);
   const clientAdded = miniAppContextData?.context?.client?.added;
