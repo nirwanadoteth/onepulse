@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
-import { SafeAreaProvider } from "@/components/safe-area-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { minikitConfig } from "@/minikit.config";
 import { RootProvider } from "./root-provider";
 
 import "@/styles/globals.css";
 
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
+import { cookieToInitialState } from "wagmi";
 import { fontVariables } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { config } from "@/lib/wagmi";
 
 const frame = {
   version: minikitConfig.miniapp.version,
@@ -72,8 +72,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  const headersData = await headers();
-  const cookies = headersData.get("cookie");
+  const initialState = cookieToInitialState(
+    config,
+    (await headers()).get("cookie")
+  );
   return (
     <html
       className="no-scrollbar layout-fixed"
@@ -81,15 +83,14 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className={cn("overscroll-none font-sans antialiased", fontVariables)}
+        className={cn(
+          "flex min-h-screen flex-col overscroll-none font-sans antialiased",
+          fontVariables
+        )}
       >
-        <RootProvider cookies={cookies}>
-          <TooltipProvider delayDuration={0}>
-            <SafeAreaProvider>
-              {children}
-              <Toaster closeButton position="top-center" />
-            </SafeAreaProvider>
-          </TooltipProvider>
+        <RootProvider initialState={initialState}>
+          {children}
+          <Toaster closeButton position="top-center" theme="system" />
         </RootProvider>
       </body>
     </html>

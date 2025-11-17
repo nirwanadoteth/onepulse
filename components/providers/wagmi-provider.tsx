@@ -3,7 +3,7 @@
 import { base } from "@reown/appkit/networks";
 import { createAppKit } from "@reown/appkit/react";
 import type { ReactNode } from "react";
-import { cookieToInitialState, WagmiProvider as Provider } from "wagmi";
+import { WagmiProvider as Provider, type State } from "wagmi";
 import { config, networks, projectId, wagmiAdapter } from "@/lib/wagmi";
 import { minikitConfig } from "@/minikit.config";
 
@@ -31,14 +31,17 @@ export const modal = createAppKit({
 
 export function WagmiProvider({
   children,
-  cookies,
+  initialState,
 }: {
   children: ReactNode;
-  cookies: string | null;
+  initialState?: State;
 }) {
-  const initialState = cookieToInitialState(config, cookies);
   return (
-    <Provider config={config} initialState={initialState}>
+    <Provider
+      config={config}
+      initialState={initialState}
+      reconnectOnMount={false}
+    >
       {children}
     </Provider>
   );
