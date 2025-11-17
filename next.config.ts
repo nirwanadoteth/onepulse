@@ -21,10 +21,6 @@ const securityHeaders = [
     key: "x-content-type-options",
     value: "nosniff",
   },
-  {
-    key: "x-xss-protection",
-    value: "1; mode=block",
-  },
 ];
 
 const nextConfig: NextConfig = {
@@ -35,11 +31,8 @@ const nextConfig: NextConfig = {
     inlineCss: true,
   },
   transpilePackages: ["spacetimedb"],
-  webpack: (config) => {
-    config.externals.push("pino-pretty");
-    return config;
-  },
   serverExternalPackages: ["pino-pretty"],
+  // biome-ignore lint/suspicious/useAwait: This is a valid async function
   async headers() {
     return [
       {
