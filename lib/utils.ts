@@ -158,7 +158,7 @@ export function timestampToDayNumber(timestampSeconds: number): number {
  * Validates domain structure: labels separated by dots, each label following DNS rules
  */
 export function isDomainFormat(input: string): boolean {
-  const trimmed = input?.trim();
+  const trimmed = input.trim();
   if (!trimmed) {
     return false;
   }
