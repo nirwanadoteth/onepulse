@@ -3,9 +3,9 @@ import { type Address, createPublicClient, http, isAddress } from "viem";
 import { base, celo, optimism } from "viem/chains";
 
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
-import { getDailyGmAddress } from "@/lib/constants";
 import type { GmStatsByAddress } from "@/lib/module_bindings";
 import { callReportGm, getGmRows } from "@/lib/spacetimedb/server-connection";
+import { getDailyGmAddress } from "@/lib/utils";
 
 export const runtime = "nodejs";
 

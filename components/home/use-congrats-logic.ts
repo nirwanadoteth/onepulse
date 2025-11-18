@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-import { getCurrentDay } from "./chain-config";
+import { getCurrentDay } from "@/lib/utils";
 
 type UseCongratsLogicProps = {
   allDone: boolean;
@@ -32,18 +31,11 @@ export function useCongratsLogic({
       return;
     }
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    timeoutId = setTimeout(() => {
+    // Schedule as microtask to avoid blocking current render
+    queueMicrotask(() => {
       setShowCongrats(true);
       onLastCongratsDayUpdateAction(today);
-    }, 0);
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
+    });
   }, [allDone, isConnected, lastCongratsDay, onLastCongratsDayUpdateAction]);
 
   return { showCongrats, setShowCongrats };

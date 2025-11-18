@@ -6,8 +6,7 @@ import {
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { memo } from "react";
 import { useClaimEligibility } from "@/hooks/use-degen-claim";
-import { getDailyRewardsAddress } from "@/lib/constants";
-import { normalizeChainId } from "@/lib/utils";
+import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { TransactionToast } from "../transaction-toast";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
 import { getButtonState } from "./get-button-state";

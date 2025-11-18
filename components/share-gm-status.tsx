@@ -15,6 +15,7 @@ import {
 } from "@/components/share-narratives";
 import { Button } from "@/components/ui/button";
 import type { GmStats } from "@/hooks/use-gm-stats";
+import { MILLISECONDS_PER_DAY } from "@/lib/constants";
 import { generateGMStatusMetadata } from "@/lib/og-utils";
 
 type ShareGMStatusProps = {
@@ -43,8 +44,17 @@ const hasGMedToday = (gmStats: GmStats | undefined) => {
   if (!gmStats?.lastGmDay) {
     return false;
   }
-  const today = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  const today = Math.floor(Date.now() / MILLISECONDS_PER_DAY);
   return gmStats.lastGmDay === today;
+};
+
+const getStreakNarrative = (streak: number, claimed: boolean): string => {
+  const narrative = STREAK_NARRATIVES.find((n) => streak <= n.max);
+  if (!narrative) {
+    return "";
+  }
+
+  return claimed ? narrative.claimed(streak) : narrative.unclaimed(streak);
 };
 
 const createShareText = (
@@ -53,15 +63,6 @@ const createShareText = (
   totalGMs = 0,
   todayGM = false
 ) => {
-  const getStreakNarrative = (streak: number, claimed: boolean) => {
-    const narrative = STREAK_NARRATIVES.find((n) => streak <= n.max);
-    if (!narrative) {
-      return "";
-    }
-
-    return claimed ? narrative.claimed(streak) : narrative.unclaimed(streak);
-  };
-
   // Check for special milestone messages (takes precedence over generic narrative)
   const specialMilestone = getSpecialMilestone(currentStreak, totalGMs);
   if (specialMilestone) {
@@ -80,9 +81,11 @@ const createShareText = (
 
   const milestoneContext = getMilestoneContext(totalGMs);
 
-  return milestoneContext
-    ? `${headline}\n\n${streakNarrative}\n${milestoneContext}`
-    : `${headline}\n\n${streakNarrative}`;
+  if (milestoneContext) {
+    return `${headline}\n\n${streakNarrative}\n${milestoneContext}`;
+  }
+
+  return `${headline}\n\n${streakNarrative}`;
 };
 
 const createShareMetadata = (options: {

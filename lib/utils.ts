@@ -8,6 +8,13 @@ import {
   type RpcUserOperation,
 } from "viem";
 import { base, celo, optimism } from "viem/chains";
+import {
+  DAILY_GM_ADDRESS,
+  DAILY_GM_ADDRESSES,
+  DAILY_REWARDS_ADDRESSES,
+  MILLISECONDS_PER_DAY,
+  SECONDS_PER_DAY,
+} from "./constants";
 
 const digitRegex = /^\d+$/;
 const EIP155_REGEX = /^eip155:(\d+)$/;
@@ -15,6 +22,27 @@ const EIP155_REGEX = /^eip155:(\d+)$/;
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Get the Daily GM contract address for a given chain ID
+ */
+export function getDailyGmAddress(chainId?: number): `0x${string}` | "" {
+  if (!chainId) {
+    return DAILY_GM_ADDRESS as `0x${string}` | "";
+  }
+  return DAILY_GM_ADDRESSES[chainId] || ("" as const);
+}
+
+/**
+ * Get the Daily Rewards contract address for a given chain ID
+ */
+export function getDailyRewardsAddress(chainId?: number): `0x${string}` | "" {
+  if (!chainId) {
+    return DAILY_REWARDS_ADDRESSES[8453] || ("" as const);
+  }
+  return DAILY_REWARDS_ADDRESSES[chainId] || ("" as const);
+}
+
 const publicClient = createPublicClient({
   chain: base,
   transport: http(),
@@ -97,6 +125,28 @@ export function parseEip155NetworkId(value: unknown): number | undefined {
     return; // invalid parsed number
   }
   return; // unsupported type
+}
+
+/**
+ * Get current day number (days since Unix epoch)
+ * Used for GM tracking and congratulations logic
+ */
+export function getCurrentDay(): number {
+  return Math.floor(Date.now() / MILLISECONDS_PER_DAY);
+}
+
+/**
+ * Get current timestamp in seconds
+ */
+export function getCurrentTimestampSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
+/**
+ * Convert timestamp in seconds to day number
+ */
+export function timestampToDayNumber(timestampSeconds: number): number {
+  return Math.floor(timestampSeconds / SECONDS_PER_DAY);
 }
 
 export function canSaveMiniApp(params: {

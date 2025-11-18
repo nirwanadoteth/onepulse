@@ -17,7 +17,12 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { GmStats } from "@/hooks/use-gm-stats";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
-import { normalizeChainId } from "@/lib/utils";
+import { SECONDS_PER_DAY } from "@/lib/constants";
+import {
+  getCurrentTimestampSeconds,
+  normalizeChainId,
+  timestampToDayNumber,
+} from "@/lib/utils";
 import { CarouselNext, CarouselPrevious } from "../ui/carousel";
 import { ActionButton } from "./action-button";
 import { CountdownText } from "./countdown-text";
@@ -36,6 +41,7 @@ const computeGMState = (params: {
     lastGmDayData,
     isPendingLastGm,
   } = params;
+
   if (!(address && contractAddress)) {
     return { hasGmToday: false, gmDisabled: !isConnected, targetSec: 0 };
   }
@@ -45,10 +51,10 @@ const computeGMState = (params: {
   }
 
   const lastDay = Number((lastGmDayData as bigint) ?? 0n);
-  const nowSec = Math.floor(Date.now() / 1000);
-  const currentDay = Math.floor(nowSec / 86_400);
+  const nowSec = getCurrentTimestampSeconds();
+  const currentDay = timestampToDayNumber(nowSec);
   const alreadyGmToday = lastDay >= currentDay;
-  const nextDayStartSec = (currentDay + 1) * 86_400;
+  const nextDayStartSec = (currentDay + 1) * SECONDS_PER_DAY;
 
   return {
     hasGmToday: alreadyGmToday,

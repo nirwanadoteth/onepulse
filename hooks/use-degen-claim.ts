@@ -4,7 +4,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useMemo } from "react";
 import { useReadContract } from "wagmi";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { getDailyRewardsAddress } from "@/lib/constants";
+import { getDailyRewardsAddress } from "@/lib/utils";
 
 type UseClaimEligibilityProps = {
   fid: bigint | undefined;

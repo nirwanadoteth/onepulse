@@ -42,8 +42,3 @@ export const getNextTargetSec = (
     .filter((t) => t > 0);
   return targets.length ? Math.min(...targets) : 0;
 };
-
-/**
- * Get current day (for congratulations logic)
- */
-export const getCurrentDay = (): number => Math.floor(Date.now() / 86_400);

@@ -10,7 +10,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { getDailyRewardsAddress } from "@/lib/constants";
+import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
 
