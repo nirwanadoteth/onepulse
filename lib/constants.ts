@@ -14,13 +14,13 @@ export const SUPPORTED_CHAINS: readonly SupportedChain[] = [
 ] as const;
 
 export const DAILY_GM_ADDRESSES: Record<number, `0x${string}`> = {
-  8453:
+  [BASE_CHAIN_ID]:
     (process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS_BASE as `0x${string}`) ||
     ("" as `0x${string}`),
-  42220:
+  [CELO_CHAIN_ID]:
     (process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS_CELO as `0x${string}`) ||
     ("" as `0x${string}`),
-  10:
+  [OPTIMISM_CHAIN_ID]:
     (process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS_OPTIMISM as `0x${string}`) ||
     ("" as `0x${string}`),
 };
@@ -31,7 +31,7 @@ export const DAILY_GM_ADDRESS =
   "";
 
 export const DAILY_REWARDS_ADDRESSES: Record<number, `0x${string}`> = {
-  8453:
+  [BASE_CHAIN_ID]:
     (process.env.NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_BASE as `0x${string}`) ||
     ("" as `0x${string}`),
 };
