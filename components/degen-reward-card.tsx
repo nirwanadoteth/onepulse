@@ -12,7 +12,7 @@ import {
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
 import { useGmStats } from "@/hooks/use-gm-stats";
-import { normalizeChainId } from "@/lib/utils";
+import { isSponsoredOnChain, normalizeChainId } from "@/lib/utils";
 
 type DegenRewardCardProps = {
   fid: bigint | undefined;
@@ -269,6 +269,7 @@ export const DegenRewardCard = memo(
       return <DepletedVaultCard />;
     }
 
+    const isSponsored = isSponsoredOnChain(sponsored, numericChainId);
     const claimState = extractClaimState(claimStatus, hasSentGMToday);
     return (
       <RewardCard
@@ -280,7 +281,7 @@ export const DegenRewardCard = memo(
         isShareModalOpen={isShareModalOpen}
         onClaimSuccess={handleClaimSuccess}
         onShareModalClose={() => setIsShareModalOpen(false)}
-        sponsored={sponsored}
+        sponsored={isSponsored}
         state={claimState}
       />
     );

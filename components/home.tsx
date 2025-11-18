@@ -9,7 +9,8 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { useGmStats } from "@/hooks/use-gm-stats";
-import { BASE_CHAIN_ID, DAILY_GM_ADDRESSES } from "@/lib/constants";
+import { DAILY_GM_ADDRESSES } from "@/lib/constants";
+import { isSponsoredOnChain } from "@/lib/utils";
 import { minikitConfig } from "@/minikit.config";
 import {
   areAllChainsComplete,
@@ -157,7 +158,7 @@ export const Home = memo(
                       setActiveRefetchFn(() => refetch);
                     }}
                     onStatusChange={handleStatus}
-                    sponsored={Boolean(sponsored) && c.id === BASE_CHAIN_ID}
+                    sponsored={isSponsoredOnChain(Boolean(sponsored), c.id)}
                   />
                 </CarouselItem>
               ) : null;

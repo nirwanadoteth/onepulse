@@ -1,11 +1,11 @@
 import { memo } from "react";
 import { GMModal } from "@/components/gm-chain-card/gm-modal";
 import {
-  BASE_CHAIN_ID,
   CELO_CHAIN_ID,
   DAILY_GM_ADDRESSES,
   OPTIMISM_CHAIN_ID,
 } from "@/lib/constants";
+import { isSponsoredOnChain } from "@/lib/utils";
 
 type ModalRendererProps = {
   activeModalChainId: number | null;
@@ -61,7 +61,7 @@ export const ModalRenderer = memo(
         contractAddress={activeContractAddress}
         isContractReady={Boolean(activeContractAddress)}
         isOpen={true}
-        isSponsored={sponsored && activeModalChainId === BASE_CHAIN_ID}
+        isSponsored={isSponsoredOnChain(sponsored, activeModalChainId)}
         onClose={onClose}
         processing={processing}
         refetchLastGmDay={refetchLastGmDay}

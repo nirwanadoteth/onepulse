@@ -187,6 +187,20 @@ export function isOptimismChain(chainId?: number): boolean {
   return chainId === OPTIMISM_CHAIN_ID;
 }
 
+/**
+ * Determine if transactions should be sponsored on a given chain.
+ * Currently, sponsorship is only supported on Base.
+ */
+export function isSponsoredOnChain(
+  sponsored: boolean,
+  chainId?: number | null
+): boolean {
+  return (
+    Boolean(sponsored) &&
+    isBaseChain(typeof chainId === "number" ? chainId : undefined)
+  );
+}
+
 export function canSaveMiniApp(params: {
   isMiniAppReady: boolean;
   inMiniApp: boolean;
