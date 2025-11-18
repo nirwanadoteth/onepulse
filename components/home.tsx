@@ -86,15 +86,11 @@ export const Home = memo(
       if (!onGmStatsChange) {
         return;
       }
-      const stats = gmStatsResult.stats;
-      if (!stats) {
-        return;
-      }
       const prev = prevStatsRef.current;
       const changed =
         !prev ||
         prev.isReady !== gmStatsResult.isReady ||
-        hasChanged(prev.stats, stats);
+        hasChanged(prev.stats, gmStatsResult.stats);
       if (!changed) {
         return;
       }
