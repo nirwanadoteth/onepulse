@@ -55,6 +55,7 @@ function Content({
   setTab,
 }: ContentProps) {
   const [gmStats, setGmStats] = useState<GmStatsResult | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   return (
     <div className="mx-auto w-[95%] max-w-lg px-4 py-4">
@@ -62,13 +63,13 @@ function Content({
         gmStats={gmStats?.stats}
         inMiniApp={inMiniApp}
         isMiniAppReady={isMiniAppReady}
+        isShareModalOpen={isShareModalOpen}
         onMiniAppAddedAction={handleMiniAppAdded}
+        onShareModalOpenChangeAction={setIsShareModalOpen}
       />
       <Tabs
         onGmStatsChangeAction={setGmStats}
-        onShareClickAction={() =>
-          window.dispatchEvent(new CustomEvent("open-share-modal"))
-        }
+        onShareClickAction={() => setIsShareModalOpen(true)}
         onTabChangeAction={setTab}
         tab={tab}
       />

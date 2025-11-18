@@ -3,7 +3,7 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { Bookmark, Share2 } from "lucide-react";
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
   type MiniAppContext,
@@ -30,6 +30,8 @@ type HeaderProps = {
   inMiniApp: boolean;
   onMiniAppAddedAction: () => void;
   gmStats?: GmStats;
+  isShareModalOpen: boolean;
+  onShareModalOpenChangeAction: (open: boolean) => void;
 };
 
 const extractUserFromContext = (
@@ -93,18 +95,12 @@ export function Header({
   inMiniApp,
   onMiniAppAddedAction,
   gmStats,
+  isShareModalOpen,
+  onShareModalOpenChangeAction,
 }: HeaderProps) {
   const miniAppContextData = useMiniAppContext();
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-
-  // Allow external triggers (e.g., Congrats dialog) to open share modal via custom event.
-  useEffect(() => {
-    const handler = () => setIsShareModalOpen(true);
-    window.addEventListener("open-share-modal", handler);
-    return () => window.removeEventListener("open-share-modal", handler);
-  }, []);
 
   const handleAddMiniApp = useCallback(async () => {
     try {
@@ -152,7 +148,7 @@ export function Header({
         </div>
         <HeaderRight
           onSaveClick={handleAddMiniApp}
-          onShareClick={() => setIsShareModalOpen(true)}
+          onShareClick={() => onShareModalOpenChangeAction(true)}
           showSaveButton={showSaveButton}
           showShareButton={showShareButton}
         />
@@ -160,7 +156,7 @@ export function Header({
 
       <ShareModal
         gmStats={gmStats}
-        onOpenChange={setIsShareModalOpen}
+        onOpenChange={onShareModalOpenChangeAction}
         open={isShareModalOpen}
       />
     </>
