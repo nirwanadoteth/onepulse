@@ -30,23 +30,21 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Get the Daily GM contract address for a given chain ID
  */
-export function getDailyGmAddress(chainId?: number): `0x${string}` | undefined {
+export function getDailyGmAddress(chainId?: number): `0x${string}` | "" {
   if (!chainId) {
-    return DAILY_GM_ADDRESS as `0x${string}` | undefined;
+    return DAILY_GM_ADDRESS as `0x${string}` | "";
   }
-  return DAILY_GM_ADDRESSES[chainId] || undefined;
+  return DAILY_GM_ADDRESSES[chainId] || ("" as const);
 }
 
 /**
  * Get the Daily Rewards contract address for a given chain ID
  */
-export function getDailyRewardsAddress(
-  chainId?: number
-): `0x${string}` | undefined {
+export function getDailyRewardsAddress(chainId?: number): `0x${string}` | "" {
   if (!chainId) {
-    return DAILY_REWARDS_ADDRESSES[BASE_CHAIN_ID] || undefined;
+    return DAILY_REWARDS_ADDRESSES[BASE_CHAIN_ID] || ("" as const);
   }
-  return DAILY_REWARDS_ADDRESSES[chainId] || undefined;
+  return DAILY_REWARDS_ADDRESSES[chainId] || ("" as const);
 }
 
 const publicClient = createPublicClient({
