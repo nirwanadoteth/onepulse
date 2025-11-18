@@ -16,24 +16,24 @@ export const SUPPORTED_CHAINS: readonly SupportedChain[] = [
 export const DAILY_GM_ADDRESSES: Record<number, `0x${string}`> = {
   8453:
     (process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS_BASE as `0x${string}`) ||
-    ("" as `0x${string}`),
+    undefined,
   42220:
     (process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS_CELO as `0x${string}`) ||
-    ("" as `0x${string}`),
+    undefined,
   10:
     (process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS_OPTIMISM as `0x${string}`) ||
-    ("" as `0x${string}`),
+    undefined,
 };
 
 export const DAILY_GM_ADDRESS =
   process.env.NEXT_PUBLIC_DAILY_GM_ADDRESS ||
   DAILY_GM_ADDRESSES[BASE_CHAIN_ID] ||
-  "";
+  undefined;
 
 export const DAILY_REWARDS_ADDRESSES: Record<number, `0x${string}`> = {
   8453:
     (process.env.NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_BASE as `0x${string}`) ||
-    ("" as `0x${string}`),
+    undefined,
 };
 
 export const SECONDS_PER_DAY = 86_400;
