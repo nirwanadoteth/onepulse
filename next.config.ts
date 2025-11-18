@@ -2,10 +2,6 @@ import type { NextConfig } from "next";
 
 const securityHeaders = [
   {
-    key: "cache-control",
-    value: "no-cache",
-  },
-  {
     key: "cross-origin-opener-policy",
     value: "same-origin-allow-popups",
   },
