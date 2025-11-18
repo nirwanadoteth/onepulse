@@ -95,10 +95,9 @@ export async function connectServerDbConnection(
       }
     };
 
-    const builder = createDbConnectionBuilder(config)
-      .onConnect(() => handleConnect(built))
-      .onConnectError(handleConnectError);
-    const built = builder.build();
+    const builder =
+      createDbConnectionBuilder(config).onConnectError(handleConnectError);
+    const built = builder.onConnect(() => handleConnect(built)).build();
   });
 }
 

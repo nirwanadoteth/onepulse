@@ -146,8 +146,13 @@ export async function POST(req: Request) {
       );
     }
     return NextResponse.json(formatReportGmResponse(row));
-  } catch {
-    // Report API error handled with generic response
-    return NextResponse.json({ error: "internal error" }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "internal error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

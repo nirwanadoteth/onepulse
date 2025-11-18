@@ -1,4 +1,5 @@
 import type { DbConnection, GmStatsByAddress } from "@/lib/module_bindings";
+import { connectionStatus } from "@/lib/spacetimedb/connection-events";
 import { getDbConnection } from "@/lib/spacetimedb/connection-factory";
 import { onSubscriptionChange } from "@/lib/spacetimedb/subscription-events";
 
@@ -121,7 +122,23 @@ class GmStatsByAddressStore {
 
     const conn = this.getConnection();
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for WebSocket connection to be established before subscribing
+    // Connection status is managed globally, wait up to 5 seconds
+    let retries = 0;
+    const maxRetries = 50;
+    const delayMs = 100;
+
+    while (retries < maxRetries && !connectionStatus.isConnected) {
+      retries += 1;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (!connectionStatus.isConnected) {
+      // Connection failed to establish
+      this.subscriptionReady = false;
+      this.emitChange();
+      return;
+    }
 
     try {
       conn
@@ -137,8 +154,9 @@ class GmStatsByAddressStore {
         .subscribe([
           `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`,
         ]);
-    } catch {
+    } catch (error) {
       // Subscription setup failed - fallback to empty stats with retry on next request
+      console.error("Failed to subscribe to GM stats:", error);
       this.subscriptionReady = false;
       this.emitChange();
     }
