@@ -3,6 +3,8 @@
 import { useAddress } from "@coinbase/onchainkit/identity";
 import { isAddress } from "viem";
 
+import { isDomainFormat } from "@/lib/utils";
+
 type ResolverResult = {
   address: string | null;
   isLoading: boolean;
@@ -13,11 +15,7 @@ export function useEnsBasenameResolver(input: string): ResolverResult {
   const trimmed = input.trim();
 
   const isValidAddress = isAddress(trimmed);
-
-  const isDomain =
-    !isValidAddress &&
-    trimmed.includes(".") &&
-    (trimmed.endsWith(".eth") || trimmed.endsWith(".base.eth"));
+  const isDomain = !isValidAddress && isDomainFormat(trimmed);
 
   const {
     data: resolvedAddress,

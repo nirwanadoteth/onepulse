@@ -149,6 +149,33 @@ export function timestampToDayNumber(timestampSeconds: number): number {
   return Math.floor(timestampSeconds / SECONDS_PER_DAY);
 }
 
+/**
+ * Check if a string is a valid ENS or Base domain
+ */
+export function isDomainFormat(input: string): boolean {
+  if (!input) {
+    return false;
+  }
+  if (!input.includes(".")) {
+    return false;
+  }
+  return input.endsWith(".eth") || input.endsWith(".base.eth");
+}
+
+/**
+ * Normalize an Ethereum address to lowercase
+ */
+export function normalizeAddress(address?: string | null): string | null {
+  return address?.toLowerCase() ?? null;
+}
+
+/**
+ * Check if a chain ID is the Celo network
+ */
+export function isCeloChain(chainId?: number): boolean {
+  return chainId === 42_220;
+}
+
 export function canSaveMiniApp(params: {
   isMiniAppReady: boolean;
   inMiniApp: boolean;

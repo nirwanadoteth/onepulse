@@ -2,6 +2,7 @@
 
 import { Gift, House, Info } from "lucide-react";
 import { Home } from "@/components/home";
+import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { Rewards } from "@/components/rewards";
 import {
   Tabs as TabsComponent,
@@ -10,8 +11,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import type { useGmStats } from "@/hooks/use-gm-stats";
+import { CELO_CHAIN_ID } from "@/lib/constants";
 import { About } from "./about";
-import { useMiniAppContext } from "./providers/miniapp-provider";
 
 type TabsProps = {
   tab: string;
@@ -30,7 +31,7 @@ export function Tabs({
 
   const isBaseApp = miniAppContext?.context?.client.clientFid === 309_857;
 
-  const allowedChainIds = isBaseApp ? [8453, 10] : [8453, 42_220, 10];
+  const allowedChainIds = isBaseApp ? [8453, 10] : [8453, CELO_CHAIN_ID, 10];
 
   return (
     <div className="my-4">

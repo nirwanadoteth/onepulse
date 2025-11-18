@@ -1,9 +1,10 @@
 import type { GmStatsByAddress } from "@/lib/module_bindings";
+import { normalizeAddress as normalizeAddressUtil } from "@/lib/utils";
 
 import type { GmStats } from "./use-gm-stats";
 
 export function normalizeAddress(address?: string | null): string | null {
-  return address?.toLowerCase() ?? null;
+  return normalizeAddressUtil(address);
 }
 
 export function groupRowsByAddress(

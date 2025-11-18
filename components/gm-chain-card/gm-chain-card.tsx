@@ -20,6 +20,7 @@ import { dailyGMAbi } from "@/lib/abi/daily-gm";
 import { SECONDS_PER_DAY } from "@/lib/constants";
 import {
   getCurrentTimestampSeconds,
+  isCeloChain,
   normalizeChainId,
   timestampToDayNumber,
 } from "@/lib/utils";
@@ -64,7 +65,7 @@ const computeGMState = (params: {
 };
 
 const getChainBtnClasses = (chainId: number, name: string): string => {
-  const isCelo = name.toLowerCase() === "celo" || chainId === 42_220;
+  const isCelo = isCeloChain(chainId);
   const isOptimism = name.toLowerCase() === "optimism" || chainId === 10;
 
   if (isCelo) {
@@ -80,7 +81,7 @@ const getChainIconName = (chainId: number, name: string): string => {
   if (name.toLowerCase() === "optimism" || chainId === 10) {
     return "optimism";
   }
-  if (name.toLowerCase() === "celo" || chainId === 42_220) {
+  if (isCeloChain(chainId)) {
     return "celo";
   }
   return "base";
