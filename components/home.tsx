@@ -24,6 +24,22 @@ import { useLastCongratsDay } from "./home/use-last-congrats-day";
 import { useModalManagement } from "./home/use-modal-management";
 import { usePerChainStatus } from "./home/use-per-chain-status";
 
+/**
+ * Performs shallow comparison of two objects by checking if any key's value differs.
+ * Returns true if prev is null/undefined or if any property value has changed.
+ * Use this helper whenever comparing GmStats or similar data structures to avoid
+ * manual field-by-field comparisons that become fragile when fields are added.
+ */
+function hasChanged<T extends Record<string, unknown>>(
+  prev: T | null | undefined,
+  current: T
+): boolean {
+  if (!prev) {
+    return true;
+  }
+  return Object.keys(current).some((key) => prev[key] !== current[key]);
+}
+
 export const Home = memo(
   ({
     sponsored,
@@ -58,9 +74,7 @@ export const Home = memo(
     const gmStatsResult = useGmStats(address);
 
     // Notify parent only when stats actually change (prevents infinite re-render loop)
-    const prevStatsRef = useRef<ReturnType<typeof useGmStats>["stats"] | null>(
-      null
-    );
+    const prevStatsRef = useRef<ReturnType<typeof useGmStats> | null>(null);
 
     useEffect(() => {
       if (!onGmStatsChange) {
@@ -73,14 +87,12 @@ export const Home = memo(
       const prev = prevStatsRef.current;
       const changed =
         !prev ||
-        prev.currentStreak !== stats.currentStreak ||
-        prev.highestStreak !== stats.highestStreak ||
-        prev.allTimeGmCount !== stats.allTimeGmCount ||
-        prev.lastGmDay !== stats.lastGmDay;
+        prev.isReady !== gmStatsResult.isReady ||
+        hasChanged(prev.stats, stats);
       if (!changed) {
         return;
       }
-      prevStatsRef.current = stats;
+      prevStatsRef.current = gmStatsResult;
       onGmStatsChange(gmStatsResult);
     }, [gmStatsResult, onGmStatsChange]);
 
