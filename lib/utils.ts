@@ -188,6 +188,19 @@ export function isOptimismChain(chainId?: number): boolean {
 }
 
 /**
+ * Get chain-specific button classes for styling
+ */
+export function getChainBtnClasses(chainId: number): string {
+  if (isCeloChain(chainId)) {
+    return "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90";
+  }
+  if (isOptimismChain(chainId)) {
+    return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
+  }
+  return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
+}
+
+/**
  * Determine if transactions should be sponsored on a given chain.
  * Currently, sponsorship is only supported on Base.
  */

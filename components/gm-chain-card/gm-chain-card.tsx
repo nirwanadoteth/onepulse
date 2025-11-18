@@ -19,6 +19,7 @@ import type { GmStats } from "@/hooks/use-gm-stats";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
 import { SECONDS_PER_DAY } from "@/lib/constants";
 import {
+  getChainBtnClasses,
   getCurrentTimestampSeconds,
   isCeloChain,
   isOptimismChain,
@@ -63,19 +64,6 @@ const computeGMState = (params: {
     gmDisabled: alreadyGmToday || isPendingLastGm,
     targetSec: nextDayStartSec,
   };
-};
-
-const getChainBtnClasses = (chainId: number): string => {
-  const isCelo = isCeloChain(chainId);
-  const isOptimism = isOptimismChain(chainId);
-
-  if (isCelo) {
-    return "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90";
-  }
-  if (isOptimism) {
-    return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
-  }
-  return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
 };
 
 const getChainIconName = (chainId: number): string => {
