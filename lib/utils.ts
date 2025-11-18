@@ -174,7 +174,8 @@ export function isDomainFormat(input: string): boolean {
   }
 
   // Check for valid suffix
-  const isValid = trimmed.endsWith(".eth") || trimmed.endsWith(".base.eth");
+  // Accepts both ENS (.eth) and Base domain (.base.eth) formats
+  const isValid = trimmed.endsWith(".eth");
   if (!isValid) {
     return false;
   }
