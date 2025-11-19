@@ -92,12 +92,25 @@ Visit `http://localhost:3000` to see the app.
 # Required environment variables
 NEXT_PUBLIC_ONCHAINKIT_API_KEY=your_cdp_api_key
 NEXT_PUBLIC_ONCHAINKIT_PROJECT_ID=your_cdp_project_id
+NEXT_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
 NEXT_PUBLIC_URL=http://localhost:3000
 
 # Smart contract addresses
 NEXT_PUBLIC_DAILY_GM_ADDRESS_BASE=0x...
 NEXT_PUBLIC_DAILY_GM_ADDRESS_CELO=0x...
 NEXT_PUBLIC_DAILY_GM_ADDRESS_OPTIMISM=0x...
+NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_BASE=0x..
+
+# Database
+SPACETIMEDB_HOST_URL=
+SPACETIMEDB_MODULE=
+
+# Redis
+KV_REST_API_URL=
+KV_REST_API_TOKEN=
+
+# Signer PK
+BACKEND_SIGNER_PRIVATE_KEY=0x
 ```
 
 ---
@@ -153,11 +166,10 @@ graph TD
 
 ```bash
 bun dev              # Start development server
-bun build            # Build for production
+bun run build        # Build for production
 bun typecheck        # Run TypeScript checks
-bun lint            # Run ESLint
-bun format:fix      # Format code
-bun check           # Run all checks
+bun check            # Run ultracite check
+bun format           # Format code with ultracite
 ```
 
 ### Code Quality
@@ -165,15 +177,14 @@ bun check           # Run all checks
 The project maintains high code quality with:
 
 - **TypeScript strict mode** enabled
-- **ESLint** with Next.js configuration
-- **Prettier** for consistent formatting
+- **Biome** lint and format tools with ultracite settings
 - **Automated import sorting**
 
 ### Naming Conventions
 
-- Components: `PascalCase` (UserCard.tsx)
-- Hooks: `camelCase` with `use` prefix (useGmStats.ts)
-- Utilities: `camelCase` (utils.ts)
+- Components: `PascalCase` (UserCard)
+- Hooks: `camelCase` with `use` prefix (useGmStats)
+- Utilities: `camelCase` (normalizeChainId)
 - Constants: `UPPER_SNAKE_CASE` (API_TIMEOUT)
 
 ---
@@ -278,8 +289,9 @@ Ensure `sdk.actions.ready()` is called in your Mini App initialization.
 
 ## 🔗 Links
 
-- [🌐 Live Demo](https://onepulse.vercel.app)
+- [🌐 Live Demo](https://onepulse-ruby.vercel.app)
 - [📖 Farcaster Documentation](https://docs.farcaster.xyz)
+- [🔗 Reown AppKit](https://docs.reown.com)
 - [🛠 OnchainKit](https://onchainkit.xyz)
 - [📚 Next.js Docs](https://nextjs.org/docs)
 - [🎨 Tailwind CSS](https://tailwindcss.com)
@@ -288,12 +300,12 @@ Ensure `sdk.actions.ready()` is called in your Mini App initialization.
 
 ## ⚠️ Disclaimer
 
-**This project is a demonstration application created for educational purposes only.**
+**This is a live Farcaster Mini App accessible through Farcaster clients and Base app, as well as via web browsers.**
 
-There are no official tokens or apps associated with this project. Use at your own risk.
+Use at your own risk. This application interacts with blockchain networks and may involve financial transactions.
 
 ---
 
-## Built with ❤️ using Next.js, React, and OnchainKit
+## Built with ❤️ using Next.js, React, OnchainKit, and Reown AppKit
 
 ⭐ [Star us on GitHub](https://github.com/nirwanadoteth/onepulse) • 🐛 [Report Issues](https://github.com/nirwanadoteth/onepulse/issues)
