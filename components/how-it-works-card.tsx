@@ -24,7 +24,7 @@ export function HowItWorksCard() {
           <div className="space-y-1">
             <h4 className="font-medium">Claim Reward</h4>
             <p className="text-muted-foreground text-xs">
-              Claim 7 DEGEN tokens once per day
+              Claim 10 DEGEN tokens once per day
             </p>
           </div>
         </div>
