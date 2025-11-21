@@ -1,10 +1,6 @@
-export type Chain = { id: number; name: string };
+import { SUPPORTED_CHAINS, type SupportedChain } from "@/lib/constants";
 
-const DEFAULT_CHAINS: readonly Chain[] = [
-  { id: 8453, name: "Base" },
-  { id: 42_220, name: "Celo" },
-  { id: 10, name: "Optimism" },
-];
+export type Chain = SupportedChain;
 
 /**
  * Filter chains by allowlist
@@ -12,9 +8,9 @@ const DEFAULT_CHAINS: readonly Chain[] = [
  */
 export const getChainList = (allowedChainIds?: number[]): Chain[] => {
   if (!Array.isArray(allowedChainIds) || allowedChainIds.length === 0) {
-    return [...DEFAULT_CHAINS];
+    return [...SUPPORTED_CHAINS];
   }
-  return DEFAULT_CHAINS.filter((c) => allowedChainIds.includes(c.id));
+  return SUPPORTED_CHAINS.filter((c) => allowedChainIds.includes(c.id));
 };
 
 /**
@@ -42,8 +38,3 @@ export const getNextTargetSec = (
     .filter((t) => t > 0);
   return targets.length ? Math.min(...targets) : 0;
 };
-
-/**
- * Get current day (for congratulations logic)
- */
-export const getCurrentDay = (): number => Math.floor(Date.now() / 86_400);

@@ -8,8 +8,14 @@ import {
   type UserContext,
   useMiniAppContext,
 } from "@/components/providers/miniapp-provider";
+import {
+  getMilestoneContext,
+  getSpecialMilestone,
+  STREAK_NARRATIVES,
+} from "@/components/share-narratives";
 import { Button } from "@/components/ui/button";
 import type { GmStats } from "@/hooks/use-gm-stats";
+import { MILLISECONDS_PER_DAY } from "@/lib/constants";
 import { generateGMStatusMetadata } from "@/lib/og-utils";
 
 type ShareGMStatusProps = {
@@ -38,8 +44,17 @@ const hasGMedToday = (gmStats: GmStats | undefined) => {
   if (!gmStats?.lastGmDay) {
     return false;
   }
-  const today = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  const today = Math.floor(Date.now() / MILLISECONDS_PER_DAY);
   return gmStats.lastGmDay === today;
+};
+
+const getStreakNarrative = (streak: number, claimed: boolean): string => {
+  const narrative = STREAK_NARRATIVES.find((n) => streak <= n.max);
+  if (!narrative) {
+    return "";
+  }
+
+  return claimed ? narrative.claimed(streak) : narrative.unclaimed(streak);
 };
 
 const createShareText = (
@@ -48,121 +63,29 @@ const createShareText = (
   totalGMs = 0,
   todayGM = false
 ) => {
-  const claimMessages = [
-    "🚀 Just snagged my daily DEGEN rewards!",
-    "💰 DEGEN rewards claimed and secured!",
-    "🎯 Daily GM rewards in the bag!",
-    "⚡ Powered up with fresh DEGEN rewards!",
-    "🌟 Claimed my GM rewards - let's go!",
-  ];
+  // Check for special milestone messages (takes precedence over generic narrative)
+  const specialMilestone = getSpecialMilestone(currentStreak, totalGMs);
+  if (specialMilestone) {
+    return claimedToday ? specialMilestone.claimed : specialMilestone.unclaimed;
+  }
 
-  const statusMessages = [
-    "📊 Check out my epic GM status!",
-    "🔥 My GM journey so far:",
-    "⚡ GM stats incoming:",
-    "🎮 Level up my GM game:",
-    "🚀 GM status report:",
-  ];
+  // Regular format: headline + narrative + context
+  const headline = claimedToday
+    ? "Just claimed my daily reward on OnePulse! 🚀"
+    : "Check out my OnePulse progress! 📊";
 
-  const getStreakMessage = (streak: number, claimed: boolean) => {
-    const streakConfigs = [
-      {
-        max: 0,
-        claimed: "Starting my GM empire! 👑",
-        unclaimed: "Ready to start my GM streak! 💪",
-      },
-      {
-        max: 1,
-        claimed: "First GM reward claimed! 🎉",
-        unclaimed: "One down, many more to go! 🔥",
-      },
-      {
-        max: 2,
-        claimed: `${streak}-day GM streak growing! 📈`,
-        unclaimed: `${streak}-day streak in progress! ⚡`,
-      },
-      {
-        max: 6,
-        claimed: `${streak}-day GM fire burning hot! 🔥`,
-        unclaimed: `${streak}-day momentum building! 💨`,
-      },
-      {
-        max: 13,
-        claimed: `${streak}-day GM legend status! 👑`,
-        unclaimed: `${streak}-day streak crushing it! 💪`,
-      },
-      {
-        max: 29,
-        claimed: `${streak}-day GM immortality! 🌟`,
-        unclaimed: `${streak}-day unstoppable! 🚀`,
-      },
-      {
-        max: 49,
-        claimed: `${streak}-day GM god mode! ⚡`,
-        unclaimed: `${streak}-day absolute unit! 💎`,
-      },
-      {
-        max: Number.POSITIVE_INFINITY,
-        claimed: `${streak}-day GM eternal flame! 🔥`,
-        unclaimed: `${streak}-day legendary status! 👑`,
-      },
-    ];
-
-    const config = streakConfigs.find((c) => streak <= c.max);
-    return config ? (claimed ? config.claimed : config.unclaimed) : "";
-  };
-
-  const getMilestoneMessage = (total: number) => {
-    const milestones = [
-      {
-        threshold: 100,
-        message: ` (${total} total GMs - absolute legend! 🏆)`,
-      },
-      { threshold: 50, message: ` (${total} total GMs - on fire! 🔥)` },
-      { threshold: 25, message: ` (${total} total GMs - crushing it! 💪)` },
-      { threshold: 10, message: ` (${total} total GMs - getting serious! ⚡)` },
-      {
-        threshold: 5,
-        message: ` (${total} total GMs - building momentum! 📈)`,
-      },
-      { threshold: 1, message: ` (${total} total GMs so far! 🎯)` },
-    ];
-
-    const milestone = milestones.find((m) => total >= m.threshold);
-    return milestone?.message || "";
-  };
-
-  const randomFrom = (arr: string[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  const baseMessage = claimedToday
-    ? randomFrom(claimMessages)
-    : randomFrom(statusMessages);
-  const streakMessage = getStreakMessage(
+  const streakNarrative = getStreakNarrative(
     currentStreak,
     claimedToday || todayGM
   );
-  const milestoneMessage = getMilestoneMessage(totalGMs);
 
-  if (totalGMs === 1 && currentStreak === 1) {
-    return claimedToday
-      ? "🎉 Just made my very first GM claim! Welcome to the DEGEN life! 🚀"
-      : "🌟 Just started my GM journey with my first GM! 💪";
+  const milestoneContext = getMilestoneContext(totalGMs);
+
+  if (milestoneContext) {
+    return `${headline}\n\n${streakNarrative}\n${milestoneContext}`;
   }
 
-  if (currentStreak === 7) {
-    return claimedToday
-      ? "🎊 Week-long GM streak achieved! DEGEN rewards flowing! 💰"
-      : "⚡ One week of consistent GMs! Who's stopping me now? 🔥";
-  }
-
-  if (currentStreak === 30) {
-    return claimedToday
-      ? "👑 30-day GM emperor! DEGEN rewards for the throne! 💎"
-      : "🏆 30 days of pure GM dedication! Unbreakable! 🚀";
-  }
-
-  return `${baseMessage} ${streakMessage}${milestoneMessage}`;
+  return `${headline}\n\n${streakNarrative}`;
 };
 
 const createShareMetadata = (options: {

@@ -2,6 +2,7 @@
 
 import { Gift, House, Info } from "lucide-react";
 import { Home } from "@/components/home";
+import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { Rewards } from "@/components/rewards";
 import {
   Tabs as TabsComponent,
@@ -9,26 +10,45 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import type { useGmStats } from "@/hooks/use-gm-stats";
+import {
+  BASE_CHAIN_ID,
+  CELO_CHAIN_ID,
+  OPTIMISM_CHAIN_ID,
+} from "@/lib/constants";
 import { About } from "./about";
-import { useMiniAppContext } from "./providers/miniapp-provider";
 
 type TabsProps = {
   tab: string;
-  onTabChange: (tab: string) => void;
+  onTabChangeAction: (tab: string) => void;
+  onGmStatsChangeAction: (stats: ReturnType<typeof useGmStats>) => void;
+  onShareClickAction: () => void;
 };
 
-export function Tabs({ tab, onTabChange }: TabsProps) {
+export function Tabs({
+  tab,
+  onTabChangeAction,
+  onGmStatsChangeAction,
+  onShareClickAction,
+}: TabsProps) {
   const miniAppContext = useMiniAppContext();
 
   const isBaseApp = miniAppContext?.context?.client.clientFid === 309_857;
 
-  const allowedChainIds = isBaseApp ? [8453, 10] : [8453, 42_220, 10];
+  const allowedChainIds = isBaseApp
+    ? [BASE_CHAIN_ID, OPTIMISM_CHAIN_ID]
+    : [BASE_CHAIN_ID, CELO_CHAIN_ID, OPTIMISM_CHAIN_ID];
 
   return (
     <div className="my-4">
-      <TabsComponent onValueChange={onTabChange} value={tab}>
+      <TabsComponent onValueChange={onTabChangeAction} value={tab}>
         <TabsContent value="home">
-          <Home allowedChainIds={allowedChainIds} sponsored={isBaseApp} />
+          <Home
+            allowedChainIds={allowedChainIds}
+            onGmStatsChange={onGmStatsChangeAction}
+            onShareClick={onShareClickAction}
+            sponsored={isBaseApp}
+          />
         </TabsContent>
         <TabsContent value="rewards">
           <Rewards sponsored={isBaseApp} />

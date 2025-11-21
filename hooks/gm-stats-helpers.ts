@@ -2,10 +2,6 @@ import type { GmStatsByAddress } from "@/lib/module_bindings";
 
 import type { GmStats } from "./use-gm-stats";
 
-export function normalizeAddress(address?: string | null): string | null {
-  return address?.toLowerCase() ?? null;
-}
-
 export function groupRowsByAddress(
   rows: GmStatsByAddress[]
 ): Map<string, GmStatsByAddress[]> {

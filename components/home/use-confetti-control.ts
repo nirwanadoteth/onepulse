@@ -3,8 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import type { ConfettiRef } from "@/components/ui/confetti";
-
-import { getCurrentDay } from "./chain-config";
+import { getCurrentDay } from "@/lib/utils";
 
 /**
  * Manages confetti animation trigger logic

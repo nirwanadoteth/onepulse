@@ -1,10 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { memo, type RefObject, useCallback, useEffect, useState } from "react";
+import { Share2 } from "lucide-react";
+import { memo, useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { ConfettiRef } from "@/components/ui/confetti";
 import {
   Dialog,
   DialogContent,
@@ -13,17 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const Confetti = dynamic(
-  () => import("@/components/ui/confetti").then((m) => m.Confetti),
-  { ssr: false }
-);
+import type { GmStats } from "@/hooks/use-gm-stats";
+import { shouldShowShareButton } from "@/lib/share";
 
 type CongratsDialogProps = {
   open: boolean;
   nextTargetSec: number;
   onOpenChange: (open: boolean) => void;
-  confettiRef: RefObject<ConfettiRef>;
+  onShare?: () => void;
+  gmStats?: GmStats;
 };
 
 /**
@@ -31,10 +28,23 @@ type CongratsDialogProps = {
  * Displays countdown to next GM time and triggers confetti animation
  */
 export const CongratsDialog = memo(
-  ({ open, nextTargetSec, onOpenChange, confettiRef }: CongratsDialogProps) => {
+  ({
+    open,
+    nextTargetSec,
+    onOpenChange,
+    onShare,
+    gmStats,
+  }: CongratsDialogProps) => {
     const handleClose = useCallback(() => {
       onOpenChange(false);
     }, [onOpenChange]);
+
+    const handleShare = useCallback(() => {
+      handleClose();
+      onShare?.();
+    }, [handleClose, onShare]);
+
+    const showShareButton = shouldShowShareButton(gmStats);
 
     return (
       <Dialog onOpenChange={onOpenChange} open={open}>
@@ -54,16 +64,22 @@ export const CongratsDialog = memo(
             </p>
           </div>
 
-          <DialogFooter>
-            <Button className="w-full" onClick={handleClose}>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            {showShareButton && (
+              <Button
+                className="w-full sm:flex-1"
+                onClick={handleShare}
+                variant="outline"
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Progress
+              </Button>
+            )}
+            <Button className="w-full sm:flex-1" onClick={handleClose}>
               Close
             </Button>
           </DialogFooter>
         </DialogContent>
-        <Confetti
-          className="pointer-events-none absolute top-0 left-0 z-0 size-full"
-          ref={confettiRef}
-        />
       </Dialog>
     );
   }

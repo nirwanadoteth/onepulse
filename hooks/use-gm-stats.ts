@@ -2,13 +2,9 @@
 
 import { useMemo } from "react";
 import type { GmStatsByAddress } from "@/lib/module_bindings";
+import { normalizeAddress } from "@/lib/utils";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
-
-import {
-  deriveStatsForAddress,
-  groupRowsByAddress,
-  normalizeAddress,
-} from "./gm-stats-helpers";
+import { deriveStatsForAddress, groupRowsByAddress } from "./gm-stats-helpers";
 import {
   useGmStatsFallback,
   useGmStatsSubscription,
@@ -30,7 +26,15 @@ export const ZERO: GmStats = {
 
 export const EMPTY_ROWS: GmStatsByAddress[] = [];
 
-export function useGmStats(address?: string | null, chainId?: number) {
+export type GmStatsResult = {
+  stats: GmStats;
+  isReady: boolean;
+};
+
+export function useGmStats(
+  address?: string | null,
+  chainId?: number
+): GmStatsResult {
   const normalizedAddress = normalizeAddress(address);
   const snapshot = useGmStatsSubscription(address);
   const rowsByAddress = useMemo(() => groupRowsByAddress(snapshot), [snapshot]);
@@ -56,5 +60,5 @@ export function useGmStats(address?: string | null, chainId?: number) {
     gmStatsByAddressStore.isSubscribedForAddress(address) ||
     Boolean(fallbackForKey);
 
-  return { stats, isReady };
+  return useMemo(() => ({ stats, isReady }), [stats, isReady]);
 }

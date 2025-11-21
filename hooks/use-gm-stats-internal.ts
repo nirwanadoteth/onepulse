@@ -5,9 +5,8 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { normalizeAddress } from "@/lib/utils";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
-
-import { normalizeAddress } from "./gm-stats-helpers";
 import type { GmStats } from "./use-gm-stats";
 
 export function useGmStatsSubscription(address?: string | null) {

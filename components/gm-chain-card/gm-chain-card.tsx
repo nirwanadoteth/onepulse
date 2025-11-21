@@ -8,7 +8,6 @@ import type { base, celo, optimism } from "wagmi/chains";
 import { Icons } from "@/components/icons";
 import {
   Item,
-  ItemActions,
   ItemContent,
   ItemDescription,
   ItemFooter,
@@ -17,8 +16,15 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { GmStats } from "@/hooks/use-gm-stats";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
-import { normalizeChainId } from "@/lib/utils";
-import { CarouselNext, CarouselPrevious } from "../ui/carousel";
+import { SECONDS_PER_DAY } from "@/lib/constants";
+import {
+  getChainBtnClasses,
+  getCurrentTimestampSeconds,
+  isCeloChain,
+  isOptimismChain,
+  normalizeChainId,
+  timestampToDayNumber,
+} from "@/lib/utils";
 import { ActionButton } from "./action-button";
 import { CountdownText } from "./countdown-text";
 
@@ -36,6 +42,7 @@ const computeGMState = (params: {
     lastGmDayData,
     isPendingLastGm,
   } = params;
+
   if (!(address && contractAddress)) {
     return { hasGmToday: false, gmDisabled: !isConnected, targetSec: 0 };
   }
@@ -45,10 +52,10 @@ const computeGMState = (params: {
   }
 
   const lastDay = Number((lastGmDayData as bigint) ?? 0n);
-  const nowSec = Math.floor(Date.now() / 1000);
-  const currentDay = Math.floor(nowSec / 86_400);
+  const nowSec = getCurrentTimestampSeconds();
+  const currentDay = timestampToDayNumber(nowSec);
   const alreadyGmToday = lastDay >= currentDay;
-  const nextDayStartSec = (currentDay + 1) * 86_400;
+  const nextDayStartSec = (currentDay + 1) * SECONDS_PER_DAY;
 
   return {
     hasGmToday: alreadyGmToday,
@@ -57,24 +64,11 @@ const computeGMState = (params: {
   };
 };
 
-const getChainBtnClasses = (chainId: number, name: string): string => {
-  const isCelo = name.toLowerCase() === "celo" || chainId === 42_220;
-  const isOptimism = name.toLowerCase() === "optimism" || chainId === 10;
-
-  if (isCelo) {
-    return "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90";
-  }
-  if (isOptimism) {
-    return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
-  }
-  return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
-};
-
-const getChainIconName = (chainId: number, name: string): string => {
-  if (name.toLowerCase() === "optimism" || chainId === 10) {
+const getChainIconName = (chainId: number): string => {
+  if (isOptimismChain(chainId)) {
     return "optimism";
   }
-  if (name.toLowerCase() === "celo" || chainId === 42_220) {
+  if (isCeloChain(chainId)) {
     return "celo";
   }
   return "base";
@@ -191,14 +185,11 @@ export const GMChainCard = memo(
     }, [chainId, hasGmToday, targetSec, onStatusChange]);
 
     const chainBtnClasses = useMemo(
-      () => getChainBtnClasses(chainId, name),
-      [chainId, name]
+      () => getChainBtnClasses(chainId),
+      [chainId]
     );
 
-    const chainIconName = useMemo(
-      () => getChainIconName(chainId, name),
-      [chainId, name]
-    );
+    const chainIconName = useMemo(() => getChainIconName(chainId), [chainId]);
 
     const handleOpenModal = useCallback(() => {
       if (onOpenModal) {
@@ -219,12 +210,6 @@ export const GMChainCard = memo(
           </ItemMedia>
           <ItemDescription>Amplify your {name} GM</ItemDescription>
         </ItemContent>
-        <ItemActions>
-          <div className="flex items-center justify-center gap-2">
-            <CarouselPrevious className="static translate-y-0" />
-            <CarouselNext className="static translate-y-0" />
-          </div>
-        </ItemActions>
         <ItemFooter className="flex-col">
           <div className="mb-4 w-full">
             <StatsDisplay

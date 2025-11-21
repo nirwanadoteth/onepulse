@@ -121,6 +121,10 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 5. **User experience** - Accessibility, performance, and usability considerations
 6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
 
+## Additional Resources
+
+- [llms.txt](./../llms.txt) - This file defines which parts of many site you may read, learn from, or store, and which parts you must skip.
+
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `bunx ultracite fix` before committing to ensure compliance.

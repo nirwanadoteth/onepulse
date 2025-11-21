@@ -6,8 +6,7 @@ import {
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { memo } from "react";
 import { useClaimEligibility } from "@/hooks/use-degen-claim";
-import { getDailyRewardsAddress } from "@/lib/constants";
-import { normalizeChainId } from "@/lib/utils";
+import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { TransactionToast } from "../transaction-toast";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
 import { getButtonState } from "./get-button-state";
@@ -53,7 +52,7 @@ export const DegenClaimTransaction = memo(
       contractAddress,
     });
 
-    const handleStatus = useTransactionStatus({
+    const { onStatus } = useTransactionStatus({
       onSuccess,
       onError,
       refetchEligibility,
@@ -85,7 +84,7 @@ export const DegenClaimTransaction = memo(
           calls={getClaimContracts}
           chainId={numericChainId}
           isSponsored={sponsored}
-          onStatus={handleStatus}
+          onStatus={onStatus}
         >
           <TransactionButton
             className="w-full"

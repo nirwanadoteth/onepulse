@@ -2,7 +2,7 @@
 
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Share2 } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
@@ -10,8 +10,10 @@ import {
   type UserContext,
   useMiniAppContext,
 } from "@/components/providers/miniapp-provider";
+import { ShareModal } from "@/components/share-modal";
 import { Button } from "@/components/ui/button";
 import { UserInfo } from "@/components/user-info";
+import type { GmStats } from "@/hooks/use-gm-stats";
 import {
   ERROR_MESSAGES,
   extractErrorMessage,
@@ -19,13 +21,17 @@ import {
   handleSuccess,
   SUCCESS_MESSAGES,
 } from "@/lib/error-handling";
+import { shouldShowShareButton } from "@/lib/share";
 import { canSaveMiniApp } from "@/lib/utils";
 import { minikitConfig } from "@/minikit.config";
 
 type HeaderProps = {
   isMiniAppReady: boolean;
   inMiniApp: boolean;
-  onMiniAppAdded: () => void;
+  onMiniAppAddedAction: () => void;
+  gmStats?: GmStats;
+  isShareModalOpen: boolean;
+  onShareModalOpenChangeAction: (open: boolean) => void;
 };
 
 const extractUserFromContext = (
@@ -42,15 +48,34 @@ const extractUserFromContext = (
 
 type HeaderRightProps = {
   showSaveButton: boolean;
+  showShareButton: boolean;
   onSaveClick: () => void;
+  onShareClick: () => void;
 };
 
 const HeaderRight = memo(
-  ({ showSaveButton, onSaveClick }: HeaderRightProps) => (
-    <div>
+  ({
+    showSaveButton,
+    showShareButton,
+    onSaveClick,
+    onShareClick,
+  }: HeaderRightProps) => (
+    <div className="flex items-center gap-1">
+      {showShareButton && (
+        <Button
+          className="group/toggle extend-touch-target size-8"
+          onClick={onShareClick}
+          size="icon"
+          title="Share"
+          variant="ghost"
+        >
+          <Share2 className="size-4.5" />
+          <span className="sr-only">Share</span>
+        </Button>
+      )}
       {showSaveButton && (
         <Button
-          className="group/toggle extend-touch-target mr-2 size-8"
+          className="group/toggle extend-touch-target size-8"
           onClick={onSaveClick}
           size="icon"
           title="Save"
@@ -68,7 +93,10 @@ const HeaderRight = memo(
 export function Header({
   isMiniAppReady,
   inMiniApp,
-  onMiniAppAdded,
+  onMiniAppAddedAction,
+  gmStats,
+  isShareModalOpen,
+  onShareModalOpenChangeAction,
 }: HeaderProps) {
   const miniAppContextData = useMiniAppContext();
   const { address } = useAppKitAccount({ namespace: "eip155" });
@@ -85,14 +113,19 @@ export function Header({
       }
 
       setMiniAppAddedLocally(true);
-      onMiniAppAdded();
+      onMiniAppAddedAction();
     } catch (error) {
       handleError(error, ERROR_MESSAGES.MINI_APP_ADD, {
         operation: "mini-app-add",
         errorMessage: extractErrorMessage(error),
       });
     }
-  }, [onMiniAppAdded]);
+  }, [onMiniAppAddedAction]);
+
+  const handleShareClick = useCallback(
+    () => onShareModalOpenChangeAction(true),
+    [onShareModalOpenChangeAction]
+  );
 
   const user = extractUserFromContext(miniAppContextData?.context);
   const clientAdded = miniAppContextData?.context?.client?.added;
@@ -104,20 +137,33 @@ export function Header({
     }) && !miniAppAddedLocally;
 
   const shouldShowUserInfo = !!user || !!address;
+  const showShareButton = shouldShowShareButton(gmStats);
 
   return (
-    <div className="sticky top-4 mt-1 flex h-16 items-center justify-between rounded-lg border border-border bg-background px-2">
-      <div className="flex-1">
-        {shouldShowUserInfo ? (
-          <UserInfo address={address} user={user} />
-        ) : (
-          <div className="font-bold text-2xl">{minikitConfig.miniapp.name}</div>
-        )}
+    <>
+      <div className="sticky top-4 mt-1 flex h-16 items-center justify-between rounded-lg border border-border bg-background px-2">
+        <div className="flex-1">
+          {shouldShowUserInfo ? (
+            <UserInfo address={address} user={user} />
+          ) : (
+            <div className="font-bold text-2xl">
+              {minikitConfig.miniapp.name}
+            </div>
+          )}
+        </div>
+        <HeaderRight
+          onSaveClick={handleAddMiniApp}
+          onShareClick={handleShareClick}
+          showSaveButton={showSaveButton}
+          showShareButton={showShareButton}
+        />
       </div>
-      <HeaderRight
-        onSaveClick={handleAddMiniApp}
-        showSaveButton={showSaveButton}
+
+      <ShareModal
+        gmStats={gmStats}
+        onOpenChange={onShareModalOpenChangeAction}
+        open={isShareModalOpen}
       />
-    </div>
+    </>
   );
 }

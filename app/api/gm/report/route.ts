@@ -3,9 +3,9 @@ import { type Address, createPublicClient, http, isAddress } from "viem";
 import { base, celo, optimism } from "viem/chains";
 
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
-import { getDailyGmAddress } from "@/lib/constants";
 import type { GmStatsByAddress } from "@/lib/module_bindings";
 import { callReportGm, getGmRows } from "@/lib/spacetimedb/server-connection";
+import { getDailyGmAddress, normalizeChainId } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -50,7 +50,11 @@ function validateReportGmRequest(body: Record<string, unknown>) {
     return addressResult;
   }
 
-  const chainId = typeof body.chainId === "number" ? body.chainId : 8453;
+  const normalizedChainId = normalizeChainId(body.chainId);
+  if (!normalizedChainId) {
+    return { error: "invalid chainId", status: 400 };
+  }
+  const chainId = normalizedChainId;
   const contractResult = validateContractAddress(chainId);
   if ("error" in contractResult) {
     return contractResult;
@@ -144,8 +148,16 @@ export async function POST(req: Request) {
       );
     }
     return NextResponse.json(formatReportGmResponse(row));
-  } catch {
-    // Report API error handled with generic response
-    return NextResponse.json({ error: "internal error" }, { status: 500 });
+  } catch (error) {
+    const response: { error: string; message?: string } = {
+      error: "internal error",
+    };
+
+    if (process.env.NODE_ENV !== "production") {
+      response.message =
+        error instanceof Error ? error.message : "Unknown error";
+    }
+
+    return NextResponse.json(response, { status: 500 });
   }
 }

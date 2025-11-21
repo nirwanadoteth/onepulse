@@ -1,15 +1,11 @@
 "use client";
 
 import { useAppKitAccount } from "@reown/appkit/react";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GMChainCard } from "@/components/gm-chain-card/gm-chain-card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
 import { useGmStats } from "@/hooks/use-gm-stats";
 import { DAILY_GM_ADDRESSES } from "@/lib/constants";
+import { isSponsoredOnChain } from "@/lib/utils";
 import { minikitConfig } from "@/minikit.config";
 import {
   areAllChainsComplete,
@@ -18,19 +14,43 @@ import {
 } from "./home/chain-config";
 import { CongratsDialog } from "./home/congrats-dialog";
 import { ModalRenderer } from "./home/modal-renderer";
-import { useConfettiControl } from "./home/use-confetti-control";
 import { useCongratsLogic } from "./home/use-congrats-logic";
 import { useLastCongratsDay } from "./home/use-last-congrats-day";
 import { useModalManagement } from "./home/use-modal-management";
 import { usePerChainStatus } from "./home/use-per-chain-status";
 
+/**
+ * Performs shallow comparison of two objects by checking if any key's value differs or if the set of keys differs.
+ * Returns true if prev is null/undefined or if any property value has changed or if keys were added/removed.
+ * Use this helper whenever comparing GmStats or similar data structures to avoid
+ * manual field-by-field comparisons that become fragile when fields are added.
+ */
+function hasChanged<T extends Record<string, unknown>>(
+  prev: T | null | undefined,
+  current: T
+): boolean {
+  if (!prev) {
+    return true;
+  }
+  const currentKeys = Object.keys(current);
+  const prevKeys = Object.keys(prev);
+  if (currentKeys.length !== prevKeys.length) {
+    return true;
+  }
+  return currentKeys.some((key) => prev[key] !== current[key]);
+}
+
 export const Home = memo(
   ({
     sponsored,
     allowedChainIds,
+    onGmStatsChange,
+    onShareClick,
   }: {
     sponsored?: boolean;
     allowedChainIds?: number[];
+    onGmStatsChange?: (stats: ReturnType<typeof useGmStats>) => void;
+    onShareClick?: () => void;
   }) => {
     const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
     const {
@@ -50,6 +70,33 @@ export const Home = memo(
     );
     const chainIds = useMemo(() => chains.map((c) => c.id), [chains]);
 
+    // Overall GM stats for sharing (aggregate across chains)
+    const gmStatsResult = useGmStats(address);
+
+    // Notify parent only when stats actually change (prevents infinite re-render loop)
+    const prevStatsRef = useRef<ReturnType<typeof useGmStats> | null>(null);
+    const prevOnGmStatsChangeRef = useRef(onGmStatsChange);
+
+    useEffect(() => {
+      if (prevOnGmStatsChangeRef.current !== onGmStatsChange) {
+        prevStatsRef.current = null;
+      }
+      prevOnGmStatsChangeRef.current = onGmStatsChange;
+      if (!onGmStatsChange) {
+        return;
+      }
+      const prev = prevStatsRef.current;
+      const changed =
+        !prev ||
+        prev.isReady !== gmStatsResult.isReady ||
+        hasChanged(prev.stats, gmStatsResult.stats);
+      if (!changed) {
+        return;
+      }
+      prevStatsRef.current = gmStatsResult;
+      onGmStatsChange(gmStatsResult);
+    }, [gmStatsResult, onGmStatsChange]);
+
     const { statusMap, handleStatus } = usePerChainStatus();
 
     const allDone = useMemo(
@@ -64,20 +111,12 @@ export const Home = memo(
 
     const { lastCongratsDay, setLastCongratsDay } = useLastCongratsDay();
 
-    const { confettiRef } = useConfettiControl(false, isConnected);
-
     const { showCongrats, setShowCongrats } = useCongratsLogic({
       allDone,
       isConnected,
       lastCongratsDay,
-      onLastCongratsDayUpdate: setLastCongratsDay,
+      onLastCongratsDayUpdateAction: setLastCongratsDay,
     });
-
-    useEffect(() => {
-      if (showCongrats) {
-        confettiRef.current?.fire?.();
-      }
-    }, [showCongrats, confettiRef]);
 
     return (
       <div className="mt-4 mb-12 space-y-4">
@@ -88,36 +127,27 @@ export const Home = memo(
           </p>
         </div>
 
-        <Carousel
-          className="w-full"
-          opts={{
-            align: "start",
-            loop: true,
-          }}
-        >
-          <CarouselContent className="-ml-2 md:-ml-4">
-            {chains.map((c) => {
-              const contractAddress = DAILY_GM_ADDRESSES[c.id];
-              return contractAddress ? (
-                <CarouselItem className="basis-full pl-2 md:pl-4" key={c.id}>
-                  <ChainSlide
-                    address={address}
-                    chainId={c.id}
-                    chainName={c.name}
-                    contractAddress={contractAddress}
-                    isConnected={Boolean(isConnected)}
-                    onOpenModal={(refetch) => {
-                      setActiveModalChainId(c.id);
-                      setActiveRefetchFn(() => refetch);
-                    }}
-                    onStatusChange={handleStatus}
-                    sponsored={Boolean(sponsored) && c.id === 8453}
-                  />
-                </CarouselItem>
-              ) : null;
-            })}
-          </CarouselContent>
-        </Carousel>
+        <div className="space-y-4">
+          {chains.map((c) => {
+            const contractAddress = DAILY_GM_ADDRESSES[c.id];
+            return contractAddress ? (
+              <ChainSlide
+                address={address}
+                chainId={c.id}
+                chainName={c.name}
+                contractAddress={contractAddress}
+                isConnected={Boolean(isConnected)}
+                key={c.id}
+                onOpenModal={(refetch) => {
+                  setActiveModalChainId(c.id);
+                  setActiveRefetchFn(() => refetch);
+                }}
+                onStatusChange={handleStatus}
+                sponsored={isSponsoredOnChain(Boolean(sponsored), c.id)}
+              />
+            ) : null;
+          })}
+        </div>
 
         <ModalRenderer
           activeModalChainId={activeModalChainId}
@@ -134,13 +164,14 @@ export const Home = memo(
         />
 
         <CongratsDialog
-          confettiRef={confettiRef}
+          gmStats={gmStatsResult.stats}
           nextTargetSec={nextTargetSec}
           onOpenChange={(val) => {
             if (!val) {
               setShowCongrats(false);
             }
           }}
+          onShare={onShareClick}
           open={Boolean(showCongrats && allDone)}
         />
       </div>

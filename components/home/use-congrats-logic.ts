@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-import { getCurrentDay } from "./chain-config";
+import { getCurrentDay } from "@/lib/utils";
 
 type UseCongratsLogicProps = {
   allDone: boolean;
   isConnected: boolean;
   lastCongratsDay: number | null;
-  onLastCongratsDayUpdate: (day: number) => void;
+  onLastCongratsDayUpdateAction: (day: number) => void;
 };
 
 /**
@@ -19,7 +18,7 @@ export function useCongratsLogic({
   allDone,
   isConnected,
   lastCongratsDay,
-  onLastCongratsDayUpdate,
+  onLastCongratsDayUpdateAction,
 }: UseCongratsLogicProps) {
   const [showCongrats, setShowCongrats] = useState(false);
 
@@ -32,19 +31,12 @@ export function useCongratsLogic({
       return;
     }
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    timeoutId = setTimeout(() => {
+    // Schedule as microtask to avoid blocking current render
+    queueMicrotask(() => {
       setShowCongrats(true);
-      onLastCongratsDayUpdate(today);
-    }, 0);
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [allDone, isConnected, lastCongratsDay, onLastCongratsDayUpdate]);
+      onLastCongratsDayUpdateAction(today);
+    });
+  }, [allDone, isConnected, lastCongratsDay, onLastCongratsDayUpdateAction]);
 
   return { showCongrats, setShowCongrats };
 }

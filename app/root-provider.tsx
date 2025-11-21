@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { State } from "wagmi";
 import { ColorSchemeSync } from "@/components/providers/color-scheme-sync";
 import { MiniAppProvider } from "@/components/providers/miniapp-provider";
 import { OnchainKitProvider } from "@/components/providers/onchainkit-provider";
@@ -8,13 +9,15 @@ import QueryClientProvider from "@/components/providers/query-client-provider";
 import { SpacetimeDBProvider } from "@/components/providers/spacetimedb-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { WagmiProvider } from "@/components/providers/wagmi-provider";
+import { SafeAreaProvider } from "@/components/safe-area-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function RootProvider({
   children,
-  cookies,
+  initialState,
 }: Readonly<{
   children: ReactNode;
-  cookies: string | null;
+  initialState?: State;
 }>) {
   return (
     <ThemeProvider
@@ -23,13 +26,17 @@ export function RootProvider({
       enableSystem
       storageKey="theme"
     >
-      <WagmiProvider cookies={cookies}>
+      <WagmiProvider initialState={initialState}>
         <QueryClientProvider>
           <OnchainKitProvider>
             <MiniAppProvider>
               <SpacetimeDBProvider>
-                {children}
-                <ColorSchemeSync />
+                <SafeAreaProvider>
+                  <TooltipProvider delayDuration={0}>
+                    {children}
+                  </TooltipProvider>
+                  <ColorSchemeSync />
+                </SafeAreaProvider>
               </SpacetimeDBProvider>
             </MiniAppProvider>
           </OnchainKitProvider>

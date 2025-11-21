@@ -4,7 +4,8 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useMemo } from "react";
 import { useReadContract } from "wagmi";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { getDailyRewardsAddress } from "@/lib/constants";
+import { BASE_CHAIN_ID } from "@/lib/constants";
+import { getDailyRewardsAddress } from "@/lib/utils";
 
 type UseClaimEligibilityProps = {
   fid: bigint | undefined;
@@ -22,7 +23,6 @@ type ClaimEligibility = {
   minReserve: bigint;
 };
 
-const CHAIN_ID = 8453;
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
 const REFETCH_ELIGIBILITY_MS = 60_000; // 60 seconds
 const REFETCH_VAULT_MS = 120_000; // 120 seconds
@@ -61,7 +61,7 @@ export function useClaimEligibility({
   enabled = true,
 }: UseClaimEligibilityProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
-  const contractAddress = getDailyRewardsAddress(CHAIN_ID);
+  const contractAddress = getDailyRewardsAddress(BASE_CHAIN_ID);
   const args = buildClaimEligibilityArgs(address, fid, contractAddress);
   const shouldQuery = shouldQueryEligibility(
     enabled,
@@ -109,13 +109,13 @@ export function useClaimDeadline(customDeadline?: bigint): bigint {
 }
 
 export function useRewardVaultStatus() {
-  const contractAddress = getDailyRewardsAddress(CHAIN_ID);
+  const contractAddress = getDailyRewardsAddress(BASE_CHAIN_ID);
 
   const { data: vaultStatus, isPending } = useReadContract({
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
     functionName: "getVaultStatus",
-    chainId: CHAIN_ID,
+    chainId: BASE_CHAIN_ID,
     query: {
       enabled: contractAddress !== "",
       refetchInterval: REFETCH_VAULT_MS,

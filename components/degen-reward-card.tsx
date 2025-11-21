@@ -4,7 +4,7 @@ import { base } from "@reown/appkit/networks";
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { memo, useState } from "react";
 import { DegenClaimTransaction } from "@/components/gm-chain-card/degen-claim-transaction";
-import { ShareGMStatus } from "@/components/share-gm-status";
+import { ShareModal } from "@/components/share-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
@@ -12,7 +12,7 @@ import {
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
 import { useGmStats } from "@/hooks/use-gm-stats";
-import { normalizeChainId } from "@/lib/utils";
+import { isSponsoredOnChain, normalizeChainId } from "@/lib/utils";
 
 type DegenRewardCardProps = {
   fid: bigint | undefined;
@@ -92,7 +92,9 @@ type RewardCardProps = {
   state: ClaimState;
   isCheckingEligibility: boolean;
   hasClaimedToday: boolean;
+  isShareModalOpen: boolean;
   onClaimSuccess: () => void;
+  onShareModalClose: () => void;
   address: string | undefined;
   chainId: number;
 };
@@ -103,7 +105,9 @@ function RewardCard({
   state,
   isCheckingEligibility,
   hasClaimedToday,
+  isShareModalOpen,
   onClaimSuccess,
+  onShareModalClose,
   address,
   chainId,
 }: RewardCardProps) {
@@ -111,55 +115,56 @@ function RewardCard({
   const { stats } = useGmStats(address, chainId);
 
   return (
-    <Card className="border-border/50">
-      <CardHeader className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <h3 className={`font-semibold text-xl ${config.accentColor}`}>
-              {config.title}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {config.description}
-            </p>
+    <>
+      <Card className="border-border/50">
+        <CardHeader className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <h3 className={`font-semibold text-xl ${config.accentColor}`}>
+                {config.title}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {config.description}
+              </p>
+            </div>
+            {!isCheckingEligibility && state.reward > 0n && (
+              <div className="text-right">
+                <div className="font-light text-3xl tracking-tight">
+                  {(Number(state.reward) / 1e18).toFixed(0)}
+                </div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider">
+                  DEGEN
+                </div>
+              </div>
+            )}
           </div>
-          {!isCheckingEligibility && state.reward > 0n && (
-            <div className="text-right">
-              <div className="font-light text-3xl tracking-tight">
-                {(Number(state.reward) / 1e18).toFixed(0)}
-              </div>
-              <div className="text-muted-foreground text-xs uppercase tracking-wider">
-                DEGEN
-              </div>
+        </CardHeader>
+        <CardContent>
+          <DegenClaimTransaction
+            disabled={!state.isEligible}
+            fid={fid}
+            onSuccess={onClaimSuccess}
+            sponsored={sponsored}
+          />
+
+          {isCheckingEligibility && (
+            <div className="mt-4 flex items-center gap-2 text-muted-foreground text-xs">
+              <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
+              Checking eligibility
             </div>
           )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <DegenClaimTransaction
-          disabled={!state.isEligible}
-          fid={fid}
-          onSuccess={onClaimSuccess}
-          sponsored={sponsored}
-        />
+        </CardContent>
+      </Card>
 
-        {hasClaimedToday && (
-          <div className="mt-4">
-            <ShareGMStatus
-              claimedToday={true}
-              className="justify-center"
-              gmStats={stats}
-            />
-          </div>
-        )}
-
-        {isCheckingEligibility && (
-          <div className="mt-4 flex items-center gap-2 text-muted-foreground text-xs">
-            <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
-            Checking eligibility
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      <ShareModal
+        claimedToday={hasClaimedToday}
+        description="You've claimed your daily DEGEN rewards! Share your achievement with the community."
+        gmStats={stats}
+        onOpenChange={onShareModalClose}
+        open={isShareModalOpen}
+        title="Rewards Claimed! 🎉"
+      />
+    </>
   );
 }
 
@@ -232,7 +237,7 @@ function WrongNetworkCard() {
 
 export const DegenRewardCard = memo(
   ({ fid, sponsored }: DegenRewardCardProps) => {
-    const [hasClaimedToday, setHasClaimedToday] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const { address, isConnected } = useAppKitAccount({ namespace: "eip155" });
     const { chainId } = useAppKitNetwork();
     const numericChainId = normalizeChainId(chainId);
@@ -246,6 +251,12 @@ export const DegenRewardCard = memo(
     });
     const { hasRewards } = useRewardVaultStatus();
 
+    const hasClaimedToday = claimStatus?.claimerClaimedToday ?? false;
+
+    const handleClaimSuccess = () => {
+      setIsShareModalOpen(true);
+    };
+
     if (!(isConnected && address)) {
       return <DisconnectedCard />;
     }
@@ -258,6 +269,7 @@ export const DegenRewardCard = memo(
       return <DepletedVaultCard />;
     }
 
+    const isSponsored = isSponsoredOnChain(sponsored, numericChainId);
     const claimState = extractClaimState(claimStatus, hasSentGMToday);
     return (
       <RewardCard
@@ -266,8 +278,10 @@ export const DegenRewardCard = memo(
         fid={fid}
         hasClaimedToday={hasClaimedToday}
         isCheckingEligibility={isCheckingEligibility}
-        onClaimSuccess={() => setHasClaimedToday(true)}
-        sponsored={sponsored}
+        isShareModalOpen={isShareModalOpen}
+        onClaimSuccess={handleClaimSuccess}
+        onShareModalClose={() => setIsShareModalOpen(false)}
+        sponsored={isSponsored}
         state={claimState}
       />
     );

@@ -8,13 +8,46 @@ import {
   type RpcUserOperation,
 } from "viem";
 import { base, celo, optimism } from "viem/chains";
+import {
+  BASE_CHAIN_ID,
+  CELO_CHAIN_ID,
+  DAILY_GM_ADDRESS,
+  DAILY_GM_ADDRESSES,
+  DAILY_REWARDS_ADDRESS,
+  DAILY_REWARDS_ADDRESSES,
+  MILLISECONDS_PER_DAY,
+  OPTIMISM_CHAIN_ID,
+  SECONDS_PER_DAY,
+} from "./constants";
 
 const digitRegex = /^\d+$/;
 const EIP155_REGEX = /^eip155:(\d+)$/;
+const DOMAIN_LABEL_PATTERN = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Get the Daily GM contract address for a given chain ID
+ */
+export function getDailyGmAddress(chainId?: number): `0x${string}` | "" {
+  if (!chainId) {
+    return DAILY_GM_ADDRESS as `0x${string}` | "";
+  }
+  return DAILY_GM_ADDRESSES[chainId] || ("" as const);
+}
+
+/**
+ * Get the Daily Rewards contract address for a given chain ID
+ */
+export function getDailyRewardsAddress(chainId?: number): `0x${string}` | "" {
+  if (!chainId) {
+    return DAILY_REWARDS_ADDRESS as `0x${string}` | "";
+  }
+  return DAILY_REWARDS_ADDRESSES[chainId] || ("" as const);
+}
+
 const publicClient = createPublicClient({
   chain: base,
   transport: http(),
@@ -97,6 +130,125 @@ export function parseEip155NetworkId(value: unknown): number | undefined {
     return; // invalid parsed number
   }
   return; // unsupported type
+}
+
+/**
+ * Get current day number (days since Unix epoch)
+ * Used for GM tracking and congratulations logic
+ */
+export function getCurrentDay(): number {
+  return Math.floor(Date.now() / MILLISECONDS_PER_DAY);
+}
+
+/**
+ * Get current timestamp in seconds
+ */
+export function getCurrentTimestampSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
+/**
+ * Convert timestamp in seconds to day number
+ */
+export function timestampToDayNumber(timestampSeconds: number): number {
+  return Math.floor(timestampSeconds / SECONDS_PER_DAY);
+}
+
+/**
+ * Check if a string is a valid ENS or Base domain
+ * Validates domain structure: labels separated by dots, each label following DNS rules
+ */
+export function isDomainFormat(input: string): boolean {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  // Reject leading/trailing dots or consecutive dots
+  if (
+    trimmed.startsWith(".") ||
+    trimmed.endsWith(".") ||
+    trimmed.includes("..")
+  ) {
+    return false;
+  }
+
+  // Check for valid suffix
+  // Accepts both ENS (.eth) and Base domain (.base.eth) formats
+  const isValid = trimmed.endsWith(".eth");
+  if (!isValid) {
+    return false;
+  }
+
+  // Split into labels and validate each
+  const labels = trimmed.split(".");
+  if (labels.length < 2) {
+    return false;
+  }
+
+  // Each label must:
+  // - Be 1-63 characters
+  // - Contain only ASCII letters, numbers, and hyphens
+  // - Not start or end with a hyphen
+  for (const label of labels) {
+    if (label.length === 0) {
+      return false;
+    }
+    if (!DOMAIN_LABEL_PATTERN.test(label)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Normalize an Ethereum address to lowercase
+ */
+export function normalizeAddress(address?: string | null): string | null {
+  return address?.toLowerCase() ?? null;
+}
+
+/**
+ * Check if a chain ID is the Celo network
+ */
+export function isCeloChain(chainId?: number): boolean {
+  return chainId === CELO_CHAIN_ID;
+}
+
+export function isBaseChain(chainId?: number): boolean {
+  return chainId === BASE_CHAIN_ID;
+}
+
+export function isOptimismChain(chainId?: number): boolean {
+  return chainId === OPTIMISM_CHAIN_ID;
+}
+
+/**
+ * Get chain-specific button classes for styling
+ */
+export function getChainBtnClasses(chainId: number): string {
+  if (isCeloChain(chainId)) {
+    return "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90";
+  }
+  if (isOptimismChain(chainId)) {
+    return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
+  }
+  return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
+}
+
+/**
+ * Determine if transactions should be sponsored on a given chain.
+ * Currently, sponsorship is only supported on Base.
+ */
+export function isSponsoredOnChain(
+  sponsored: boolean,
+  chainId?: number | null
+): boolean {
+  return (
+    Boolean(sponsored) &&
+    isBaseChain(typeof chainId === "number" ? chainId : undefined)
+  );
 }
 
 export function canSaveMiniApp(params: {

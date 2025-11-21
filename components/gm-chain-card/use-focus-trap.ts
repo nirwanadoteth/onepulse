@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 type UseFocusTrapOptions = {
   isOpen: boolean;
   isProcessing: boolean;
-  onClose: () => void;
+  onCloseAction: () => void;
 };
 
 const isElementHidden = (el: HTMLElement) => {
@@ -71,7 +71,7 @@ const handleTabKey = (
 export function useFocusTrap({
   isOpen,
   isProcessing,
-  onClose,
+  onCloseAction,
 }: UseFocusTrapOptions) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const lastActiveRef = useRef<HTMLElement | null>(null);
@@ -94,7 +94,7 @@ export function useFocusTrap({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isProcessing) {
         e.preventDefault();
-        onClose();
+        onCloseAction();
         return;
       }
 
@@ -112,7 +112,7 @@ export function useFocusTrap({
         prev.focus();
       }
     };
-  }, [isOpen, isProcessing, onClose]);
+  }, [isOpen, isProcessing, onCloseAction]);
 
   return dialogRef;
 }
