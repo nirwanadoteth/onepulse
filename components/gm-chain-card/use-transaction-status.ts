@@ -1,5 +1,5 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
@@ -28,6 +28,8 @@ export function useTransactionStatus({
   onRefreshError,
   refetchEligibility,
 }: UseTransactionStatusProps): TransactionStatusHandlers {
+  const processedTxHashes = useRef<Set<string>>(new Set());
+
   const handleRefreshAfterSuccess = useCallback(
     async (txHash: string) => {
       try {
@@ -63,7 +65,8 @@ export function useTransactionStatus({
       if (isSuccess) {
         const txHash =
           status.statusData.transactionReceipts[0]?.transactionHash;
-        if (txHash) {
+        if (txHash && !processedTxHashes.current.has(txHash)) {
+          processedTxHashes.current.add(txHash);
           // Fire and forget - handleRefreshAfterSuccess runs async without blocking
           handleRefreshAfterSuccess(txHash);
         }
