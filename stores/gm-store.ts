@@ -1,5 +1,8 @@
 import type { DbConnection, GmStatsByAddress } from "@/lib/module_bindings";
-import { connectionStatus } from "@/lib/spacetimedb/connection-events";
+import {
+  connectionStatus,
+  onConnectionChange,
+} from "@/lib/spacetimedb/connection-events";
 import { getDbConnection } from "@/lib/spacetimedb/connection-factory";
 import { onSubscriptionChange } from "@/lib/spacetimedb/subscription-events";
 
@@ -122,23 +125,28 @@ class GmStatsByAddressStore {
 
     const conn = this.getConnection();
 
-    // Wait for WebSocket connection to be established before subscribing
-    // Connection status is managed globally, wait up to 5 seconds
-    let retries = 0;
-    const maxRetries = 50;
-    const delayMs = 100;
+    if (!connectionStatus.isConnected) {
+      // Wait for connection
+      await new Promise<void>((resolve) => {
+        const unsubscribe = onConnectionChange(() => {
+          if (connectionStatus.isConnected) {
+            unsubscribe();
+            resolve();
+          }
+        });
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          unsubscribe();
+          resolve();
+        }, 5000);
+      });
+    }
 
-    while (retries < maxRetries && !connectionStatus.isConnected) {
-      retries += 1;
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-
-      if (
-        this.subscribedAddress &&
-        this.subscribedAddress.toLowerCase() !== addr
-      ) {
-        // Abort if a newer subscribeToAddress call changed the target address
-        return;
-      }
+    if (
+      this.subscribedAddress &&
+      this.subscribedAddress.toLowerCase() !== addr
+    ) {
+      return;
     }
 
     if (!connectionStatus.isConnected) {
