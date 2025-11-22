@@ -141,7 +141,7 @@ export function Header({
 
   return (
     <>
-      <div className="sticky top-4 mt-1 flex h-16 items-center justify-between rounded-lg border border-border bg-background px-2">
+      <div className="sticky top-4 z-50 mt-1 flex h-16 items-center justify-between rounded-lg border border-border bg-background px-2">
         <div className="flex-1">
           {shouldShowUserInfo ? (
             <UserInfo address={address} user={user} />
