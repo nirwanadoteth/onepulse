@@ -140,8 +140,8 @@ export function Header({
   const showShareButton = shouldShowShareButton(gmStats);
 
   return (
-    <>
-      <div className="sticky top-4 z-50 mt-1 flex h-16 items-center justify-between rounded-lg border border-border bg-background px-2">
+    <div className="fixed top-0 right-0 left-0 z-50 mx-auto h-16 w-full max-w-lg bg-transparent">
+      <div className="flex h-16 items-center justify-between rounded-b-lg border border-border bg-background px-4 shadow-lg">
         <div className="flex-1">
           {shouldShowUserInfo ? (
             <UserInfo address={address} user={user} />
@@ -164,6 +164,6 @@ export function Header({
         onOpenChange={onShareModalOpenChangeAction}
         open={isShareModalOpen}
       />
-    </>
+    </div>
   );
 }

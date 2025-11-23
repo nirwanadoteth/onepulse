@@ -19,22 +19,29 @@ import { dailyGMAbi } from "@/lib/abi/daily-gm";
 import { SECONDS_PER_DAY } from "@/lib/constants";
 import {
   getChainBtnClasses,
+  getChainIconName,
   getCurrentTimestampSeconds,
-  isCeloChain,
-  isOptimismChain,
   normalizeChainId,
   timestampToDayNumber,
 } from "@/lib/utils";
 import { ActionButton } from "./action-button";
 import { CountdownText } from "./countdown-text";
 
-const computeGMState = (params: {
+type ComputeGMStateParams = {
   address: string | undefined;
   contractAddress: `0x${string}`;
   isConnected: boolean;
   lastGmDayData: unknown;
   isPendingLastGm: boolean;
-}) => {
+};
+
+type GMState = {
+  hasGmToday: boolean;
+  gmDisabled: boolean;
+  targetSec: number;
+};
+
+const computeGMState = (params: ComputeGMStateParams): GMState => {
   const {
     address,
     contractAddress,
@@ -62,16 +69,6 @@ const computeGMState = (params: {
     gmDisabled: alreadyGmToday || isPendingLastGm,
     targetSec: nextDayStartSec,
   };
-};
-
-const getChainIconName = (chainId: number): string => {
-  if (isOptimismChain(chainId)) {
-    return "optimism";
-  }
-  if (isCeloChain(chainId)) {
-    return "celo";
-  }
-  return "base";
 };
 
 const StatsDisplay = memo(

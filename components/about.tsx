@@ -54,7 +54,7 @@ export function About() {
   );
 
   return (
-    <div className="mt-4 mb-12 flex flex-col gap-2 rounded-lg border">
+    <div className="my-12 flex flex-col gap-2 rounded-lg border">
       <div className="flex w-full justify-center p-4 data-[align=start]:items-start data-[align=end]:items-end data-[align=center]:items-center">
         <div>
           <h1 className="text-balance font-bold text-xl tracking-tight">

@@ -86,7 +86,7 @@ const chainExplorerMap: Record<number, string> = {
   [optimism.id]: "https://optimistic.etherscan.io",
 };
 
-export function getChainExplorer(chainId?: number) {
+export function getChainExplorer(chainId?: number): string {
   if (!chainId) {
     return "https://basescan.org";
   }
@@ -175,8 +175,7 @@ export function isDomainFormat(input: string): boolean {
 
   // Check for valid suffix
   // Accepts both ENS (.eth) and Base domain (.base.eth) formats
-  const isValid = trimmed.endsWith(".eth");
-  if (!isValid) {
+  if (!trimmed.endsWith(".eth")) {
     return false;
   }
 
@@ -190,16 +189,9 @@ export function isDomainFormat(input: string): boolean {
   // - Be 1-63 characters
   // - Contain only ASCII letters, numbers, and hyphens
   // - Not start or end with a hyphen
-  for (const label of labels) {
-    if (label.length === 0) {
-      return false;
-    }
-    if (!DOMAIN_LABEL_PATTERN.test(label)) {
-      return false;
-    }
-  }
-
-  return true;
+  return labels.every(
+    (label) => label.length > 0 && DOMAIN_LABEL_PATTERN.test(label)
+  );
 }
 
 /**
@@ -258,4 +250,17 @@ export function canSaveMiniApp(params: {
 }): boolean {
   const { isMiniAppReady, inMiniApp, clientAdded } = params;
   return isMiniAppReady && inMiniApp && clientAdded !== true;
+}
+
+/**
+ * Get the icon name for a given chain ID
+ */
+export function getChainIconName(chainId: number): string {
+  if (isOptimismChain(chainId)) {
+    return "optimism";
+  }
+  if (isCeloChain(chainId)) {
+    return "celo";
+  }
+  return "base";
 }

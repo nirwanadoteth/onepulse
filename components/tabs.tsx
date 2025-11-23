@@ -56,9 +56,9 @@ export function Tabs({
         <TabsContent value="about">
           <About />
         </TabsContent>
-        <div className="fixed right-0 bottom-0 left-0 mx-auto h-18 w-full max-w-lg bg-transparent px-4 py-1">
-          <div className="mb-1 h-16 rounded-lg border border-border bg-background p-2">
-            <TabsList className="mx-auto flex h-12 w-full max-w-lg gap-2 rounded-lg bg-background p-0 py-0">
+        <div className="fixed right-0 bottom-0 left-0 mx-auto h-16 w-full max-w-lg bg-transparent">
+          <div className="h-16 rounded-t-lg border border-border bg-transparent shadow-lg">
+            <TabsList className="mx-auto flex h-full w-full max-w-lg gap-2 rounded-t-lg bg-background p-0 py-0">
               <TabsTrigger
                 className="flex h-full flex-col items-center justify-center gap-1 border-0 data-[state=active]:bg-foreground/10"
                 value="home"
