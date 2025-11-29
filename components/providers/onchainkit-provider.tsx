@@ -15,7 +15,7 @@ export function OnchainKitProvider({ children }: { children: ReactNode }) {
       config={{
         appearance: {
           name: process.env.NEXT_PUBLIC_PROJECT_NAME,
-          logo: minikitConfig.miniapp.iconUrl,
+          logo: minikitConfig.miniapp.splashImageUrl,
           mode: "auto",
           theme: "custom",
         },
