@@ -8,11 +8,7 @@ import {
   type UserContext,
   useMiniAppContext,
 } from "@/components/providers/miniapp-provider";
-import {
-  getMilestoneContext,
-  getSpecialMilestone,
-  STREAK_NARRATIVES,
-} from "@/components/share-narratives";
+import { getShareText } from "@/components/share-narratives";
 import { Button } from "@/components/ui/button";
 import type { GmStats } from "@/hooks/use-gm-stats";
 import { MILLISECONDS_PER_DAY } from "@/lib/constants";
@@ -29,6 +25,7 @@ type ShareGMStatusProps = {
     | "destructive";
   size?: "default" | "sm" | "lg" | "icon";
   claimedToday?: boolean;
+  completedAllChains?: boolean;
   gmStats?: GmStats;
 };
 
@@ -48,82 +45,56 @@ const hasGMedToday = (gmStats: GmStats | undefined) => {
   return gmStats.lastGmDay === today;
 };
 
-const getStreakNarrative = (streak: number, claimed: boolean): string => {
-  const narrative = STREAK_NARRATIVES.find((n) => streak <= n.max);
-  if (!narrative) {
-    return "";
-  }
-
-  return claimed ? narrative.claimed(streak) : narrative.unclaimed(streak);
-};
-
-const createShareText = (
-  claimedToday: boolean,
-  currentStreak: number,
-  totalGMs = 0,
-  todayGM = false
-) => {
-  // Check for special milestone messages (takes precedence over generic narrative)
-  const specialMilestone = getSpecialMilestone(currentStreak, totalGMs);
-  if (specialMilestone) {
-    return claimedToday ? specialMilestone.claimed : specialMilestone.unclaimed;
-  }
-
-  // Regular format: headline + narrative + context
-  const headline = claimedToday
-    ? "Just claimed my daily reward on OnePulse! 🚀"
-    : "Check out my OnePulse progress! 📊";
-
-  const streakNarrative = getStreakNarrative(
-    currentStreak,
-    claimedToday || todayGM
-  );
-
-  const milestoneContext = getMilestoneContext(totalGMs);
-
-  if (milestoneContext) {
-    return `${headline}\n\n${streakNarrative}\n${milestoneContext}`;
-  }
-
-  return `${headline}\n\n${streakNarrative}`;
-};
+const createShareText = (claimedToday: boolean, completedAllChains: boolean) =>
+  getShareText(claimedToday, completedAllChains);
 
 const createShareMetadata = (options: {
   username: string;
+  displayName: string;
+  pfp: string;
   currentStreak: number;
   totalGMs: number;
   todayGM: boolean;
   claimedToday: boolean;
+  chains: { name: string; count: number }[];
 }) =>
   generateGMStatusMetadata({
     username: options.username,
+    displayName: options.displayName,
+    pfp: options.pfp,
     streak: options.currentStreak,
     totalGMs: options.totalGMs,
-    chains: ["Base"],
     todayGM: options.todayGM,
     claimedToday: options.claimedToday,
+    chains: options.chains,
   });
 
-function useGMSharing(claimedToday: boolean, gmStats?: GmStats) {
+function useGMSharing(
+  claimedToday: boolean,
+  completedAllChains: boolean,
+  gmStats?: GmStats
+) {
   const miniAppContextData = useMiniAppContext();
   const openUrl = useOpenUrl();
 
-  const username = getUsername(miniAppContextData?.context?.user ?? null);
+  const user = miniAppContextData?.context?.user;
+  const username = getUsername(user ?? null);
+  const displayName = user?.displayName || username;
+  const pfp = user?.pfpUrl || "";
+
   const { currentStreak, totalGMs } = getGMStats(gmStats);
   const todayGM = hasGMedToday(gmStats);
 
-  const shareText = createShareText(
-    claimedToday,
-    currentStreak,
-    totalGMs,
-    todayGM
-  );
+  const shareText = createShareText(claimedToday, completedAllChains);
   const metadata = createShareMetadata({
     username,
+    displayName,
+    pfp,
     currentStreak,
     totalGMs,
     todayGM,
     claimedToday,
+    chains: gmStats?.chains || [],
   });
 
   return {
@@ -166,9 +137,14 @@ export function ShareGMStatus({
   variant = "outline",
   size = "default",
   claimedToday = false,
+  completedAllChains = false,
   gmStats,
 }: ShareGMStatusProps) {
-  const { shareText, shareUrl, openUrl } = useGMSharing(claimedToday, gmStats);
+  const { shareText, shareUrl, openUrl } = useGMSharing(
+    claimedToday,
+    completedAllChains,
+    gmStats
+  );
 
   const handleShare = async (platform: "twitter" | "cast" | "copy") => {
     switch (platform) {

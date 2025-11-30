@@ -23,6 +23,7 @@ type TabsProps = {
   onTabChangeAction: (tab: string) => void;
   onGmStatsChangeAction: (stats: ReturnType<typeof useGmStats>) => void;
   onShareClickAction: () => void;
+  onAllDoneChangeAction?: (allDone: boolean) => void;
 };
 
 export function Tabs({
@@ -30,6 +31,7 @@ export function Tabs({
   onTabChangeAction,
   onGmStatsChangeAction,
   onShareClickAction,
+  onAllDoneChangeAction,
 }: TabsProps) {
   const miniAppContext = useMiniAppContext();
 
@@ -45,6 +47,7 @@ export function Tabs({
         <TabsContent value="home">
           <Home
             allowedChainIds={allowedChainIds}
+            onAllDoneChange={onAllDoneChangeAction}
             onGmStatsChange={onGmStatsChangeAction}
             onShareClick={onShareClickAction}
             sponsored={isBaseApp}

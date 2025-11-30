@@ -18,6 +18,7 @@ export type GmStats = {
   highestStreak: number;
   allTimeGmCount: number;
   lastGmDay: number;
+  chains: { name: string; count: number }[];
 };
 
 export const ZERO: GmStats = {
@@ -25,6 +26,7 @@ export const ZERO: GmStats = {
   highestStreak: 0,
   allTimeGmCount: 0,
   lastGmDay: 0,
+  chains: [],
 };
 
 export const EMPTY_ROWS: GmStatsByAddress[] = [];

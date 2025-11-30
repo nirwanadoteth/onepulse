@@ -46,11 +46,13 @@ export const Home = memo(
     allowedChainIds,
     onGmStatsChange,
     onShareClick,
+    onAllDoneChange,
   }: {
     sponsored?: boolean;
     allowedChainIds?: number[];
     onGmStatsChange?: (stats: ReturnType<typeof useGmStats>) => void;
     onShareClick?: () => void;
+    onAllDoneChange?: (allDone: boolean) => void;
   }) => {
     const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
     const {
@@ -103,6 +105,10 @@ export const Home = memo(
       () => areAllChainsComplete(chainIds, statusMap),
       [chainIds, statusMap]
     );
+
+    useEffect(() => {
+      onAllDoneChange?.(allDone);
+    }, [allDone, onAllDoneChange]);
 
     const nextTargetSec = useMemo(
       () => getNextTargetSec(chainIds, statusMap),

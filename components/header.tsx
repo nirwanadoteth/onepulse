@@ -32,6 +32,7 @@ type HeaderProps = {
   gmStats?: GmStats;
   isShareModalOpen: boolean;
   onShareModalOpenChangeAction: (open: boolean) => void;
+  completedAllChains?: boolean;
 };
 
 const extractUserFromContext = (
@@ -90,80 +91,84 @@ const HeaderRight = memo(
   )
 );
 
-export function Header({
-  isMiniAppReady,
-  inMiniApp,
-  onMiniAppAddedAction,
-  gmStats,
-  isShareModalOpen,
-  onShareModalOpenChangeAction,
-}: HeaderProps) {
-  const miniAppContextData = useMiniAppContext();
-  const { address } = useAppKitAccount({ namespace: "eip155" });
-  const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
+export const Header = memo(
+  ({
+    isMiniAppReady,
+    inMiniApp,
+    onMiniAppAddedAction,
+    gmStats,
+    isShareModalOpen,
+    onShareModalOpenChangeAction,
+    completedAllChains,
+  }: HeaderProps) => {
+    const { address } = useAppKitAccount({ namespace: "eip155" });
+    const miniAppContext = useMiniAppContext();
+    const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
 
-  const handleAddMiniApp = useCallback(async () => {
-    try {
-      const response = await sdk.actions.addMiniApp();
+    const handleAddMiniApp = useCallback(async () => {
+      try {
+        const response = await sdk.actions.addMiniApp();
 
-      if (response.notificationDetails) {
-        handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED);
-      } else {
-        handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED_NO_NOTIF);
+        if (response.notificationDetails) {
+          handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED);
+        } else {
+          handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED_NO_NOTIF);
+        }
+
+        setMiniAppAddedLocally(true);
+        onMiniAppAddedAction();
+      } catch (error) {
+        handleError(error, ERROR_MESSAGES.MINI_APP_ADD, {
+          operation: "mini-app-add",
+          errorMessage: extractErrorMessage(error),
+        });
       }
+    }, [onMiniAppAddedAction]);
 
-      setMiniAppAddedLocally(true);
-      onMiniAppAddedAction();
-    } catch (error) {
-      handleError(error, ERROR_MESSAGES.MINI_APP_ADD, {
-        operation: "mini-app-add",
-        errorMessage: extractErrorMessage(error),
-      });
-    }
-  }, [onMiniAppAddedAction]);
+    const handleShareClick = useCallback(
+      () => onShareModalOpenChangeAction(true),
+      [onShareModalOpenChangeAction]
+    );
 
-  const handleShareClick = useCallback(
-    () => onShareModalOpenChangeAction(true),
-    [onShareModalOpenChangeAction]
-  );
+    const user = extractUserFromContext(miniAppContext?.context);
+    const clientAdded = miniAppContext?.context?.client?.added;
+    const showSaveButton =
+      canSaveMiniApp({
+        isMiniAppReady,
+        inMiniApp,
+        clientAdded,
+      }) && !miniAppAddedLocally;
 
-  const user = extractUserFromContext(miniAppContextData?.context);
-  const clientAdded = miniAppContextData?.context?.client?.added;
-  const showSaveButton =
-    canSaveMiniApp({
-      isMiniAppReady,
-      inMiniApp,
-      clientAdded,
-    }) && !miniAppAddedLocally;
+    const shouldShowUserInfo = !!user || !!address;
+    const showShareButton = shouldShowShareButton(gmStats);
 
-  const shouldShowUserInfo = !!user || !!address;
-  const showShareButton = shouldShowShareButton(gmStats);
-
-  return (
-    <div className="fixed top-0 right-0 left-0 z-50 mx-auto h-16 w-full max-w-lg bg-transparent">
-      <div className="flex h-16 items-center justify-between rounded-b-lg border border-border bg-background px-4 shadow-lg">
-        <div className="flex-1">
-          {shouldShowUserInfo ? (
-            <UserInfo address={address} user={user} />
-          ) : (
-            <div className="font-bold text-2xl">
-              {minikitConfig.miniapp.name}
-            </div>
-          )}
+    return (
+      <div className="fixed top-0 right-0 left-0 z-50 mx-auto h-16 w-full max-w-lg bg-transparent">
+        <div className="flex h-16 items-center justify-between rounded-b-lg border border-border bg-background px-4 shadow-lg">
+          <div className="flex-1">
+            {shouldShowUserInfo ? (
+              <UserInfo address={address} user={user} />
+            ) : (
+              <div className="font-bold text-2xl">
+                {minikitConfig.miniapp.name}
+              </div>
+            )}
+          </div>
+          <HeaderRight
+            onSaveClick={handleAddMiniApp}
+            onShareClick={handleShareClick}
+            showSaveButton={showSaveButton}
+            showShareButton={showShareButton}
+          />
         </div>
-        <HeaderRight
-          onSaveClick={handleAddMiniApp}
-          onShareClick={handleShareClick}
-          showSaveButton={showSaveButton}
-          showShareButton={showShareButton}
+
+        <ShareModal
+          completedAllChains={completedAllChains}
+          gmStats={gmStats}
+          onOpenChange={onShareModalOpenChangeAction}
+          open={isShareModalOpen}
         />
       </div>
-
-      <ShareModal
-        gmStats={gmStats}
-        onOpenChange={onShareModalOpenChangeAction}
-        open={isShareModalOpen}
-      />
-    </div>
-  );
-}
+    );
+  }
+);

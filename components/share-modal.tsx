@@ -18,6 +18,7 @@ type ShareModalProps = {
   title?: string;
   description?: string;
   claimedToday?: boolean;
+  completedAllChains?: boolean;
   gmStats?: GmStats;
 };
 
@@ -32,6 +33,7 @@ export const ShareModal = memo(
     title = "Share Your Progress",
     description = "Share your GM achievements with the community",
     claimedToday = false,
+    completedAllChains = false,
     gmStats,
   }: ShareModalProps) => (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -44,6 +46,7 @@ export const ShareModal = memo(
         <div className="py-4">
           <ShareGMStatus
             claimedToday={claimedToday}
+            completedAllChains={completedAllChains}
             gmStats={gmStats}
             size="default"
             variant="outline"

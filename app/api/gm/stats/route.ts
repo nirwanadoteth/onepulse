@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { Infer } from "spacetimedb";
 import { isAddress } from "viem";
+import { SUPPORTED_CHAINS } from "@/lib/constants";
 import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
@@ -22,16 +23,23 @@ function validateGmStatsQuery(searchParams: URLSearchParams) {
   return { address, chainId };
 }
 
+function getChainName(chainId: number): string {
+  return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
+}
+
 function formatChainStatsResponse(
   address: string,
   stats: GmStatsByAddress | undefined
 ) {
+  const count = stats?.allTimeGmCount ?? 0;
+  const chainId = stats?.chainId ?? 0;
   return {
     address,
     currentStreak: stats?.currentStreak ?? 0,
     highestStreak: stats?.highestStreak ?? 0,
-    allTimeGmCount: stats?.allTimeGmCount ?? 0,
+    allTimeGmCount: count,
     lastGmDay: stats?.lastGmDay ?? 0,
+    chains: chainId ? [{ name: getChainName(chainId), count }] : [],
   };
 }
 
@@ -48,12 +56,21 @@ function formatAggregateStatsResponse(
     0
   );
   const lastGmDay = rows.reduce((acc, r) => Math.max(acc, r.lastGmDay ?? 0), 0);
+
+  const chains = rows
+    .map((r) => ({
+      name: getChainName(r.chainId),
+      count: r.allTimeGmCount ?? 0,
+    }))
+    .filter((c) => c.count > 0);
+
   return {
     address,
     currentStreak: 0,
     highestStreak,
     allTimeGmCount,
     lastGmDay,
+    chains,
   };
 }
 
