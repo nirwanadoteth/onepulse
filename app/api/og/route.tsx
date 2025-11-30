@@ -4,13 +4,22 @@ import type { NextRequest } from "next/server";
 export const runtime = "edge";
 
 function parseGMStatusParams(searchParams: URLSearchParams) {
+  const chainsParam = searchParams.get("chains");
+  const chains = chainsParam
+    ? chainsParam.split(",").map((c) => {
+        const [name, count] = c.split(":");
+        return {
+          name: name || "Unknown",
+          count: Number.parseInt(count || "0", 10),
+        };
+      })
+    : [];
+
   return {
     displayName: searchParams.get("displayName") || "name",
     username: searchParams.get("username") || "username",
     pfp: searchParams.get("pfp") || null,
-    basegm: Number.parseInt(searchParams.get("basegm") || "0", 10),
-    celogm: Number.parseInt(searchParams.get("celogm") || "0", 10),
-    optimismgm: Number.parseInt(searchParams.get("optimismgm") || "0", 10),
+    chains,
   };
 }
 
@@ -100,27 +109,23 @@ function generateProfileSection(
   );
 }
 
-function generateGmStats(basegm: number, celogm: number, optimismgm: number) {
-  const chains = [
-    {
-      name: "Base",
-      count: basegm,
-      bg: "rgba(0, 82, 255, 0.1)",
-      border: "rgba(0, 82, 255, 0.5)",
-    },
-    {
-      name: "Celo",
-      count: celogm,
-      bg: "rgba(53, 208, 127, 0.1)",
-      border: "rgba(53, 208, 127, 0.5)",
-    },
-    {
-      name: "Optimism",
-      count: optimismgm,
-      bg: "rgba(255, 4, 32, 0.1)",
-      border: "rgba(255, 4, 32, 0.5)",
-    },
-  ];
+const CHAIN_COLORS: Record<string, { bg: string; border: string }> = {
+  base: { bg: "rgba(0, 82, 255, 0.1)", border: "rgba(0, 82, 255, 0.5)" },
+  celo: { bg: "rgba(53, 208, 127, 0.1)", border: "rgba(53, 208, 127, 0.5)" },
+  optimism: { bg: "rgba(255, 4, 32, 0.1)", border: "rgba(255, 4, 32, 0.5)" },
+};
+
+function generateGmStats(chains: { name: string; count: number }[]) {
+  const stats = chains.map((chain) => {
+    const colors = CHAIN_COLORS[chain.name.toLowerCase()] || {
+      bg: "rgba(0, 0, 0, 0.1)",
+      border: "rgba(0, 0, 0, 0.5)",
+    };
+    return {
+      ...chain,
+      ...colors,
+    };
+  });
 
   return (
     <div
@@ -132,7 +137,7 @@ function generateGmStats(basegm: number, celogm: number, optimismgm: number) {
         justifyContent: "center",
       }}
     >
-      {chains.map((chain) => (
+      {stats.map((chain) => (
         <div
           key={chain.name}
           style={{
@@ -176,7 +181,7 @@ function generateGmStats(basegm: number, celogm: number, optimismgm: number) {
 }
 
 function generateMainOGImage(params: ReturnType<typeof parseGMStatusParams>) {
-  const { displayName, username, pfp, basegm, celogm, optimismgm } = params;
+  const { displayName, username, pfp, chains } = params;
 
   return (
     <div
@@ -228,7 +233,7 @@ function generateMainOGImage(params: ReturnType<typeof parseGMStatusParams>) {
         </div>
 
         {generateProfileSection(displayName, username, pfp)}
-        {generateGmStats(basegm, celogm, optimismgm)}
+        {generateGmStats(chains)}
       </div>
     </div>
   );

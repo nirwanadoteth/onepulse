@@ -56,9 +56,7 @@ const createShareMetadata = (options: {
   totalGMs: number;
   todayGM: boolean;
   claimedToday: boolean;
-  basegm: number;
-  celogm: number;
-  optimismgm: number;
+  chains: { name: string; count: number }[];
 }) =>
   generateGMStatusMetadata({
     username: options.username,
@@ -66,12 +64,9 @@ const createShareMetadata = (options: {
     pfp: options.pfp,
     streak: options.currentStreak,
     totalGMs: options.totalGMs,
-    chains: ["Base"],
     todayGM: options.todayGM,
     claimedToday: options.claimedToday,
-    basegm: options.basegm,
-    celogm: options.celogm,
-    optimismgm: options.optimismgm,
+    chains: options.chains,
   });
 
 function useGMSharing(
@@ -99,9 +94,7 @@ function useGMSharing(
     totalGMs,
     todayGM,
     claimedToday,
-    basegm: gmStats?.baseGm || 0,
-    celogm: gmStats?.celoGm || 0,
-    optimismgm: gmStats?.optimismGm || 0,
+    chains: gmStats?.chains || [],
   });
 
   return {

@@ -7,9 +7,7 @@ export function generateGMStatusOGUrl(params: {
   pfp?: string;
   todayGM?: boolean;
   claimedToday?: boolean;
-  basegm?: number;
-  celogm?: number;
-  optimismgm?: number;
+  chains?: { name: string; count: number }[];
 }): string {
   const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
   const searchParams = new URLSearchParams();
@@ -18,15 +16,19 @@ export function generateGMStatusOGUrl(params: {
     { key: "username", value: params.username },
     { key: "displayName", value: params.displayName },
     { key: "pfp", value: params.pfp },
-    { key: "basegm", value: params.basegm?.toString() },
-    { key: "celogm", value: params.celogm?.toString() },
-    { key: "optimismgm", value: params.optimismgm?.toString() },
   ];
 
   for (const { key, value } of paramMappings) {
     if (value !== undefined) {
       searchParams.set(key, value);
     }
+  }
+
+  if (params.chains) {
+    const chainsStr = params.chains
+      .map((c) => `${c.name}:${c.count}`)
+      .join(",");
+    searchParams.set("chains", chainsStr);
   }
 
   return `${baseUrl}/api/og?${searchParams.toString()}`;
@@ -41,12 +43,9 @@ export function generateGMStatusMetadata(params: {
   pfp?: string;
   streak?: number;
   totalGMs?: number;
-  chains?: string[];
+  chains?: { name: string; count: number }[];
   todayGM?: boolean;
   claimedToday?: boolean;
-  basegm?: number;
-  celogm?: number;
-  optimismgm?: number;
 }) {
   const imageUrl = generateGMStatusOGUrl(params);
   const username = params.username || "user";

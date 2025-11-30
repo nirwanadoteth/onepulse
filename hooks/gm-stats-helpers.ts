@@ -1,9 +1,5 @@
 import type { Infer } from "spacetimedb";
-import {
-  BASE_CHAIN_ID,
-  CELO_CHAIN_ID,
-  OPTIMISM_CHAIN_ID,
-} from "@/lib/constants";
+import { SUPPORTED_CHAINS } from "@/lib/constants";
 import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 
 import type { GmStats } from "./use-gm-stats";
@@ -41,6 +37,10 @@ export function deriveStatsForAddress(
   return getAggregateStats(rows, zero);
 }
 
+function getChainName(chainId: number): string {
+  return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
+}
+
 function getStatsForSingleChain(
   rows: GmStatsByAddress[],
   chainId: number
@@ -56,24 +56,27 @@ function getStatsForSingleChain(
     highestStreak: row.highestStreak ?? 0,
     allTimeGmCount: count,
     lastGmDay: row.lastGmDay ?? 0,
-    baseGm: row.chainId === BASE_CHAIN_ID ? count : 0,
-    celoGm: row.chainId === CELO_CHAIN_ID ? count : 0,
-    optimismGm: row.chainId === OPTIMISM_CHAIN_ID ? count : 0,
+    chains: [{ name: getChainName(row.chainId), count }],
   };
 }
 
 function getAggregateStats(rows: GmStatsByAddress[], zero: GmStats): GmStats {
-  return rows.reduce<GmStats>((acc, r) => {
+  const stats = rows.reduce<GmStats>((acc, r) => {
     const count = r.allTimeGmCount ?? 0;
     return {
       currentStreak: Math.max(acc.currentStreak, r.currentStreak ?? 0),
       highestStreak: Math.max(acc.highestStreak, r.highestStreak ?? 0),
       allTimeGmCount: acc.allTimeGmCount + count,
       lastGmDay: Math.max(acc.lastGmDay, r.lastGmDay ?? 0),
-      baseGm: acc.baseGm + (r.chainId === BASE_CHAIN_ID ? count : 0),
-      celoGm: acc.celoGm + (r.chainId === CELO_CHAIN_ID ? count : 0),
-      optimismGm:
-        acc.optimismGm + (r.chainId === OPTIMISM_CHAIN_ID ? count : 0),
+      chains: [], // We'll populate this after
     };
   }, zero);
+
+  // Populate chains array dynamically
+  stats.chains = SUPPORTED_CHAINS.map((chain) => ({
+    name: chain.name,
+    count: rows.find((r) => r.chainId === chain.id)?.allTimeGmCount ?? 0,
+  })).filter((c) => c.count > 0);
+
+  return stats;
 }

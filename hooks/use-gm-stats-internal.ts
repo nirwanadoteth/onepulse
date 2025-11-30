@@ -29,6 +29,31 @@ export function useGmStatsSubscription(address?: string | null) {
   return snapshot;
 }
 
+type GmStatsApiResponse = {
+  currentStreak?: number;
+  highestStreak?: number;
+  allTimeGmCount?: number;
+  lastGmDay?: number;
+  baseGm?: number;
+  celoGm?: number;
+  optimismGm?: number;
+  chains?: { name: string; count: number }[];
+};
+
+function parseStatsFromResponse(json: GmStatsApiResponse): GmStats {
+  return {
+    currentStreak: json.currentStreak ?? 0,
+    highestStreak: json.highestStreak ?? 0,
+    allTimeGmCount: json.allTimeGmCount ?? 0,
+    lastGmDay: json.lastGmDay ?? 0,
+    chains: json.chains || [
+      { name: "Base", count: json.baseGm ?? 0 },
+      { name: "Celo", count: json.celoGm ?? 0 },
+      { name: "Optimism", count: json.optimismGm ?? 0 },
+    ],
+  };
+}
+
 export function useGmStatsFallback(
   rowsForAddress: GmStatsByAddress[],
   address?: string | null,
@@ -122,26 +147,18 @@ export function useGmStatsFallback(
         });
 
         if (res.ok) {
-          const json = (await res.json()) as Partial<GmStats>;
+          const json = (await res.json()) as GmStatsApiResponse;
           setLastFetchTime(Date.now());
           setFallbackStats({
             key,
-            stats: {
-              currentStreak: json.currentStreak ?? 0,
-              highestStreak: json.highestStreak ?? 0,
-              allTimeGmCount: json.allTimeGmCount ?? 0,
-              lastGmDay: json.lastGmDay ?? 0,
-              baseGm: json.baseGm ?? 0,
-              celoGm: json.celoGm ?? 0,
-              optimismGm: json.optimismGm ?? 0,
-            },
+            stats: parseStatsFromResponse(json),
           });
         }
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
           return;
         }
-        // Fallback fetch failure handled silently
+        // Ignore other errors for fallback
       }
     },
     [normalizedAddress, shouldSkipFetch, buildStatsUrl]
