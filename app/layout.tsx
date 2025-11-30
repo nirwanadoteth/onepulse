@@ -87,6 +87,7 @@ export default async function RootLayout({
           "flex min-h-screen flex-col overscroll-none font-sans antialiased",
           fontVariables
         )}
+        cz-shortcut-listen="true"
       >
         <RootProvider initialState={initialState}>
           {children}
