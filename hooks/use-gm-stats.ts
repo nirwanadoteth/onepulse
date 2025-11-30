@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import type { GmStatsByAddress } from "@/lib/module_bindings";
+import type { Infer } from "spacetimedb";
+import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 import { normalizeAddress } from "@/lib/utils";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
 import { deriveStatsForAddress, groupRowsByAddress } from "./gm-stats-helpers";
@@ -9,6 +10,8 @@ import {
   useGmStatsFallback,
   useGmStatsSubscription,
 } from "./use-gm-stats-internal";
+
+type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
 export type GmStats = {
   currentStreak: number;

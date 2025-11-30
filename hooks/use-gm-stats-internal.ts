@@ -5,9 +5,13 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import type { Infer } from "spacetimedb";
+import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 import { normalizeAddress } from "@/lib/utils";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
 import type { GmStats } from "./use-gm-stats";
+
+type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
 export function useGmStatsSubscription(address?: string | null) {
   useEffect(() => {
@@ -26,7 +30,7 @@ export function useGmStatsSubscription(address?: string | null) {
 }
 
 export function useGmStatsFallback(
-  rowsForAddress: import("@/lib/module_bindings").GmStatsByAddress[],
+  rowsForAddress: GmStatsByAddress[],
   address?: string | null,
   chainId?: number
 ) {
