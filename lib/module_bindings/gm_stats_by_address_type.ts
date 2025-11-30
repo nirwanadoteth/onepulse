@@ -4,84 +4,25 @@
 /* eslint-disable */
 /* tslint:disable */
 import {
-  AlgebraicType as __AlgebraicTypeValue,
-  BinaryReader as __BinaryReader,
-  BinaryWriter as __BinaryWriter,
-  ClientCache as __ClientCache,
-  ConnectionId as __ConnectionId,
-  DbConnectionBuilder as __DbConnectionBuilder,
-  DbConnectionImpl as __DbConnectionImpl,
-  Identity as __Identity,
-  SubscriptionBuilderImpl as __SubscriptionBuilderImpl,
-  TableCache as __TableCache,
-  TimeDuration as __TimeDuration,
-  Timestamp as __Timestamp,
-  deepEqual as __deepEqual,
-  type AlgebraicType as __AlgebraicTypeType,
-  type AlgebraicTypeVariants as __AlgebraicTypeVariants,
-  type CallReducerFlags as __CallReducerFlags,
-  type ErrorContextInterface as __ErrorContextInterface,
-  type Event as __Event,
-  type EventContextInterface as __EventContextInterface,
-  type ReducerEventContextInterface as __ReducerEventContextInterface,
-  type SubscriptionEventContextInterface as __SubscriptionEventContextInterface,
-  type TableHandle as __TableHandle,
+  TypeBuilder as __TypeBuilder,
+  t as __t,
+  type AlgebraicTypeType as __AlgebraicTypeType,
+  type Infer as __Infer,
 } from "spacetimedb";
 
-export type GmStatsByAddress = {
-  addressChain: string,
-  address: string,
-  chainId: number,
-  currentStreak: number,
-  highestStreak: number,
-  allTimeGmCount: number,
-  lastGmDay: number,
-  lastTxHash: string | undefined,
-  fid: bigint | undefined,
-  displayName: string | undefined,
-  username: string | undefined,
-  updatedAt: __Timestamp,
-};
-let _cached_GmStatsByAddress_type_value: __AlgebraicTypeType | null = null;
-
-/**
- * An object for generated helper functions.
- */
-export const GmStatsByAddress = {
-  /**
-  * A function which returns this type represented as an AlgebraicType.
-  * This function is derived from the AlgebraicType used to generate this type.
-  */
-  getTypeScriptAlgebraicType(): __AlgebraicTypeType {
-    if (_cached_GmStatsByAddress_type_value) return _cached_GmStatsByAddress_type_value;
-    _cached_GmStatsByAddress_type_value = __AlgebraicTypeValue.Product({ elements: [] });
-    _cached_GmStatsByAddress_type_value.value.elements.push(
-      { name: "addressChain", algebraicType: __AlgebraicTypeValue.String },
-      { name: "address", algebraicType: __AlgebraicTypeValue.String },
-      { name: "chainId", algebraicType: __AlgebraicTypeValue.I32 },
-      { name: "currentStreak", algebraicType: __AlgebraicTypeValue.I32 },
-      { name: "highestStreak", algebraicType: __AlgebraicTypeValue.I32 },
-      { name: "allTimeGmCount", algebraicType: __AlgebraicTypeValue.I32 },
-      { name: "lastGmDay", algebraicType: __AlgebraicTypeValue.I32 },
-      { name: "lastTxHash", algebraicType: __AlgebraicTypeValue.createOptionType(__AlgebraicTypeValue.String) },
-      { name: "fid", algebraicType: __AlgebraicTypeValue.createOptionType(__AlgebraicTypeValue.I64) },
-      { name: "displayName", algebraicType: __AlgebraicTypeValue.createOptionType(__AlgebraicTypeValue.String) },
-      { name: "username", algebraicType: __AlgebraicTypeValue.createOptionType(__AlgebraicTypeValue.String) },
-      { name: "updatedAt", algebraicType: __AlgebraicTypeValue.createTimestampType() },
-    );
-    return _cached_GmStatsByAddress_type_value;
-  },
-
-  serialize(writer: __BinaryWriter, value: GmStatsByAddress): void {
-    __AlgebraicTypeValue.serializeValue(writer, GmStatsByAddress.getTypeScriptAlgebraicType(), value);
-  },
-
-  deserialize(reader: __BinaryReader): GmStatsByAddress {
-    return __AlgebraicTypeValue.deserializeValue(reader, GmStatsByAddress.getTypeScriptAlgebraicType());
-  },
-
-}
-
-export default GmStatsByAddress;
+export default __t.object("GmStatsByAddress", {
+  addressChain: __t.string(),
+  address: __t.string(),
+  chainId: __t.i32(),
+  currentStreak: __t.i32(),
+  highestStreak: __t.i32(),
+  allTimeGmCount: __t.i32(),
+  lastGmDay: __t.i32(),
+  lastTxHash: __t.option(__t.string()),
+  fid: __t.option(__t.i64()),
+  displayName: __t.option(__t.string()),
+  username: __t.option(__t.string()),
+  updatedAt: __t.timestamp(),
+});
 
 
