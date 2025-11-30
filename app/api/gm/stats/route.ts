@@ -1,10 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
+import type { Infer } from "spacetimedb";
 import { isAddress } from "viem";
+import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 
-import type { GmStatsByAddress } from "@/lib/module_bindings";
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
 
-export const runtime = "nodejs"; // require Node for WebSocket client
+type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
+
+export const runtime = "nodejs";
 
 function validateGmStatsQuery(searchParams: URLSearchParams) {
   const address = searchParams.get("address") || "";
