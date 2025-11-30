@@ -1,4 +1,6 @@
-import type { DbConnection, GmStatsByAddress } from "@/lib/module_bindings";
+import type { Infer } from "spacetimedb";
+import type { DbConnection } from "@/lib/module_bindings";
+import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 import {
   connectionStatus,
   onConnectionChange,
@@ -6,14 +8,16 @@ import {
 import { getDbConnection } from "@/lib/spacetimedb/connection-factory";
 import { onSubscriptionChange } from "@/lib/spacetimedb/subscription-events";
 
+type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
+
 type ReportGmParams = {
   address: string;
   chainId: number;
-  lastGmDay: number;
-  txHash: string;
-  fid: bigint;
-  displayName: string;
-  username: string;
+  lastGmDayOnchain: number;
+  txHash: string | undefined;
+  fid: bigint | undefined;
+  displayName: string | undefined;
+  username: string | undefined;
 };
 
 class GmStatsByAddressStore {
@@ -180,15 +184,7 @@ class GmStatsByAddressStore {
 
   reportGm(params: ReportGmParams) {
     if (this.connection) {
-      this.connection.reducers.reportGm(
-        params.address,
-        params.chainId,
-        params.lastGmDay,
-        params.txHash,
-        params.fid,
-        params.displayName,
-        params.username
-      );
+      this.connection.reducers.reportGm(params);
     }
   }
 

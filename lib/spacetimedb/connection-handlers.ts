@@ -1,12 +1,6 @@
-import type { ErrorContextInterface, Identity } from "spacetimedb";
+import type { Identity } from "spacetimedb";
 
-import type {
-  DbConnection,
-  ErrorContext,
-  RemoteReducers,
-  RemoteTables,
-  SetReducerFlags,
-} from "@/lib/module_bindings";
+import type { DbConnection, ErrorContext } from "@/lib/module_bindings";
 import {
   connectionStatus,
   notifyConnectionDisconnected,
@@ -77,17 +71,9 @@ export const subscribeToQueries = (conn: DbConnection, queries: string[]) => {
       connectionStatus.isSubscribed = true;
       notifySubscriptionApplied();
     })
-    .onError(
-      (
-        _ctx: ErrorContextInterface<
-          RemoteTables,
-          RemoteReducers,
-          SetReducerFlags
-        >
-      ) => {
-        connectionStatus.isSubscribed = false;
-        notifySubscriptionError();
-      }
-    )
+    .onError(() => {
+      connectionStatus.isSubscribed = false;
+      notifySubscriptionError();
+    })
     .subscribe(queries);
 };

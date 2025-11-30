@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
+import type { Infer } from "spacetimedb";
 import { type Address, createPublicClient, http, isAddress } from "viem";
 import { base, celo, optimism } from "viem/chains";
-
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
-import type { GmStatsByAddress } from "@/lib/module_bindings";
+import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 import { callReportGm, getGmRows } from "@/lib/spacetimedb/server-connection";
 import { getDailyGmAddress, normalizeChainId } from "@/lib/utils";
+
+type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
 export const runtime = "nodejs";
 

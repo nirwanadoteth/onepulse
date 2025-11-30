@@ -1,4 +1,8 @@
-import { DbConnection, type GmStatsByAddress } from "@/lib/module_bindings";
+import type { Infer } from "spacetimedb";
+import { DbConnection } from "@/lib/module_bindings";
+import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
+
+type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
 // Helper to resolve SpacetimeDB config from environment
 function getSpacetimeDbConfig() {
@@ -131,10 +135,10 @@ export async function callReportGm(
     address: string;
     chainId: number;
     lastGmDayOnchain: number;
-    txHash?: string;
-    fid?: bigint;
-    displayName?: string;
-    username?: string;
+    txHash: string | undefined;
+    fid: bigint | undefined;
+    displayName: string | undefined;
+    username: string | undefined;
   },
   timeoutMs = 4000
 ): Promise<GmStatsByAddress | null> {
@@ -172,15 +176,7 @@ export async function callReportGm(
       }, timeoutMs);
     });
 
-    conn.reducers.reportGm(
-      params.address,
-      params.chainId,
-      params.lastGmDayOnchain,
-      params.txHash,
-      params.fid,
-      params.displayName,
-      params.username
-    );
+    conn.reducers.reportGm(params);
 
     return await updated;
   } finally {
