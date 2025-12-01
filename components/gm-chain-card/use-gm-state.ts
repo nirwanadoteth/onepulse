@@ -6,7 +6,7 @@ import { getCurrentTimestampSeconds, timestampToDayNumber } from "@/lib/utils";
 import type { Chain } from "../home/chain-config";
 
 type ComputeGMStateParams = {
-  address: string | undefined;
+  address: Address | undefined;
   contractAddress: `0x${string}`;
   isConnected: boolean;
   lastGmDayData: unknown;
@@ -56,7 +56,7 @@ const computeGMState = (params: ComputeGMStateParams): GMState => {
 export const useGMState = (
   chainId: Chain["id"],
   contractAddress: `0x${string}`,
-  address: string | undefined,
+  address: Address | undefined,
   isConnected: boolean
 ) => {
   const {
@@ -68,7 +68,7 @@ export const useGMState = (
     abi: dailyGMAbi,
     address: contractAddress,
     functionName: "lastGMDay",
-    args: address ? [address as Address] : undefined,
+    args: address ? [address] : undefined,
     query: { enabled: Boolean(address && contractAddress) },
   });
 
