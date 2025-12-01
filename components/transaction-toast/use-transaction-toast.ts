@@ -1,0 +1,140 @@
+import { type RefObject, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import {
+  ERROR_MESSAGES,
+  LOADING_MESSAGES,
+  SUCCESS_MESSAGES,
+} from "@/lib/error-handling";
+import { useSafeTransactionContext } from "./use-safe-transaction-context";
+import {
+  createErrorAction,
+  createSuccessAction,
+  getTransactionState,
+} from "./utils";
+
+type UseTransactionToastParams = {
+  className?: string;
+  position?: "top-center" | "bottom-center";
+  label?: string;
+  onStatusChange?: (status: string) => void;
+};
+
+function updateToastState(
+  state: string,
+  toastId: RefObject<string | number | null>,
+  params: {
+    className?: string;
+    label?: string;
+    position?: "top-center" | "bottom-center";
+    transactionHash?: string;
+    chainId?: number;
+    errorMessage?: string;
+    onSubmit?: () => void;
+  }
+) {
+  const {
+    className,
+    label,
+    position,
+    transactionHash,
+    chainId,
+    errorMessage,
+    onSubmit,
+  } = params;
+
+  if (state === "hidden") {
+    if (toastId.current) {
+      toast.dismiss(toastId.current);
+      toastId.current = null;
+    }
+    return;
+  }
+
+  if (state === "loading" && toastId.current) {
+    return;
+  }
+
+  if (toastId.current) {
+    toast.dismiss(toastId.current);
+  }
+
+  if (state === "success") {
+    toastId.current = toast.success(SUCCESS_MESSAGES.TRANSACTION_SUCCESS, {
+      className,
+      description: label,
+      action: createSuccessAction(transactionHash, chainId),
+      position,
+      duration: 5000,
+    });
+  } else if (state === "error") {
+    toastId.current = toast.error(errorMessage || ERROR_MESSAGES.UNKNOWN, {
+      className,
+      action: createErrorAction(onSubmit),
+      position,
+      duration: 5000,
+    });
+  } else if (state === "loading") {
+    toastId.current = toast.loading(LOADING_MESSAGES.TRANSACTION_PENDING, {
+      className,
+      position,
+    });
+  }
+}
+
+export function useTransactionToast({
+  className,
+  position = "bottom-center",
+  label,
+  onStatusChange,
+}: UseTransactionToastParams) {
+  const {
+    errorMessage,
+    isLoading,
+    isToastVisible,
+    receipt,
+    transactionHash,
+    transactionId,
+    onSubmit,
+    chainId,
+  } = useSafeTransactionContext();
+
+  const toastId = useRef<string | number | null>(null);
+
+  useEffect(() => {
+    const state = getTransactionState({
+      isToastVisible,
+      isLoading,
+      receipt,
+      errorMessage,
+      transactionId,
+      transactionHash,
+    });
+
+    if (onStatusChange) {
+      onStatusChange(state);
+    }
+
+    updateToastState(state, toastId, {
+      className,
+      label,
+      position,
+      transactionHash,
+      chainId,
+      errorMessage,
+      onSubmit,
+    });
+  }, [
+    isToastVisible,
+    isLoading,
+    receipt,
+    errorMessage,
+    transactionId,
+    transactionHash,
+    onSubmit,
+    chainId,
+    className,
+    label,
+    position,
+    onStatusChange,
+  ]);
+}
