@@ -4,6 +4,7 @@ import { base } from "@reown/appkit/networks";
 import { useAppKitNetwork } from "@reown/appkit/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type StatusCardProps = {
   title: string;
@@ -20,7 +21,7 @@ export function StatusCard({
     <Card className="border-border/50">
       <CardContent className="py-12 text-center">
         <div className="space-y-3">
-          <h3 className={`font-semibold text-xl ${titleClassName || ""}`}>
+          <h3 className={cn("font-semibold text-xl", titleClassName)}>
             {title}
           </h3>
           <p className="text-muted-foreground text-sm">{description}</p>
