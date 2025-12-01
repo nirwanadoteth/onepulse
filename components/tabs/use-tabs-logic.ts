@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import {
   BASE_CHAIN_ID,
@@ -10,9 +11,13 @@ export function useTabsLogic() {
 
   const isBaseApp = miniAppContext?.context?.client.clientFid === 309_857;
 
-  const allowedChainIds = isBaseApp
-    ? [BASE_CHAIN_ID, OPTIMISM_CHAIN_ID]
-    : [BASE_CHAIN_ID, CELO_CHAIN_ID, OPTIMISM_CHAIN_ID];
+  const allowedChainIds = useMemo(
+    () =>
+      isBaseApp
+        ? [BASE_CHAIN_ID, OPTIMISM_CHAIN_ID]
+        : [BASE_CHAIN_ID, CELO_CHAIN_ID, OPTIMISM_CHAIN_ID],
+    [isBaseApp]
+  );
 
   return {
     isBaseApp,
