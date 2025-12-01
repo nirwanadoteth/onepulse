@@ -111,3 +111,5 @@ export const GmToMode = memo(
     );
   }
 );
+
+GmToMode.displayName = "GmToMode";
