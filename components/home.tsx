@@ -73,7 +73,27 @@ export const Home = memo(
     const chainIds = useMemo(() => chains.map((c) => c.id), [chains]);
 
     // Overall GM stats for sharing (aggregate across chains)
-    const gmStatsResult = useGmStats(address);
+    const rawGmStatsResult = useGmStats(address);
+
+    const gmStatsResult = useMemo(() => {
+      // If no stats, return raw result
+      if (!rawGmStatsResult.stats) {
+        return rawGmStatsResult;
+      }
+
+      // Filter chains based on what's currently displayed/allowed
+      const allowedNames = chains.map((c) => c.name);
+
+      return {
+        ...rawGmStatsResult,
+        stats: {
+          ...rawGmStatsResult.stats,
+          chains: rawGmStatsResult.stats.chains.filter((c) =>
+            allowedNames.includes(c.name)
+          ),
+        },
+      };
+    }, [rawGmStatsResult, chains]);
 
     // Notify parent only when stats actually change (prevents infinite re-render loop)
     const prevStatsRef = useRef<ReturnType<typeof useGmStats> | null>(null);
