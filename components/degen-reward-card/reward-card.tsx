@@ -19,7 +19,9 @@ type RewardCardProps = {
   chainId: number | undefined;
 };
 
-const DEGEN_DECIMALS = 1e18;
+const DEGEN_DECIMALS = 18n;
+
+const DEGEN_SCALING_FACTOR = 10n ** DEGEN_DECIMALS;
 
 export function RewardCard({
   fid,
@@ -52,7 +54,7 @@ export function RewardCard({
             {!isCheckingEligibility && state.reward > 0n && (
               <div className="text-right">
                 <div className="font-light text-3xl tracking-tight">
-                  {(Number(state.reward) / DEGEN_DECIMALS).toFixed(0)}
+                  {(state.reward / DEGEN_SCALING_FACTOR).toString()}
                 </div>
                 <div className="text-muted-foreground text-xs uppercase tracking-wider">
                   DEGEN
