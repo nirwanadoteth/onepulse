@@ -27,6 +27,7 @@ function Content({
     setIsShareModalOpen,
     completedAllChains,
     setCompletedAllChains,
+    openShareModal,
   } = useContentLogic();
 
   return (
@@ -43,7 +44,7 @@ function Content({
       <Tabs
         onAllDoneChangeAction={setCompletedAllChains}
         onGmStatsChangeAction={setGmStats}
-        onShareClickAction={() => setIsShareModalOpen(true)}
+        onShareClickAction={openShareModal}
         onTabChangeAction={setTab}
         tab={tab}
       />

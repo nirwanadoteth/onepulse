@@ -1,5 +1,5 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import type { GmStatsResult } from "@/hooks/use-gm-stats";
 import { useMiniAppFlow } from "@/hooks/use-miniapp-flow";
@@ -51,6 +51,7 @@ export const useContentLogic = () => {
   const [gmStats, setGmStats] = useState<GmStatsResult | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [completedAllChains, setCompletedAllChains] = useState(false);
+  const openShareModal = useCallback(() => setIsShareModalOpen(true), []);
 
   return {
     gmStats,
@@ -59,5 +60,6 @@ export const useContentLogic = () => {
     setIsShareModalOpen,
     completedAllChains,
     setCompletedAllChains,
+    openShareModal,
   };
 };
