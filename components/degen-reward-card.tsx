@@ -60,3 +60,4 @@ export const DegenRewardCard = memo(
     );
   }
 );
+DegenRewardCard.displayName = "DegenRewardCard";
