@@ -113,3 +113,5 @@ export const GMModal = memo(
     );
   }
 );
+
+GMModal.displayName = "GMModal";

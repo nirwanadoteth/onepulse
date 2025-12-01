@@ -98,4 +98,5 @@ export const GMChainCard = memo(
     );
   }
 );
+
 GMChainCard.displayName = "GMChainCard";

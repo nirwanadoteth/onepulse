@@ -82,4 +82,5 @@ export const Home = memo(
     );
   }
 );
+
 Home.displayName = "Home";

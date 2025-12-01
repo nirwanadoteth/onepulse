@@ -57,3 +57,5 @@ export const ModalRenderer = memo(
     );
   }
 );
+
+ModalRenderer.displayName = "ModalRenderer";

@@ -50,3 +50,5 @@ export const ChainList = memo(
     </div>
   )
 );
+
+ChainList.displayName = "ChainList";

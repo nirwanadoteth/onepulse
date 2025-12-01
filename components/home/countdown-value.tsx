@@ -8,3 +8,5 @@ export const CountdownValue = memo(({ targetSec }: { targetSec: number }) => {
 
   return <span className="font-bold font-mono">{text}</span>;
 });
+
+CountdownValue.displayName = "CountdownValue";

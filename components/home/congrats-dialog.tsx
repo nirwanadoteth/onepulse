@@ -81,3 +81,5 @@ export const CongratsDialog = memo(
     );
   }
 );
+
+CongratsDialog.displayName = "CongratsDialog";

@@ -49,3 +49,5 @@ export const ChainSlide = memo(
     );
   }
 );
+
+ChainSlide.displayName = "ChainSlide";
