@@ -16,7 +16,14 @@ export const BASE_APP_PROFILE_URL =
 export const FARCASTER_PROFILE_URL =
   "https://farcaster.xyz/nirwana.eth" as const;
 
-export const useAboutLogic = () => {
+export type AboutLogic = {
+  isInMiniApp: boolean;
+  handleOpenMiniApp: (url: string) => Promise<void>;
+  handleOpenUrl: (url: string) => void;
+  handleViewProfile: (fid: number) => void;
+};
+
+export const useAboutLogic = (): AboutLogic => {
   const miniappContext = useMiniAppContext();
   const openUrl = useOpenUrl();
   const viewProfile = useViewProfile();
