@@ -1,17 +1,10 @@
 import {
   Transaction,
   TransactionButton,
-  TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
-import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
-import { memo } from "react";
-import { useClaimEligibility } from "@/hooks/use-degen-claim";
-import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
-import { TransactionToast } from "../transaction-toast";
+import { ActionButton } from "./action-button";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
-import { getButtonState } from "./get-button-state";
-import { useClaimContracts } from "./use-claim-contracts";
-import { useTransactionStatus } from "./use-transaction-status";
+import { useDegenClaimTransactionLogic } from "./use-degen-claim-transaction-logic";
 
 type DegenClaimTransactionProps = {
   fid: bigint | undefined;
@@ -21,80 +14,48 @@ type DegenClaimTransactionProps = {
   disabled?: boolean;
 };
 
-/**
- * Component for claiming daily DEGEN rewards using OnchainKit Transaction with sponsorship.
- * Backend signs the claim authorization, user submits sponsored transaction.
- */
-export const DegenClaimTransaction = memo(
-  ({
+export function DegenClaimTransaction({
+  fid,
+  sponsored,
+  onSuccess,
+  onError,
+  disabled = false,
+}: DegenClaimTransactionProps) {
+  const {
+    numericChainId,
+    getClaimContracts,
+    onStatus,
+    isDisabled,
+    buttonState,
+  } = useDegenClaimTransactionLogic({
     fid,
     sponsored,
     onSuccess,
     onError,
-    disabled = false,
-  }: DegenClaimTransactionProps) => {
-    const { address } = useAppKitAccount({ namespace: "eip155" });
-    const { chainId } = useAppKitNetwork();
-    const numericChainId = normalizeChainId(chainId);
-    const contractAddress = numericChainId
-      ? getDailyRewardsAddress(numericChainId)
-      : undefined;
-    const {
-      canClaim,
-      hasSentGMToday,
-      isPending: isEligibilityPending,
-      refetch: refetchEligibility,
-    } = useClaimEligibility({ fid });
+    disabled,
+  });
 
-    const getClaimContracts = useClaimContracts({
-      address,
-      fid,
-      contractAddress,
-    });
-
-    const { onStatus } = useTransactionStatus({
-      onSuccess,
-      onError,
-      refetchEligibility,
-    });
-
-    const isDisabled =
-      disabled ||
-      !address ||
-      !fid ||
-      !contractAddress ||
-      !canClaim ||
-      !hasSentGMToday ||
-      isEligibilityPending;
-
-    const buttonState = getButtonState(
-      Boolean(address),
-      isEligibilityPending,
-      hasSentGMToday,
-      canClaim
-    );
-
-    if (buttonState.showFallback) {
-      return <ClaimFallbackUI type={buttonState.showFallback} />;
-    }
-
-    return (
-      <div className="relative w-full">
-        <Transaction
-          calls={getClaimContracts}
-          chainId={numericChainId}
-          isSponsored={sponsored}
-          onStatus={onStatus}
-        >
-          <TransactionButton
-            className="w-full"
-            disabled={isDisabled}
-            text={buttonState.label}
-          />
-          {sponsored && <TransactionSponsor />}
-          <TransactionToast />
-        </Transaction>
-      </div>
-    );
+  if (!numericChainId) {
+    return <ClaimFallbackUI />;
   }
-);
+
+  return (
+    <Transaction
+      chainId={numericChainId}
+      contracts={getClaimContracts}
+      isSponsored={sponsored}
+      onStatus={onStatus}
+    >
+      <TransactionButton
+        className="w-full"
+        disabled={isDisabled}
+        text={buttonState.text}
+      />
+      <ActionButton
+        className="w-full"
+        disabled={isDisabled}
+        state={buttonState}
+      />
+    </Transaction>
+  );
+}
