@@ -2,17 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { useMiniAppRequiredLogic } from "./mini-app-required-card/use-mini-app-required-logic";
 
 export function MiniAppRequiredCard() {
-  const handleOpenInApp = () => {
-    const appUrl = window.location.href;
-    // Try to open in Warpcast (Farcaster) or Base app
-    window.open(
-      `https://farcaster.xyz/?launchFrameUrl=${encodeURIComponent(appUrl)}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
+  const { handleOpenInApp } = useMiniAppRequiredLogic();
 
   return (
     <Card className="border-border/50">
