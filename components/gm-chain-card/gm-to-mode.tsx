@@ -86,7 +86,6 @@ export const GmToMode = memo(
             isRecipientValid={isRecipientValid}
             isResolving={isResolving}
             recipient={recipient}
-            resolvedAddress={resolvedAddress}
             sanitizedRecipient={sanitizedRecipient}
           />
         </CardContent>

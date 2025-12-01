@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-
-type TransactionStatus = "default" | "success" | "error" | "pending";
+import type { TransactionStatus } from "@/types/transaction";
 
 type UseProcessingMirrorLogicProps = {
   status: TransactionStatus;

@@ -1,5 +1,5 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import type { GmStatsResult } from "@/hooks/use-gm-stats";
 import { useMiniAppFlow } from "@/hooks/use-miniapp-flow";
@@ -24,14 +24,14 @@ export const useHomePage = () => {
 
   const clientAdded = miniAppContextData?.context?.client?.added;
 
-  const onboardingSaveHandler = (() => {
+  const onboardingSaveHandler = useMemo(() => {
     const shouldEnableSave = canSaveMiniApp({
       isMiniAppReady,
       inMiniApp,
       clientAdded,
     });
     return shouldEnableSave ? handleMiniAppAdded : undefined;
-  })();
+  }, [isMiniAppReady, inMiniApp, clientAdded, handleMiniAppAdded]);
 
   return {
     inMiniApp,

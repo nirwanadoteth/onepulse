@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import { useGmStats } from "@/hooks/use-gm-stats";
 
 type UseChainSlideLogicProps = {
@@ -14,16 +13,9 @@ export function useChainSlideLogic({
 }: UseChainSlideLogicProps) {
   const { stats, isReady } = useGmStats(address, chainId);
 
-  const handleOpenModal = useCallback(
-    (refetch: () => Promise<unknown>) => {
-      onOpenModal(refetch);
-    },
-    [onOpenModal]
-  );
-
   return {
     stats,
     isReady,
-    handleOpenModal,
+    handleOpenModal: onOpenModal,
   };
 }

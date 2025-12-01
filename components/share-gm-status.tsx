@@ -36,7 +36,7 @@ export function ShareGMStatus({
   );
 
   return (
-    <div className={cn(`${className} flex gap-2`)}>
+    <div className={cn("flex gap-2", className)}>
       <Button
         className="flex-1 gap-2"
         onClick={() => handleShare("cast")}
@@ -47,6 +47,7 @@ export function ShareGMStatus({
         Cast to Share
       </Button>
       <Button
+        aria-label="Copy GM status"
         className="gap-2"
         onClick={() => handleShare("copy")}
         size={size}

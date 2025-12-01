@@ -37,7 +37,7 @@ const computeGMState = (params: ComputeGMStateParams): GMState => {
     return { hasGmToday: false, gmDisabled: true, targetSec: 0 };
   }
 
-  const lastDay = Number((lastGmDayData as bigint) ?? 0n);
+  const lastDay = typeof lastGmDayData === "bigint" ? Number(lastGmDayData) : 0;
   const nowSec = getCurrentTimestampSeconds();
   const currentDay = timestampToDayNumber(nowSec);
   const alreadyGmToday = lastDay >= currentDay;

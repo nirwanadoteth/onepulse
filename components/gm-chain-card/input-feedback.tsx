@@ -6,12 +6,8 @@ type InputFeedbackProps = {
   sanitizedRecipient: string;
   isRecipientValid: boolean;
   isResolving: boolean;
-  resolvedAddress: string | null;
   recipient: string;
 };
-
-const shouldShowResolvingMessage = (isResolving: boolean): boolean =>
-  isResolving;
 
 const shouldShowErrorMessage = (
   sanitizedRecipient: string,
@@ -27,7 +23,7 @@ export const InputFeedback = memo(
     isResolving,
     recipient,
   }: InputFeedbackProps) => {
-    if (shouldShowResolvingMessage(isResolving)) {
+    if (isResolving) {
       return (
         <p className="mt-2 text-blue-500 text-sm">Resolving {recipient}...</p>
       );

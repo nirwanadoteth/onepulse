@@ -1,9 +1,10 @@
+import { useMemo } from "react";
 import { useConnection } from "@/hooks/use-connection";
 
 export function useConnectionStatusLogic() {
   const connection = useConnection();
 
-  const getStatusInfo = () => {
+  const statusInfo = useMemo(() => {
     if (connection.isConnected) {
       return { className: "bg-green-500", text: "Connected" };
     }
@@ -14,9 +15,7 @@ export function useConnectionStatusLogic() {
       };
     }
     return { className: "bg-red-500", text: "Disconnected" };
-  };
-
-  const statusInfo = getStatusInfo();
+  }, [connection.isConnected, connection.isReconnecting]);
 
   return {
     connection,

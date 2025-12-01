@@ -16,7 +16,7 @@ export const getAvatarUrl = (
 export const getDisplayName = (
   userDisplayName: string | undefined,
   ensName: GetNameReturnType | undefined,
-  address: string
+  address: string | undefined
 ): string => userDisplayName || ensName || truncateAddress(address);
 
 export const getMiniAppUserDisplay = (user: UserInfoProps["user"]) => ({
@@ -42,10 +42,11 @@ export const determineDisplayState = (
   address: Address | undefined,
   isLoading: boolean
 ): DisplayState => {
-  if (!(user || address)) {
+  const hasIdentity = Boolean(user || address);
+  if (!hasIdentity) {
     return "hidden";
   }
-  if ((address || user) && isLoading) {
+  if (hasIdentity && isLoading) {
     return "loading";
   }
   if (address && !user) {

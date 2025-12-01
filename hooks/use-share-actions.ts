@@ -8,8 +8,9 @@ export function useShareActions() {
         text: shareText,
         embeds: [shareUrl],
       });
-    } catch {
+    } catch (error) {
       // Cast composition failure handled by copying to clipboard
+      console.error("Failed to compose cast:", error);
       navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       toast.success("Copied to clipboard");
     }

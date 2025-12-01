@@ -15,7 +15,7 @@ const createShareText = (
   completedAllChains: boolean
 ) => {
   const text = getShareText(claimedToday, completedAllChains);
-  return `${text}`.trimEnd();
+  return text.trimEnd();
 };
 
 export function useGMSharing(

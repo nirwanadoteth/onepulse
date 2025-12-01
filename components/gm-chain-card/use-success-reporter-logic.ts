@@ -40,6 +40,9 @@ export const useSuccessReporterLogic = ({
       queryClient,
       refetchLastGmDay,
       onReported,
+    }).catch((error) => {
+      console.error("GM reporting failed:", error);
+      didReport.current = false; // Allow retry on next success
     });
   }, [
     status,
