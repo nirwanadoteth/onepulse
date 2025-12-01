@@ -1,10 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
+import type { TransactionStatus } from "@/types/transaction";
 import { performGmReporting } from "./gm-reporting-utils";
 
 type UseSuccessReporterLogicProps = {
-  status: string;
+  status: TransactionStatus;
   onReported?: () => void;
   address?: string;
   refetchLastGmDay?: () => Promise<unknown>;
