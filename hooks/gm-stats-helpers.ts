@@ -76,7 +76,7 @@ function getAggregateStats(rows: GmStatsByAddress[], zero: GmStats): GmStats {
   stats.chains = SUPPORTED_CHAINS.map((chain) => ({
     name: chain.name,
     count: rows.find((r) => r.chainId === chain.id)?.allTimeGmCount ?? 0,
-  })).filter((c) => c.count > 0);
+  }));
 
   return stats;
 }
