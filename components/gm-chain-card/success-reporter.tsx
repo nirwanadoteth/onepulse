@@ -1,11 +1,7 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { memo, useEffect, useRef } from "react";
-import type { MiniAppUser } from "@/components/providers/miniapp-provider";
-
-import { useMiniAppContext } from "@/components/providers/miniapp-provider";
-import { gmStatsByAddressStore } from "@/stores/gm-store";
+import { memo } from "react";
+import { useSuccessReporterLogic } from "./use-success-reporter-logic";
 
 type SuccessReporterProps = {
   status: string;
@@ -16,99 +12,6 @@ type SuccessReporterProps = {
   txHash?: string;
 };
 
-async function reportToApi({
-  address,
-  chainId,
-  txHash,
-  fid,
-  displayName,
-  username,
-}: {
-  address: string;
-  chainId: number;
-  txHash?: string;
-  fid?: number;
-  displayName?: string;
-  username?: string;
-}) {
-  try {
-    await fetch("/api/gm/report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        address,
-        chainId,
-        txHash,
-        fid,
-        displayName,
-        username,
-      }),
-    });
-  } catch {
-    // Report failure handled silently
-  }
-}
-
-async function refreshStats(
-  address: string,
-  queryClient: ReturnType<typeof useQueryClient>
-) {
-  try {
-    await gmStatsByAddressStore.refreshForAddress(address);
-  } catch {
-    // Store refresh failure handled silently
-  }
-
-  try {
-    await queryClient.invalidateQueries({
-      queryKey: ["gm-stats", address],
-    });
-  } catch {
-    // Query cache invalidation failure handled silently
-  }
-}
-
-async function refetchOnChainState(refetchLastGmDay?: () => Promise<unknown>) {
-  try {
-    await refetchLastGmDay?.();
-  } catch {
-    // On-chain state refetch failure handled silently
-  }
-}
-
-async function performGmReporting({
-  address,
-  chainId,
-  txHash,
-  user,
-  queryClient,
-  refetchLastGmDay,
-  onReported,
-}: {
-  address: string;
-  chainId: number;
-  txHash?: string;
-  user: MiniAppUser | undefined;
-  queryClient: ReturnType<typeof useQueryClient>;
-  refetchLastGmDay?: () => Promise<unknown>;
-  onReported?: () => void;
-}) {
-  await reportToApi({
-    address,
-    chainId,
-    txHash,
-    fid: user?.fid,
-    displayName: user?.displayName,
-    username: user?.username,
-  });
-
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  await refreshStats(address, queryClient);
-  await refetchOnChainState(refetchLastGmDay);
-
-  onReported?.();
-}
-
 export const SuccessReporter = memo(
   ({
     status,
@@ -118,37 +21,14 @@ export const SuccessReporter = memo(
     chainId,
     txHash,
   }: SuccessReporterProps) => {
-    const didReport = useRef(false);
-    const queryClient = useQueryClient();
-    const miniAppContextData = useMiniAppContext();
-    const user = miniAppContextData?.context?.user;
-
-    useEffect(() => {
-      if (status !== "success" || !address || didReport.current) {
-        return;
-      }
-
-      didReport.current = true;
-
-      performGmReporting({
-        address,
-        chainId,
-        txHash,
-        user,
-        queryClient,
-        refetchLastGmDay,
-        onReported,
-      });
-    }, [
+    useSuccessReporterLogic({
       status,
-      address,
       onReported,
-      queryClient,
+      address,
       refetchLastGmDay,
       chainId,
       txHash,
-      user,
-    ]);
+    });
 
     return null;
   }
