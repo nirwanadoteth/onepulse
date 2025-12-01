@@ -2,8 +2,8 @@ import {
   Transaction,
   TransactionButton,
 } from "@coinbase/onchainkit/transaction";
-import { ActionButton } from "./action-button";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
+import { DegenActionButton } from "./degen-action-button";
 import { useDegenClaimTransactionLogic } from "./use-degen-claim-transaction-logic";
 
 type DegenClaimTransactionProps = {
@@ -36,26 +36,22 @@ export function DegenClaimTransaction({
   });
 
   if (!numericChainId) {
-    return <ClaimFallbackUI />;
+    return <ClaimFallbackUI type="wallet" />;
   }
 
   return (
     <Transaction
+      calls={getClaimContracts}
       chainId={numericChainId}
-      contracts={getClaimContracts}
       isSponsored={sponsored}
       onStatus={onStatus}
     >
       <TransactionButton
         className="w-full"
         disabled={isDisabled}
-        text={buttonState.text}
+        text={buttonState.label}
       />
-      <ActionButton
-        className="w-full"
-        disabled={isDisabled}
-        state={buttonState}
-      />
+      <DegenActionButton state={buttonState} />
     </Transaction>
   );
 }
