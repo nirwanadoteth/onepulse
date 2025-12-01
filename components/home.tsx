@@ -1,44 +1,12 @@
 "use client";
 
-import { useAppKitAccount } from "@reown/appkit/react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GMChainCard } from "@/components/gm-chain-card/gm-chain-card";
-import { useGmStats } from "@/hooks/use-gm-stats";
-import { DAILY_GM_ADDRESSES } from "@/lib/constants";
-import { isSponsoredOnChain } from "@/lib/utils";
+import { memo } from "react";
+import type { useGmStats } from "@/hooks/use-gm-stats";
 import { minikitConfig } from "@/minikit.config";
-import {
-  areAllChainsComplete,
-  getChainList,
-  getNextTargetSec,
-} from "./home/chain-config";
+import { ChainList } from "./home/chain-list";
 import { CongratsDialog } from "./home/congrats-dialog";
 import { ModalRenderer } from "./home/modal-renderer";
-import { useCongratsLogic } from "./home/use-congrats-logic";
-import { useLastCongratsDay } from "./home/use-last-congrats-day";
-import { useModalManagement } from "./home/use-modal-management";
-import { usePerChainStatus } from "./home/use-per-chain-status";
-
-/**
- * Performs shallow comparison of two objects by checking if any key's value differs or if the set of keys differs.
- * Returns true if prev is null/undefined or if any property value has changed or if keys were added/removed.
- * Use this helper whenever comparing GmStats or similar data structures to avoid
- * manual field-by-field comparisons that become fragile when fields are added.
- */
-function hasChanged<T extends Record<string, unknown>>(
-  prev: T | null | undefined,
-  current: T
-): boolean {
-  if (!prev) {
-    return true;
-  }
-  const currentKeys = Object.keys(current);
-  const prevKeys = Object.keys(prev);
-  if (currentKeys.length !== prevKeys.length) {
-    return true;
-  }
-  return currentKeys.some((key) => prev[key] !== current[key]);
-}
+import { useHomeLogic } from "./home/use-home-logic";
 
 export const Home = memo(
   ({
@@ -54,94 +22,24 @@ export const Home = memo(
     onShareClick?: () => void;
     onAllDoneChange?: (allDone: boolean) => void;
   }) => {
-    const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
     const {
+      isConnected,
+      address,
       activeModalChainId,
       processing,
       setActiveModalChainId,
       setProcessing,
-    } = useModalManagement();
-
-    const [activeRefetchFn, setActiveRefetchFn] = useState<
-      (() => Promise<unknown>) | undefined
-    >(undefined);
-
-    const chains = useMemo(
-      () => getChainList(allowedChainIds),
-      [allowedChainIds]
-    );
-    const chainIds = useMemo(() => chains.map((c) => c.id), [chains]);
-
-    // Overall GM stats for sharing (aggregate across chains)
-    const rawGmStatsResult = useGmStats(address);
-
-    const gmStatsResult = useMemo(() => {
-      // If no stats, return raw result
-      if (!rawGmStatsResult.stats) {
-        return rawGmStatsResult;
-      }
-
-      // Filter chains based on what's currently displayed/allowed
-      const allowedNames = chains.map((c) => c.name);
-
-      return {
-        ...rawGmStatsResult,
-        stats: {
-          ...rawGmStatsResult.stats,
-          chains: rawGmStatsResult.stats.chains.filter((c) =>
-            allowedNames.includes(c.name)
-          ),
-        },
-      };
-    }, [rawGmStatsResult, chains]);
-
-    // Notify parent only when stats actually change (prevents infinite re-render loop)
-    const prevStatsRef = useRef<ReturnType<typeof useGmStats> | null>(null);
-    const prevOnGmStatsChangeRef = useRef(onGmStatsChange);
-
-    useEffect(() => {
-      if (prevOnGmStatsChangeRef.current !== onGmStatsChange) {
-        prevStatsRef.current = null;
-      }
-      prevOnGmStatsChangeRef.current = onGmStatsChange;
-      if (!onGmStatsChange) {
-        return;
-      }
-      const prev = prevStatsRef.current;
-      const changed =
-        !prev ||
-        prev.isReady !== gmStatsResult.isReady ||
-        hasChanged(prev.stats, gmStatsResult.stats);
-      if (!changed) {
-        return;
-      }
-      prevStatsRef.current = gmStatsResult;
-      onGmStatsChange(gmStatsResult);
-    }, [gmStatsResult, onGmStatsChange]);
-
-    const { statusMap, handleStatus } = usePerChainStatus();
-
-    const allDone = useMemo(
-      () => areAllChainsComplete(chainIds, statusMap),
-      [chainIds, statusMap]
-    );
-
-    useEffect(() => {
-      onAllDoneChange?.(allDone);
-    }, [allDone, onAllDoneChange]);
-
-    const nextTargetSec = useMemo(
-      () => getNextTargetSec(chainIds, statusMap),
-      [chainIds, statusMap]
-    );
-
-    const { lastCongratsDay, setLastCongratsDay } = useLastCongratsDay();
-
-    const { showCongrats, setShowCongrats } = useCongratsLogic({
-      allDone,
-      isConnected,
-      lastCongratsDay,
-      onLastCongratsDayUpdateAction: setLastCongratsDay,
+      activeRefetchFn,
+      setActiveRefetchFn,
+      chains,
+      handleStatus,
+      nextTargetSec,
+      showCongrats,
+      setShowCongrats,
+    } = useHomeLogic({
+      allowedChainIds,
+      onGmStatsChange,
+      onAllDoneChange,
     });
 
     return (
@@ -153,36 +51,21 @@ export const Home = memo(
           </p>
         </div>
 
-        <div className="space-y-4">
-          {chains.map((c) => {
-            const contractAddress = DAILY_GM_ADDRESSES[c.id];
-            return contractAddress ? (
-              <ChainSlide
-                address={address}
-                chainId={c.id}
-                chainName={c.name}
-                contractAddress={contractAddress}
-                isConnected={Boolean(isConnected)}
-                key={c.id}
-                onOpenModal={(refetch) => {
-                  setActiveModalChainId(c.id);
-                  setActiveRefetchFn(() => refetch);
-                }}
-                onStatusChange={handleStatus}
-                sponsored={isSponsoredOnChain(Boolean(sponsored), c.id)}
-              />
-            ) : null;
-          })}
-        </div>
+        <ChainList
+          address={address}
+          chains={chains}
+          handleStatus={handleStatus}
+          isConnected={Boolean(isConnected)}
+          setActiveModalChainId={setActiveModalChainId}
+          setActiveRefetchFn={setActiveRefetchFn}
+          sponsored={Boolean(sponsored)}
+        />
 
         <ModalRenderer
           activeModalChainId={activeModalChainId}
           address={address}
           chains={chains}
-          onClose={() => {
-            setActiveModalChainId(null);
-            setProcessing(false);
-          }}
+          onClose={() => setActiveModalChainId(null)}
           processing={processing}
           refetchLastGmDay={activeRefetchFn}
           setProcessing={setProcessing}
@@ -190,67 +73,12 @@ export const Home = memo(
         />
 
         <CongratsDialog
-          gmStats={gmStatsResult.stats}
           nextTargetSec={nextTargetSec}
-          onOpenChange={(val) => {
-            if (!val) {
-              setShowCongrats(false);
-            }
-          }}
+          onOpenChange={setShowCongrats}
           onShare={onShareClick}
-          open={Boolean(showCongrats && allDone)}
+          open={showCongrats}
         />
       </div>
-    );
-  }
-);
-
-const ChainSlide = memo(
-  ({
-    chainId,
-    chainName,
-    contractAddress,
-    isConnected,
-    address,
-    sponsored,
-    onStatusChange,
-    onOpenModal,
-  }: {
-    chainId: number;
-    chainName: string;
-    contractAddress: `0x${string}`;
-    isConnected: boolean;
-    address?: string;
-    sponsored: boolean;
-    onStatusChange: (status: {
-      chainId: number;
-      hasGmToday: boolean;
-      targetSec: number;
-    }) => void;
-    onOpenModal: (refetch: () => Promise<unknown>) => void;
-  }) => {
-    const { stats, isReady } = useGmStats(address, chainId);
-
-    const handleOpenModal = useCallback(
-      (refetch: () => Promise<unknown>) => {
-        onOpenModal(refetch);
-      },
-      [onOpenModal]
-    );
-
-    return (
-      <GMChainCard
-        address={address}
-        chainId={chainId}
-        contractAddress={contractAddress}
-        isConnected={isConnected}
-        isStatsReady={isReady}
-        name={chainName}
-        onOpenModal={handleOpenModal}
-        onStatusChange={onStatusChange}
-        sponsored={sponsored}
-        stats={stats}
-      />
     );
   }
 );
