@@ -1,10 +1,9 @@
-import { useMemo } from "react";
 import type { Address } from "viem";
 import { useReadContract } from "wagmi";
-import type { base, celo, optimism } from "wagmi/chains";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
 import { SECONDS_PER_DAY } from "@/lib/constants";
 import { getCurrentTimestampSeconds, timestampToDayNumber } from "@/lib/utils";
+import type { Chain } from "../home/chain-config";
 
 type ComputeGMStateParams = {
   address: string | undefined;
@@ -51,7 +50,7 @@ const computeGMState = (params: ComputeGMStateParams): GMState => {
 };
 
 export const useGMState = (
-  chainId: number,
+  chainId: Chain["id"],
   contractAddress: `0x${string}`,
   address: string | undefined,
   isConnected: boolean
@@ -61,7 +60,7 @@ export const useGMState = (
     isPending: isPendingLastGm,
     refetch: refetchLastGmDay,
   } = useReadContract({
-    chainId: chainId as typeof base.id | typeof celo.id | typeof optimism.id,
+    chainId,
     abi: dailyGMAbi,
     address: contractAddress,
     functionName: "lastGMDay",
@@ -69,17 +68,13 @@ export const useGMState = (
     query: { enabled: Boolean(address && contractAddress) },
   });
 
-  const { hasGmToday, gmDisabled, targetSec } = useMemo(
-    () =>
-      computeGMState({
-        address,
-        contractAddress,
-        isConnected,
-        lastGmDayData,
-        isPendingLastGm,
-      }),
-    [address, contractAddress, isConnected, lastGmDayData, isPendingLastGm]
-  );
+  const { hasGmToday, gmDisabled, targetSec } = computeGMState({
+    address,
+    contractAddress,
+    isConnected,
+    lastGmDayData,
+    isPendingLastGm,
+  });
 
   return {
     hasGmToday,
