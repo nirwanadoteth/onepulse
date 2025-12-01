@@ -33,18 +33,31 @@ export const useHomePage = () => {
     return shouldEnableSave ? handleMiniAppAdded : undefined;
   }, [isMiniAppReady, inMiniApp, clientAdded, handleMiniAppAdded]);
 
-  return {
-    inMiniApp,
-    safeAreaStyle,
-    handleMiniAppAdded,
-    shouldShowOnboarding,
-    dismissOnboarding,
-    canSaveApp,
-    tab,
-    setTab,
-    isMiniAppReady,
-    onboardingSaveHandler,
-  };
+  return useMemo(
+    () => ({
+      inMiniApp,
+      safeAreaStyle,
+      handleMiniAppAdded,
+      shouldShowOnboarding,
+      dismissOnboarding,
+      canSaveApp,
+      tab,
+      setTab,
+      isMiniAppReady,
+      onboardingSaveHandler,
+    }),
+    [
+      inMiniApp,
+      safeAreaStyle,
+      handleMiniAppAdded,
+      shouldShowOnboarding,
+      dismissOnboarding,
+      canSaveApp,
+      tab,
+      isMiniAppReady,
+      onboardingSaveHandler,
+    ]
+  );
 };
 
 export const useContentLogic = () => {
@@ -53,13 +66,16 @@ export const useContentLogic = () => {
   const [completedAllChains, setCompletedAllChains] = useState(false);
   const openShareModal = useCallback(() => setIsShareModalOpen(true), []);
 
-  return {
-    gmStats,
-    setGmStats,
-    isShareModalOpen,
-    setIsShareModalOpen,
-    completedAllChains,
-    setCompletedAllChains,
-    openShareModal,
-  };
+  return useMemo(
+    () => ({
+      gmStats,
+      setGmStats,
+      isShareModalOpen,
+      setIsShareModalOpen,
+      completedAllChains,
+      setCompletedAllChains,
+      openShareModal,
+    }),
+    [gmStats, isShareModalOpen, completedAllChains, openShareModal]
+  );
 };
