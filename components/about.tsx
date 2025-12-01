@@ -1,57 +1,23 @@
 "use client";
 
-import { useOpenUrl, useViewProfile } from "@coinbase/onchainkit/minikit";
-import { sdk } from "@farcaster/miniapp-sdk";
 import Image from "next/image";
-import { useCallback } from "react";
-import { toast } from "sonner";
+import {
+  BASE_APP_PROFILE_URL,
+  FARCASTER_PROFILE_URL,
+  GITHUB_URL,
+  PRODUCT_CLANK_MINIAPP_URL,
+  PRODUCT_CLANK_WEB_URL,
+  PROFILE_FID,
+  TWITTER_URL,
+  useAboutLogic,
+} from "@/components/about/use-about-logic";
 import { Icons } from "./icons";
-import { useMiniAppContext } from "./providers/miniapp-provider";
 import { Button } from "./ui/button";
 import { ButtonGroup, ButtonGroupText } from "./ui/button-group";
 
-const PRODUCT_CLANK_MINIAPP_URL =
-  "https://miniapp.productclank.com/frame/25a3822f-e828-4af5-868c-a2061bf66e20?referrer=52d833eb-c0b5-484f-baa9-49eb95317ecf" as const;
-const PRODUCT_CLANK_WEB_URL =
-  "https://app.productclank.com/product/25a3822f-e828-4af5-868c-a2061bf66e20?referrer=52d833eb-c0b5-484f-baa9-49eb95317ecf" as const;
-const PROFILE_FID = 999_883 as const;
-const GITHUB_URL = "https://github.com/nirwanadoteth/onepulse" as const;
-const TWITTER_URL = "https://twitter.com/nirwana_eth" as const;
-const BASE_APP_PROFILE_URL = "https://base.app/profile/nirwana.eth" as const;
-const FARCASTER_PROFILE_URL = "https://farcaster.xyz/nirwana.eth" as const;
-
 export function About() {
-  const miniappContext = useMiniAppContext();
-  const openUrl = useOpenUrl();
-  const viewProfile = useViewProfile();
-
-  const isInMiniApp = Boolean(miniappContext?.isInMiniApp);
-
-  const handleOpenMiniApp = useCallback(
-    async (url: string) => {
-      try {
-        await sdk.actions.openMiniApp({ url });
-      } catch (_error) {
-        toast.error("Failed to open Mini App");
-        openUrl(url);
-      }
-    },
-    [openUrl]
-  );
-
-  const handleOpenUrl = useCallback(
-    (url: string) => {
-      openUrl(url);
-    },
-    [openUrl]
-  );
-
-  const handleViewProfile = useCallback(
-    (fid: number) => {
-      viewProfile(fid);
-    },
-    [viewProfile]
-  );
+  const { isInMiniApp, handleOpenMiniApp, handleOpenUrl, handleViewProfile } =
+    useAboutLogic();
 
   return (
     <div className="my-12 flex flex-col gap-2 rounded-lg border">
