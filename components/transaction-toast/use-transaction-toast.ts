@@ -21,6 +21,8 @@ type UseTransactionToastParams = {
   onStatusChangeAction?: (status: string) => void;
 };
 
+const TRANSACTION_TOAST_DURATION_MS = 5000;
+
 function updateToastState(
   state: string,
   toastId: RefObject<string | number | null>,
@@ -66,14 +68,14 @@ function updateToastState(
       description: label,
       action: createSuccessAction(transactionHash, chainId),
       position,
-      duration: 5000,
+      duration: TRANSACTION_TOAST_DURATION_MS,
     });
   } else if (state === "error") {
     toastId.current = toast.error(errorMessage || ERROR_MESSAGES.UNKNOWN, {
       className,
       action: createErrorAction(onSubmit),
       position,
-      duration: 5000,
+      duration: TRANSACTION_TOAST_DURATION_MS,
     });
   } else if (state === "loading") {
     toastId.current = toast.loading(LOADING_MESSAGES.TRANSACTION_PENDING, {
