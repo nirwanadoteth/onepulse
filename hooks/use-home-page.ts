@@ -22,7 +22,7 @@ export const useHomePage = () => {
   const { isMiniAppReady, setMiniAppReady } = useMiniKit();
   useMiniAppInitialization({ isMiniAppReady, setMiniAppReady });
 
-  const clientAdded = miniAppContextData?.context?.client?.added;
+  const clientAdded = miniAppContextData?.context?.client?.added ?? false;
 
   const onboardingSaveHandler = useMemo(() => {
     const shouldEnableSave = canSaveMiniApp({
