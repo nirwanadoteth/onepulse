@@ -44,6 +44,7 @@ export async function generateMetadata({
       action: {
         type: "launch_frame",
         name: minikitConfig.miniapp.name,
+        url: minikitConfig.miniapp.homeUrl,
         splashImageUrl: minikitConfig.miniapp.splashImageUrl,
         splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
       },
