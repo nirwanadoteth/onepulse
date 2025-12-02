@@ -61,7 +61,7 @@ export const Home = memo(
           address={address}
           chains={chains}
           handleStatus={handleStatus}
-          isConnected={Boolean(isConnected)}
+          isConnected={isConnected}
           setActiveModalChainId={setActiveModalChainId}
           setActiveRefetchFn={setActiveRefetchFn}
         />
