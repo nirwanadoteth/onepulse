@@ -7,12 +7,12 @@ export function getShareText(
   completedAllChains: boolean
 ): string {
   if (completedAllChains) {
-    return "I just sent GM on all chains with @onepulse! 🌍✨\n\nCan you keep up the streak? Join us and start your daily GM journey now! 🚀";
+    return "I just completed Daily GM on OnePulse!\n\nStart your streak now!";
   }
 
   if (claimedReward) {
-    return "I just claimed my daily rewards on @onepulse! 💸✨\n\nDon't miss out—start your streak and earn today! 🚀";
+    return "I just claimed 10 $DEGEN on OnePulse!\n\nSend GM and get rewarded.";
   }
 
-  return "Just checking in on @onepulse! ⚡️\n\nJoin the community, send your daily GM, and start earning rewards! 🚀";
+  return "Check out my stats on OnePulse";
 }
