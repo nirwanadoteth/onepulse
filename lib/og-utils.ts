@@ -1,27 +1,23 @@
 import { minikitConfig } from "@/minikit.config";
 
-/**
- * Generate OG image URL for GM status sharing
- */
-export function generateGMStatusOGUrl(params: {
+type ShareParams = {
   username?: string;
   displayName?: string;
   pfp?: string;
   chains?: { name: string; count: number }[];
-}): string {
-  const baseUrl = `${minikitConfig.miniapp.homeUrl}`;
+};
+
+function buildSearchParams(params: ShareParams): URLSearchParams {
   const searchParams = new URLSearchParams();
 
-  const paramMappings = [
-    { key: "username", value: params.username },
-    { key: "displayName", value: params.displayName },
-    { key: "pfp", value: params.pfp },
-  ];
-
-  for (const { key, value } of paramMappings) {
-    if (value !== undefined) {
-      searchParams.set(key, value);
-    }
+  if (params.username) {
+    searchParams.set("username", params.username);
+  }
+  if (params.displayName) {
+    searchParams.set("displayName", params.displayName);
+  }
+  if (params.pfp) {
+    searchParams.set("pfp", params.pfp);
   }
 
   if (params.chains) {
@@ -31,39 +27,13 @@ export function generateGMStatusOGUrl(params: {
     searchParams.set("chains", chainsStr);
   }
 
-  return `${baseUrl}/api/og?${searchParams.toString()}`;
+  return searchParams;
 }
 
-/**
- * Generate Share Page URL
- */
-export function generateSharePageUrl(params: {
-  username?: string;
-  displayName?: string;
-  pfp?: string;
-  chains?: { name: string; count: number }[];
-}): string {
-  const baseUrl = `${minikitConfig.miniapp.homeUrl}`;
-  const searchParams = new URLSearchParams();
+export function generateGMStatusOGUrl(params: ShareParams): string {
+  return `${minikitConfig.miniapp.homeUrl}/api/og?${buildSearchParams(params)}`;
+}
 
-  const paramMappings = [
-    { key: "username", value: params.username },
-    { key: "displayName", value: params.displayName },
-    { key: "pfp", value: params.pfp },
-  ];
-
-  for (const { key, value } of paramMappings) {
-    if (value !== undefined) {
-      searchParams.set(key, value);
-    }
-  }
-
-  if (params.chains) {
-    const chainsStr = params.chains
-      .map((c) => `${encodeURIComponent(c.name)}:${c.count}`)
-      .join(",");
-    searchParams.set("chains", chainsStr);
-  }
-
-  return `${baseUrl}/share/view?${searchParams.toString()}`;
+export function generateSharePageUrl(params: ShareParams): string {
+  return `${minikitConfig.miniapp.homeUrl}/share/view?${buildSearchParams(params)}`;
 }

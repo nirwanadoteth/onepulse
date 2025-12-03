@@ -1,4 +1,3 @@
-import { useOpenUrl } from "@coinbase/onchainkit/minikit";
 import {
   type UserContext,
   useMiniAppContext,
@@ -24,7 +23,6 @@ export function useGMSharing(
   gmStats?: GmStats
 ) {
   const miniAppContextData = useMiniAppContext();
-  const openUrl = useOpenUrl();
 
   const user = miniAppContextData?.context?.user;
   const username = getUsername(user ?? null);
@@ -42,6 +40,5 @@ export function useGMSharing(
   return {
     shareText,
     shareUrl,
-    openUrl,
   };
 }
