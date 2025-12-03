@@ -1,3 +1,4 @@
+import { sdk } from "@farcaster/miniapp-sdk";
 import { useCallback } from "react";
 import type { ContractFunctionParameters } from "viem";
 
@@ -11,6 +12,7 @@ type UseClaimContractsProps = {
 
 /**
  * Hook to generate backend-signed claim contract calls.
+ * Uses Quick Auth to securely authenticate the user's FID with the backend.
  * Fetches signature from /api/claims/execute before contract execution.
  */
 export function useClaimContracts({
@@ -26,12 +28,13 @@ export function useClaimContracts({
 
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
-    const response = await fetch("/api/claims/execute", {
+    // Use Quick Auth fetch to securely pass the user's verified FID to the backend
+    // The backend will extract the FID from the JWT token, not from the request body
+    const response = await sdk.quickAuth.fetch("/api/claims/execute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         claimer: address,
-        fid: fid.toString(),
         deadline: deadline.toString(),
       }),
     });

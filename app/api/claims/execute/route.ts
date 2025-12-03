@@ -10,6 +10,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
+import { verifyQuickAuth } from "@/lib/quick-auth";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
@@ -22,7 +23,6 @@ type ValidationSuccess = {
   valid: true;
   data: {
     claimer: string;
-    fid: number | bigint;
     deadline: number | bigint;
   };
 };
@@ -35,14 +35,11 @@ type ValidationFailure = {
 function validateRequest(
   body: Record<string, unknown>
 ): ValidationSuccess | ValidationFailure {
-  const { claimer, fid, deadline } = body;
+  const { claimer, deadline } = body;
   const missing: string[] = [];
 
   if (!claimer) {
     missing.push("claimer");
-  }
-  if (!fid) {
-    missing.push("fid");
   }
   if (!deadline) {
     missing.push("deadline");
@@ -56,7 +53,6 @@ function validateRequest(
     valid: true,
     data: {
       claimer: claimer as string,
-      fid: fid as number | bigint,
       deadline: deadline as number | bigint,
     },
   };
@@ -126,6 +122,17 @@ async function generateClaimAuthorization(params: {
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify the user's FID via Quick Auth - this is secure and cannot be spoofed
+    const authResult = await verifyQuickAuth(req);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.status }
+      );
+    }
+
+    const { fid } = authResult;
+
     const body = await req.json();
 
     const validation = validateRequest(body);
@@ -136,7 +143,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { claimer, fid, deadline } = validation.data;
+    const { claimer, deadline } = validation.data;
 
     const { signature, nonce } = await generateClaimAuthorization({
       claimer,
