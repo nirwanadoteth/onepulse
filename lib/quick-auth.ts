@@ -90,23 +90,3 @@ export async function verifyQuickAuth(
     return { success: false, error: "Token verification failed", status: 500 };
   }
 }
-
-/**
- * Extracts the FID from an optional Authorization header.
- * Returns undefined if no valid token is present (non-blocking).
- * Use this when FID is optional but should be verified if provided.
- */
-export async function getOptionalVerifiedFid(
-  request: NextRequest
-): Promise<number | undefined> {
-  const authorization = request.headers.get("Authorization");
-
-  if (!authorization?.startsWith("Bearer ")) {
-    return;
-  }
-
-  const result = await verifyQuickAuth(request);
-  if (result.success) {
-    return result.fid;
-  }
-}
