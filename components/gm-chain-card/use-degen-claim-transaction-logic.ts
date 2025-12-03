@@ -1,4 +1,5 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
+import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { useClaimEligibility } from "@/hooks/use-degen-claim";
 import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
@@ -21,6 +22,9 @@ export function useDegenClaimTransactionLogic({
 }: UseDegenClaimTransactionLogicProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const { chainId } = useAppKitNetwork();
+  const miniAppContext = useMiniAppContext();
+  const verifiedFid = miniAppContext?.context?.verifiedFid;
+
   const numericChainId = normalizeChainId(chainId);
   const contractAddress = numericChainId
     ? getDailyRewardsAddress(numericChainId)
@@ -35,6 +39,7 @@ export function useDegenClaimTransactionLogic({
   const getClaimContracts = useClaimContracts({
     address,
     fid,
+    verifiedFid,
     contractAddress,
   });
 
