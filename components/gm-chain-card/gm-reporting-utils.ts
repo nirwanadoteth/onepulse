@@ -1,3 +1,4 @@
+import { sdk } from "@farcaster/miniapp-sdk";
 import type { QueryClient } from "@tanstack/react-query";
 import type { MiniAppUser } from "@/components/providers/miniapp-provider";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
@@ -6,30 +7,38 @@ export async function reportToApi({
   address,
   chainId,
   txHash,
-  fid,
   displayName,
   username,
+  inMiniApp = false,
 }: {
   address: string;
   chainId: number;
   txHash?: string;
-  fid?: number;
   displayName?: string;
   username?: string;
+  inMiniApp?: boolean;
 }) {
   try {
-    await fetch("/api/gm/report", {
+    const body = JSON.stringify({
+      address,
+      chainId,
+      txHash,
+      displayName,
+      username,
+    });
+
+    const fetchOptions = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        address,
-        chainId,
-        txHash,
-        fid,
-        displayName,
-        username,
-      }),
-    });
+      body,
+    };
+
+    // Use Quick Auth fetch when in mini app to securely pass verified FID
+    if (inMiniApp) {
+      await sdk.quickAuth.fetch("/api/gm/report", fetchOptions);
+    } else {
+      await fetch("/api/gm/report", fetchOptions);
+    }
   } catch {
     // Report failure handled silently
   }
@@ -69,6 +78,7 @@ export async function performGmReporting({
   queryClient,
   refetchLastGmDay,
   onReported,
+  inMiniApp = false,
 }: {
   address: string;
   chainId: number;
@@ -76,16 +86,16 @@ export async function performGmReporting({
   user: MiniAppUser | undefined;
   queryClient: QueryClient;
   refetchLastGmDay?: () => Promise<unknown>;
-
   onReported?: () => void;
+  inMiniApp?: boolean;
 }) {
   await reportToApi({
     address,
     chainId,
     txHash,
-    fid: user?.fid,
     displayName: user?.displayName,
     username: user?.username,
+    inMiniApp,
   });
 
   await new Promise((resolve) => setTimeout(resolve, 1000));

@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import type { Infer } from "spacetimedb";
 import { type Address, createPublicClient, http, isAddress } from "viem";
 import { base, celo, optimism } from "viem/chains";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
 import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
+import { getOptionalVerifiedFid } from "@/lib/quick-auth";
 import { callReportGm, getGmRows } from "@/lib/spacetimedb/server-connection";
 import { getDailyGmAddress, normalizeChainId } from "@/lib/utils";
 
@@ -109,8 +110,11 @@ function formatReportGmResponse(row: GmStatsByAddress) {
   };
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Get verified FID from Quick Auth if available (safer than trusting client-provided FID)
+    const verifiedFid = await getOptionalVerifiedFid(req);
+
     const body = await req.json();
     const validation = validateReportGmRequest(body);
     if ("error" in validation) {
@@ -119,15 +123,12 @@ export async function POST(req: Request) {
         { status: validation.status }
       );
     }
-    const {
-      address,
-      chainId,
-      fid,
-      displayName,
-      username,
-      txHash,
-      contractAddress,
-    } = validation;
+    const { address, chainId, displayName, username, txHash, contractAddress } =
+      validation;
+
+    // Use verified FID if available, otherwise fall back to body.fid for backwards compatibility
+    const fid = verifiedFid ?? validation.fid;
+
     const lastGmDayOnchain = await readOnchainLastGmDay(
       address,
       contractAddress,
