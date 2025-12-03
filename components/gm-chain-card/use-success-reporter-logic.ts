@@ -25,6 +25,7 @@ export const useSuccessReporterLogic = ({
   const queryClient = useQueryClient();
   const miniAppContextData = useMiniAppContext();
   const user = miniAppContextData?.context?.user;
+  const inMiniApp = miniAppContextData?.isInMiniApp ?? false;
 
   useEffect(() => {
     if (status !== "success" || !address || didReport.current) {
@@ -41,6 +42,7 @@ export const useSuccessReporterLogic = ({
       queryClient,
       refetchLastGmDay,
       onReported,
+      inMiniApp,
     }).catch((error) => {
       console.error("GM reporting failed:", error);
       didReport.current = false; // Allow retry on next success
@@ -54,5 +56,6 @@ export const useSuccessReporterLogic = ({
     chainId,
     txHash,
     user,
+    inMiniApp,
   ]);
 };
