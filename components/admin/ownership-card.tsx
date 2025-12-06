@@ -161,7 +161,6 @@ export function OwnershipCard({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Current Owner */}
           <div className="space-y-2">
             <Label>Current Owner</Label>
             <div className="rounded-lg bg-muted p-3 font-mono text-sm">
@@ -169,7 +168,6 @@ export function OwnershipCard({
             </div>
           </div>
 
-          {/* Pending Owner */}
           {pendingOwner &&
             pendingOwner !== "0x0000000000000000000000000000000000000000" && (
               <div className="space-y-2">
@@ -193,7 +191,6 @@ export function OwnershipCard({
               </div>
             )}
 
-          {/* Transfer Ownership */}
           {isCurrentOwner && (
             <div className="space-y-4">
               <div className="space-y-2">
