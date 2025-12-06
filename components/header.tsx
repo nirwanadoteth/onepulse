@@ -34,6 +34,7 @@ export const Header = memo(
       shouldShowUserInfo,
       showSaveButton,
       showShareButton,
+      showAdminButton,
       handleAddMiniApp,
       handleShareClick,
     } = useHeaderLogic({
@@ -59,6 +60,7 @@ export const Header = memo(
           <HeaderRight
             onSaveClick={handleAddMiniApp}
             onShareClick={handleShareClick}
+            showAdminButton={showAdminButton}
             showSaveButton={showSaveButton}
             showShareButton={showShareButton}
           />

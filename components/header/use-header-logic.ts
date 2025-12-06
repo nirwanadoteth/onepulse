@@ -6,6 +6,7 @@ import {
   type UserContext,
   useMiniAppContext,
 } from "@/components/providers/miniapp-provider";
+import { useContractOwner } from "@/hooks/use-contract-owner";
 import type { GmStats } from "@/hooks/use-gm-stats";
 import {
   ERROR_MESSAGES,
@@ -46,6 +47,7 @@ export const useHeaderLogic = ({
 }: UseHeaderLogicProps) => {
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContext = useMiniAppContext();
+  const { owner } = useContractOwner();
   const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
 
   const handleAddMiniApp = useCallback(async () => {
@@ -84,6 +86,9 @@ export const useHeaderLogic = ({
 
   const shouldShowUserInfo = !!user || !!address;
   const showShareButton = shouldShowShareButton(gmStats);
+  const showAdminButton = Boolean(
+    address && owner && address.toLowerCase() === owner.toLowerCase()
+  );
 
   return {
     address,
@@ -91,6 +96,7 @@ export const useHeaderLogic = ({
     shouldShowUserInfo,
     showSaveButton,
     showShareButton,
+    showAdminButton,
     handleAddMiniApp,
     handleShareClick,
   };
