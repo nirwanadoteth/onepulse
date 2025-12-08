@@ -21,6 +21,7 @@ function Content({
   setTab,
 }: ContentProps) {
   const {
+    gmStats,
     setGmStats,
     isShareModalOpen,
     setIsShareModalOpen,
@@ -33,6 +34,7 @@ function Content({
     <div className="mx-auto w-[95%] max-w-lg px-4 py-4">
       <Header
         completedAllChains={completedAllChains}
+        gmStats={gmStats?.stats}
         inMiniApp={inMiniApp}
         isMiniAppReady={isMiniAppReady}
         isShareModalOpen={isShareModalOpen}
