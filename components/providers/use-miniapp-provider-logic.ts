@@ -33,6 +33,12 @@ export function useMiniAppProviderLogic() {
       try {
         const inMiniApp = await sdk.isInMiniApp();
 
+        // Wait for context to be available before verifying FID
+        // This ensures context is fully populated before quick-auth is called
+        if (!context) {
+          return;
+        }
+
         // Verify FID via Quick Auth once on mini app load
         let verifiedFid: number | undefined;
         if (inMiniApp) {
@@ -40,12 +46,10 @@ export function useMiniAppProviderLogic() {
         }
 
         setMiniAppContext({
-          context: context
-            ? {
-                ...(context as unknown as MiniAppContext),
-                verifiedFid,
-              }
-            : null,
+          context: {
+            ...(context as unknown as MiniAppContext),
+            verifiedFid,
+          },
           isInMiniApp: inMiniApp,
         });
       } catch {
