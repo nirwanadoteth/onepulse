@@ -5,14 +5,12 @@ import { HeaderRight } from "@/components/header/header-right";
 import { useHeaderLogic } from "@/components/header/use-header-logic";
 import { ShareModal } from "@/components/share-modal";
 import { UserInfo } from "@/components/user-info";
-import type { GmStats } from "@/hooks/use-gm-stats";
 import { minikitConfig } from "@/minikit.config";
 
 type HeaderProps = {
   isMiniAppReady: boolean;
   inMiniApp: boolean;
   onMiniAppAddedAction: () => void;
-  gmStats?: GmStats;
   isShareModalOpen: boolean;
   onShareModalOpenChangeAction: (open: boolean) => void;
   completedAllChains?: boolean;
@@ -23,7 +21,6 @@ export const Header = memo(
     isMiniAppReady,
     inMiniApp,
     onMiniAppAddedAction,
-    gmStats,
     isShareModalOpen,
     onShareModalOpenChangeAction,
     completedAllChains,
@@ -43,7 +40,6 @@ export const Header = memo(
       isMiniAppReady,
       inMiniApp,
       onMiniAppAddedAction,
-      gmStats,
       onShareModalOpenChangeAction,
     });
     return (
@@ -73,7 +69,6 @@ export const Header = memo(
 
         <ShareModal
           completedAllChains={completedAllChains}
-          gmStats={gmStats}
           onOpenChange={onShareModalOpenChangeAction}
           open={isShareModalOpen}
         />
