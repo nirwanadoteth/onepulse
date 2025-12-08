@@ -6,6 +6,7 @@ import type { MiniAppContext } from "@/types/miniapp";
 type MiniAppProviderContextType = {
   context: MiniAppContext | null;
   isInMiniApp: boolean;
+  verifiedFid: number | undefined;
 } | null;
 
 async function verifyFidWithQuickAuth(): Promise<number | undefined> {
@@ -33,30 +34,19 @@ export function useMiniAppProviderLogic() {
       try {
         const inMiniApp = await sdk.isInMiniApp();
 
-        // Wait for context to be available before verifying FID
-        // This ensures context is fully populated before quick-auth is called
-        if (!context) {
-          return;
-        }
-
-        // Verify FID via Quick Auth once on mini app load
-        let verifiedFid: number | undefined;
-        if (inMiniApp) {
-          verifiedFid = await verifyFidWithQuickAuth();
-        }
+        const verifiedFid = await verifyFidWithQuickAuth();
 
         setMiniAppContext({
-          context: {
-            ...(context as unknown as MiniAppContext),
-            verifiedFid,
-          },
+          context: context as unknown as MiniAppContext,
           isInMiniApp: inMiniApp,
+          verifiedFid,
         });
       } catch {
         // MiniApp initialization failure handled gracefully
         setMiniAppContext({
           context: null,
           isInMiniApp: false,
+          verifiedFid: undefined,
         });
       }
     };

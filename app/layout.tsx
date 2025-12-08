@@ -7,6 +7,7 @@ import "@/styles/globals.css";
 
 import { headers } from "next/headers";
 import type { ReactNode } from "react";
+import { preconnect } from "react-dom";
 import { cookieToInitialState } from "wagmi";
 import { fontVariables } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  preconnect("https://auth.farcaster.xyz");
   const initialState = cookieToInitialState(
     config,
     (await headers()).get("cookie")

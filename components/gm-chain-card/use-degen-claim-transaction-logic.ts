@@ -23,7 +23,7 @@ export function useDegenClaimTransactionLogic({
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const { chainId } = useAppKitNetwork();
   const miniAppContext = useMiniAppContext();
-  const verifiedFid = miniAppContext?.context?.verifiedFid;
+  const verifiedFid = miniAppContext?.verifiedFid;
 
   const numericChainId = normalizeChainId(chainId);
   const contractAddress = numericChainId

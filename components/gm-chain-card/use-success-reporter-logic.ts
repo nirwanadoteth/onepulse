@@ -25,7 +25,7 @@ export const useSuccessReporterLogic = ({
   const queryClient = useQueryClient();
   const miniAppContextData = useMiniAppContext();
   const user = miniAppContextData?.context?.user;
-  const verifiedFid = miniAppContextData?.context?.verifiedFid;
+  const verifiedFid = miniAppContextData?.verifiedFid;
 
   useEffect(() => {
     if (status !== "success" || !address || didReport.current) {
