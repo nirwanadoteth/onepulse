@@ -34,6 +34,8 @@ export function useDegenClaimTransactionLogic({
     hasSentGMToday,
     isPending: isEligibilityPending,
     refetch: refetchEligibility,
+    scoreCheckPassed,
+    userScore,
   } = useClaimEligibility({ fid });
 
   const getClaimContracts = useClaimContracts({
@@ -58,12 +60,14 @@ export function useDegenClaimTransactionLogic({
     !hasSentGMToday ||
     isEligibilityPending;
 
-  const buttonState = getButtonState(
-    Boolean(address),
+  const buttonState = getButtonState({
+    isConnected: Boolean(address),
     isEligibilityPending,
     hasSentGMToday,
-    canClaim
-  );
+    canClaim,
+    scoreCheckPassed,
+    userScore,
+  });
 
   return {
     numericChainId,

@@ -1,19 +1,30 @@
 export type ButtonState = {
   label: string;
   disabled: boolean;
-  showFallback: "wallet" | "gm-first" | null;
+  showFallback: "wallet" | "gm-first" | "low-score" | null;
+};
+
+type GetButtonStateParams = {
+  isConnected: boolean;
+  isEligibilityPending: boolean;
+  hasSentGMToday: boolean;
+  canClaim: boolean;
+  scoreCheckPassed?: boolean;
+  userScore?: number;
 };
 
 /**
  * Determines the button state based on eligibility and connection status.
  * Uses a flat decision tree to minimize cyclomatic complexity.
  */
-export function getButtonState(
-  isConnected: boolean,
-  isEligibilityPending: boolean,
-  hasSentGMToday: boolean,
-  canClaim: boolean
-): ButtonState {
+export function getButtonState({
+  isConnected,
+  isEligibilityPending,
+  hasSentGMToday,
+  canClaim,
+  scoreCheckPassed,
+  userScore,
+}: GetButtonStateParams): ButtonState {
   if (!isConnected) {
     return {
       label: "Connect wallet",
@@ -35,6 +46,14 @@ export function getButtonState(
       label: "Checking eligibility...",
       disabled: true,
       showFallback: null,
+    };
+  }
+
+  if (scoreCheckPassed === false) {
+    return {
+      label: `Low Score (${userScore?.toFixed(2) ?? "N/A"})`,
+      disabled: true,
+      showFallback: "low-score",
     };
   }
 
