@@ -10,9 +10,11 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
+import { getScore } from "@/lib/neynar";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
+const SCORE_THRESHOLD = 0.55;
 
 if (!BACKEND_SIGNER_PRIVATE_KEY) {
   console.warn("BACKEND_SIGNER_PRIVATE_KEY not configured");
@@ -137,6 +139,21 @@ export async function POST(req: NextRequest) {
     }
 
     const { claimer, fid, deadline } = validation.data;
+
+    // Verify user's Neynar score meets the threshold
+    const scoreResponse = await getScore([Number(fid)]);
+    const userScore = scoreResponse.users?.[0]?.score ?? 0;
+
+    if (userScore <= SCORE_THRESHOLD) {
+      return NextResponse.json(
+        {
+          error: "User score does not meet minimum threshold",
+          userScore,
+          requiredScore: SCORE_THRESHOLD,
+        },
+        { status: 403 }
+      );
+    }
 
     const { signature, nonce } = await generateClaimAuthorization({
       claimer,
