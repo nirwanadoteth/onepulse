@@ -28,7 +28,7 @@ type ClaimEligibility = {
 const SCORE_THRESHOLD = 0.55;
 const MIN_STREAK_FOR_LOW_SCORE = 3;
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
-const REFETCH_ELIGIBILITY_MS = 60_000; // 60 seconds
+const REFETCH_ELIGIBILITY_MS = 10_000; // 10 seconds (more responsive)
 const REFETCH_VAULT_MS = 120_000; // 120 seconds
 
 function formatClaimEligibility(
@@ -100,9 +100,11 @@ export function useClaimEligibility({
   );
 
   // Fetch user's Neynar score
-  const { score, isLoading: isScoreLoading } = useScore(
-    fid ? Number(fid) : undefined
-  );
+  const {
+    score,
+    isLoading: isScoreLoading,
+    mutate: mutateScore,
+  } = useScore(fid ? Number(fid) : undefined);
   const userScore = score?.[0]?.score ?? 0;
   const scoreCheckPassed = userScore > SCORE_THRESHOLD;
 
@@ -114,7 +116,7 @@ export function useClaimEligibility({
     data: claimStatus,
     isPending,
     isError,
-    refetch,
+    refetch: refetchContract,
   } = useReadContract({
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
@@ -125,6 +127,14 @@ export function useClaimEligibility({
       refetchInterval: REFETCH_ELIGIBILITY_MS,
     },
   });
+
+  // Comprehensive refetch that includes all data sources
+  const refetch = async () => {
+    await Promise.all([
+      refetchContract(),
+      mutateScore(), // Refetch score from SWR
+    ]);
+  };
 
   return {
     ...formatClaimEligibility(
