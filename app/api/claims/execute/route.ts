@@ -10,13 +10,12 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { BASE_CHAIN_ID } from "@/lib/constants";
+import { BASE_CHAIN_ID, SCORE_THRESHOLD } from "@/lib/constants";
 import { getScore } from "@/lib/neynar";
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
-const SCORE_THRESHOLD = 0.55;
 const MIN_STREAK_FOR_LOW_SCORE = 3;
 
 if (!BACKEND_SIGNER_PRIVATE_KEY) {

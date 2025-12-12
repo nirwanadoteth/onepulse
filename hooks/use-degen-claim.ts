@@ -4,7 +4,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useMemo } from "react";
 import { useReadContract } from "wagmi";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { BASE_CHAIN_ID } from "@/lib/constants";
+import { BASE_CHAIN_ID, SCORE_THRESHOLD } from "@/lib/constants";
 import { getDailyRewardsAddress } from "@/lib/utils";
 import { useGmStats } from "./use-gm-stats";
 import { useScore } from "./use-score";
@@ -25,7 +25,6 @@ type ClaimEligibility = {
   minReserve: bigint;
 };
 
-const SCORE_THRESHOLD = 0.55;
 const MIN_STREAK_FOR_LOW_SCORE = 3;
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
 const REFETCH_ELIGIBILITY_MS = 10_000; // 10 seconds (more responsive)

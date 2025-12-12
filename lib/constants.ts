@@ -45,3 +45,5 @@ export const DAILY_REWARDS_ADDRESS =
 
 export const SECONDS_PER_DAY = 86_400;
 export const MILLISECONDS_PER_DAY = SECONDS_PER_DAY * 1000;
+
+export const SCORE_THRESHOLD = 0.5;
