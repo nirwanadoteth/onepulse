@@ -47,7 +47,7 @@ export const OnboardingModal = memo(
           </div>
 
           <DialogFooter>
-            <Button onClick={onClose} type="button" variant="ghost">
+            <Button onClick={onClose} type="button" variant="secondary">
               Got it
             </Button>
             {canSave && onSave && (
