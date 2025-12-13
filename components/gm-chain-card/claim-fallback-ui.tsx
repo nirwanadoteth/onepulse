@@ -1,7 +1,7 @@
 import { memo } from "react";
 
 type FallbackUIProps = {
-  type: "wallet" | "gm-first" | "low-score" | null;
+  type: "wallet" | "gm-first" | null;
 };
 
 /**
@@ -15,7 +15,6 @@ export const ClaimFallbackUI = memo(({ type }: FallbackUIProps) => {
   const messages = {
     wallet: "Connect your wallet to claim rewards",
     "gm-first": "Send GM first to claim rewards",
-    "low-score": "Build a 3-day streak to unlock daily rewards",
   };
 
   const message = messages[type];
