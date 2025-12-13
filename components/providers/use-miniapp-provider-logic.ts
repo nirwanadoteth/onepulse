@@ -1,13 +1,19 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { sdk } from "@farcaster/miniapp-sdk";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { MiniAppContext } from "@/types/miniapp";
 
-type MiniAppProviderContextType = {
+type MiniAppState = {
   context: MiniAppContext | null;
   isInMiniApp: boolean;
   verifiedFid: number | undefined;
-} | null;
+};
+
+type MiniAppProviderContextType =
+  | (MiniAppState & {
+      signIn: () => Promise<void>;
+    })
+  | null;
 
 async function verifyFidWithQuickAuth(
   token: string | null
@@ -38,29 +44,34 @@ async function getToken(): Promise<string | null> {
 }
 
 export function useMiniAppProviderLogic() {
-  const [miniAppContext, setMiniAppContext] =
-    useState<MiniAppProviderContextType>(null);
+  const [state, setState] = useState<MiniAppState | null>(null);
   const { context } = useMiniKit();
+
+  const signIn = useCallback(async () => {
+    try {
+      const authJWT = await getToken();
+      const verifiedFid = await verifyFidWithQuickAuth(authJWT);
+      if (verifiedFid) {
+        setState((prev) => (prev ? { ...prev, verifiedFid } : prev));
+      }
+    } catch (e) {
+      console.error("Sign in failed", e);
+    }
+  }, []);
 
   useEffect(() => {
     const init = async () => {
       try {
         const inMiniApp = await sdk.isInMiniApp();
 
-        // Get token first, then use it immediately
-        const authJWT = await getToken();
-
-        // Pass the newly fetched token, not the state value
-        const verifiedFid = await verifyFidWithQuickAuth(authJWT);
-
-        setMiniAppContext({
+        setState({
           context: context as unknown as MiniAppContext,
           isInMiniApp: inMiniApp,
-          verifiedFid,
+          verifiedFid: undefined,
         });
       } catch {
         // MiniApp initialization failure handled gracefully
-        setMiniAppContext({
+        setState({
           context: null,
           isInMiniApp: false,
           verifiedFid: undefined,
@@ -70,6 +81,10 @@ export function useMiniAppProviderLogic() {
 
     init();
   }, [context]);
+
+  const miniAppContext: MiniAppProviderContextType = state
+    ? { ...state, signIn }
+    : null;
 
   return {
     miniAppContext,

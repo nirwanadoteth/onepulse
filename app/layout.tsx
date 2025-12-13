@@ -93,7 +93,13 @@ export default async function RootLayout({
       >
         <RootProvider initialState={initialState}>
           {children}
-          <Toaster closeButton position="top-center" theme="system" />
+          <Toaster
+            className="max-w-[80%] self-center justify-self-center"
+            closeButton={true}
+            position="top-center"
+            richColors={true}
+            swipeDirections={["top"]}
+          />
         </RootProvider>
       </body>
     </html>

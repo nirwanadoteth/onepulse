@@ -2,6 +2,7 @@ export type ButtonState = {
   label: string;
   disabled: boolean;
   showFallback: "wallet" | "gm-first" | "limit-reached" | null;
+  requiresVerification: boolean;
 };
 
 type GetButtonStateParams = {
@@ -10,6 +11,7 @@ type GetButtonStateParams = {
   hasSentGMToday: boolean;
   canClaim: boolean;
   isDailyLimitReached: boolean;
+  isVerified: boolean;
 };
 
 /**
@@ -22,12 +24,14 @@ export function getButtonState({
   hasSentGMToday,
   canClaim,
   isDailyLimitReached,
+  isVerified,
 }: GetButtonStateParams): ButtonState {
   if (!isConnected) {
     return {
       label: "Connect wallet",
       disabled: true,
       showFallback: "wallet",
+      requiresVerification: false,
     };
   }
 
@@ -36,6 +40,7 @@ export function getButtonState({
       label: "Daily Limit Reached",
       disabled: true,
       showFallback: "limit-reached",
+      requiresVerification: false,
     };
   }
 
@@ -44,6 +49,7 @@ export function getButtonState({
       label: "Send GM First",
       disabled: true,
       showFallback: "gm-first",
+      requiresVerification: false,
     };
   }
 
@@ -52,6 +58,7 @@ export function getButtonState({
       label: "Checking eligibility...",
       disabled: true,
       showFallback: null,
+      requiresVerification: false,
     };
   }
 
@@ -60,6 +67,16 @@ export function getButtonState({
       label: "Already Claimed",
       disabled: true,
       showFallback: null,
+      requiresVerification: false,
+    };
+  }
+
+  if (!isVerified) {
+    return {
+      label: "Verify & Claim",
+      disabled: false,
+      showFallback: null,
+      requiresVerification: true,
     };
   }
 
@@ -67,5 +84,6 @@ export function getButtonState({
     label: "Claim Rewards",
     disabled: false,
     showFallback: null,
+    requiresVerification: false,
   };
 }

@@ -87,7 +87,7 @@ function updateToastState(
 
 export function useTransactionToast({
   className,
-  position = "bottom-center",
+  position = "top-center",
   label,
   onStatusChangeAction,
 }: UseTransactionToastParams) {

@@ -25,6 +25,7 @@ export function useDegenClaimTransactionLogic({
   const { chainId } = useAppKitNetwork();
   const miniAppContext = useMiniAppContext();
   const verifiedFid = miniAppContext?.verifiedFid;
+  const signIn = miniAppContext?.signIn;
 
   const numericChainId = normalizeChainId(chainId);
   const contractAddress = numericChainId
@@ -69,6 +70,7 @@ export function useDegenClaimTransactionLogic({
     hasSentGMToday,
     canClaim,
     isDailyLimitReached,
+    isVerified: !!verifiedFid,
   });
 
   return {
@@ -77,5 +79,6 @@ export function useDegenClaimTransactionLogic({
     onStatus,
     isDisabled,
     buttonState,
+    signIn,
   };
 }
