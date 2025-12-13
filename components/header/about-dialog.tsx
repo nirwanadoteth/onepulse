@@ -17,14 +17,14 @@ type AboutDialogProps = {
 export function AboutDialog({ open, onOpenChangeAction }: AboutDialogProps) {
   return (
     <Dialog onOpenChange={onOpenChangeAction} open={open}>
-      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>About OnePulse</DialogTitle>
           <DialogDescription className="sr-only">
             Learn more about OnePulse and how to get help
           </DialogDescription>
         </DialogHeader>
-        <AboutContent layout="dialog" />
+        <AboutContent />
       </DialogContent>
     </Dialog>
   );
