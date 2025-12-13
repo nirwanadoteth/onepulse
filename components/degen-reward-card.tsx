@@ -30,6 +30,7 @@ export const DegenRewardCard = memo(
       isWrongNetwork,
       isDisconnected,
       hasRewards,
+      dailyClaimsCount,
     } = useDegenRewardCard({ fid, sponsored });
 
     if (isDisconnected) {
@@ -48,6 +49,7 @@ export const DegenRewardCard = memo(
       <RewardCard
         address={address}
         chainId={numericChainId}
+        dailyClaimsCount={dailyClaimsCount}
         fid={fid}
         hasClaimedToday={hasClaimedToday}
         isCheckingEligibility={isCheckingEligibility}
