@@ -1,6 +1,7 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
-import { useClaimEligibility } from "@/hooks/use-degen-claim";
+import { useClaimEligibility, useClaimStats } from "@/hooks/use-degen-claim";
+import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
 import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
@@ -36,6 +37,9 @@ export function useDegenClaimTransactionLogic({
     refetch: refetchEligibility,
   } = useClaimEligibility({ fid });
 
+  const { count: dailyClaimsCount } = useClaimStats();
+  const isDailyLimitReached = dailyClaimsCount >= DAILY_CLAIM_LIMIT;
+
   const getClaimContracts = useClaimContracts({
     address,
     fid,
@@ -56,13 +60,15 @@ export function useDegenClaimTransactionLogic({
     !contractAddress ||
     !canClaim ||
     !hasSentGMToday ||
-    isEligibilityPending;
+    isEligibilityPending ||
+    isDailyLimitReached;
 
   const buttonState = getButtonState({
     isConnected: Boolean(address),
     isEligibilityPending,
     hasSentGMToday,
     canClaim,
+    isDailyLimitReached,
   });
 
   return {
