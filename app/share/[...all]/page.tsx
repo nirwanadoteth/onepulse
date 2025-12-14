@@ -19,7 +19,13 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-async function fetchGmStats(address: string) {
+export type GmStatsResult = {
+  chains: { name: string; count: number }[];
+  allTimeGmCount: number;
+  fid?: number;
+};
+
+async function fetchGmStats(address: string): Promise<GmStatsResult> {
   try {
     const rows = await getGmRows(address);
     const allTimeGmCount = rows.reduce(
@@ -35,7 +41,8 @@ async function fetchGmStats(address: string) {
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Find FID from rows
-    const fid = rows.find((r) => r.fid)?.fid;
+    const rowWithFid = rows.find((r) => r.fid);
+    const fid = rowWithFid?.fid ? Number(rowWithFid.fid) : undefined;
 
     return { chains, allTimeGmCount, fid };
   } catch {
