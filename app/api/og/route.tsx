@@ -12,15 +12,26 @@ const RES_REGEXP = /src: url\((.+)\) format\('(opentype|truetype)'\)/;
 const fontMemoryCache = new Map<string, ArrayBuffer>();
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(buffer).toString("base64");
+  }
   const bytes = new Uint8Array(buffer);
   let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i] as number);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i += 1024) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 1024));
   }
   return btoa(binary);
 }
 
 function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  if (typeof Buffer !== "undefined") {
+    const buf = Buffer.from(base64, "base64");
+    return buf.buffer.slice(
+      buf.byteOffset,
+      buf.byteOffset + buf.byteLength
+    ) as ArrayBuffer;
+  }
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
