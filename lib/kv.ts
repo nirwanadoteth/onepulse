@@ -130,7 +130,7 @@ export async function checkAndIncrementDailyClaims(
     if current < tonumber(ARGV[1]) then
       local new_count = redis.call("INCR", KEYS[1])
       if new_count == 1 then
-        redis.call("EXPIRE", KEYS[1], 90000)
+        redis.call("EXPIRE", KEYS[1], ARGV[2])
       end
       return {1, new_count}
     else
@@ -138,10 +138,11 @@ export async function checkAndIncrementDailyClaims(
     end
   `;
 
-    const [allowed, count] = (await redis.eval(script, [key], [limit])) as [
-      number,
-      number,
-    ];
+    const [allowed, count] = (await redis.eval(
+      script,
+      [key],
+      [limit, DAILY_KEY_EXPIRY_SECONDS]
+    )) as [number, number];
 
     return { allowed: allowed === 1, count };
   } catch (error) {
@@ -154,6 +155,8 @@ export async function checkAndIncrementDailyClaims(
 const FARCASTER_USER_CACHE_TTL = 300; // 5 minutes
 const NEYNAR_SCORE_CACHE_TTL = 3600; // 1 hour
 const GOOGLE_FONT_CACHE_TTL = 86_400; // 24 hours
+const TX_EXPIRY_SECONDS = 86_400; // 24 hours
+const DAILY_KEY_EXPIRY_SECONDS = 90_000; // ~25 hours
 
 function getFarcasterUserCacheKey(fid: number): string {
   return `onepulse:cache:farcaster_user:${fid}`;
@@ -314,7 +317,7 @@ export async function processClaimTransaction(
     const [status, count] = (await redis.eval(
       script,
       [txKey, dailyKey],
-      [limit, 86_400, 90_000]
+      [limit, TX_EXPIRY_SECONDS, DAILY_KEY_EXPIRY_SECONDS]
     )) as [string, number];
 
     return {
