@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
+import { handleError } from "@/lib/error-handling";
 import type { TransactionStatus } from "@/types/transaction";
 import { performGmReporting } from "./gm-reporting-utils";
 
@@ -42,7 +43,17 @@ export const useSuccessReporterLogic = ({
       refetchLastGmDay,
       onReported,
     }).catch((error) => {
-      console.error("GM reporting failed:", error);
+      handleError(
+        error,
+        "GM reporting failed",
+        {
+          operation: "gm/reporting",
+          address,
+          chainId,
+          txHash,
+        },
+        { silent: true }
+      );
       didReport.current = false; // Allow retry on next success
     });
   }, [
