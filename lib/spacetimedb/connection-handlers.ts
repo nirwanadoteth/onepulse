@@ -1,5 +1,5 @@
 import type { Identity } from "spacetimedb";
-
+import { handleError } from "@/lib/error-handling";
 import type { DbConnection, ErrorContext } from "@/lib/module_bindings";
 import {
   connectionStatus,
@@ -53,7 +53,14 @@ export const onDisconnect = () => {
 };
 
 export const onConnectError = (_ctx: ErrorContext, error: Error) => {
-  console.error("[SpacetimeDB] Connection error:", error);
+  handleError(
+    error,
+    "SpacetimeDB connection error",
+    {
+      operation: "spacetimedb/connect-error",
+    },
+    { silent: true }
+  );
 
   connectionStatus.isConnected = false;
   connectionStatus.isSubscribed = false;
