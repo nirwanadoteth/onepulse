@@ -88,7 +88,7 @@ export function useTransactionStatus({
 
       if (isSuccess) {
         const txHash =
-          status.statusData.transactionReceipts[0]?.transactionHash;
+          status.statusData.transactionReceipts?.[0]?.transactionHash;
         if (txHash && !processedTxHashes.current.has(txHash)) {
           processedTxHashes.current.add(txHash);
           // Fire and forget - handleRefreshAfterSuccess runs async without blocking
