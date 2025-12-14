@@ -105,7 +105,8 @@ function getFarcasterUserCacheKey(fid: number): string {
 }
 
 function getNeynarScoreCacheKey(fids: number[]): string {
-  return `onepulse:cache:neynar_score:${fids.sort().join(",")}`;
+  const sortedFids = [...fids].sort((a, b) => a - b);
+  return `onepulse:cache:neynar_score:${sortedFids.join(",")}`;
 }
 
 function getGoogleFontCacheKey(font: string, weight: number): string {
