@@ -7,6 +7,7 @@ import { getDailyRewardsAddress } from "@/lib/utils";
 
 /**
  * Verifies the transaction was to the correct contract and called the claim function.
+ * Fetches receipt and transaction in parallel to minimize active CPU wait time.
  */
 async function verifyTransaction(
   transactionHash: string,
@@ -21,9 +22,13 @@ async function verifyTransaction(
     getTransaction: (opts: { hash: `0x${string}` }) => Promise<unknown>;
   };
 
-  const receipt = await client.getTransactionReceipt({
-    hash: transactionHash as `0x${string}`,
-  });
+  const txHash = transactionHash as `0x${string}`;
+
+  // Fetch both in parallel to reduce I/O wait time
+  const [receipt, transaction] = await Promise.all([
+    client.getTransactionReceipt({ hash: txHash }),
+    client.getTransaction({ hash: txHash }),
+  ]);
 
   if (!receipt || typeof receipt !== "object") {
     throw new Error("Transaction not found on-chain");
@@ -41,10 +46,6 @@ async function verifyTransaction(
   ) {
     throw new Error("Transaction is not to the DailyRewards contract");
   }
-
-  const transaction = await client.getTransaction({
-    hash: transactionHash as `0x${string}`,
-  });
 
   if (!transaction || typeof transaction !== "object") {
     throw new Error("Transaction input not found");
