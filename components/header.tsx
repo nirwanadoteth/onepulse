@@ -34,7 +34,7 @@ export const Header = memo(
       shouldShowUserInfo,
       canConfigureMiniApp,
       isMiniAppSaved,
-      notificationsEnabled,
+      isNotificationsEnabled,
       showAdminButton,
       showShareButton,
       handleAddMiniApp,
@@ -62,7 +62,7 @@ export const Header = memo(
             canConfigureMiniApp={canConfigureMiniApp}
             inMiniApp={inMiniApp}
             isMiniAppSaved={isMiniAppSaved}
-            notificationsEnabled={notificationsEnabled}
+            notificationsEnabled={isNotificationsEnabled}
             onNotificationToggle={handleAddMiniApp}
             onSaveClick={handleAddMiniApp}
             onShareClick={handleShareClick}
