@@ -81,3 +81,79 @@ export async function checkAndIncrementDailyClaims(
 
   return { allowed: count <= limit, count };
 }
+
+// Cache TTLs in seconds
+const FARCASTER_USER_CACHE_TTL = 300; // 5 minutes
+const NEYNAR_SCORE_CACHE_TTL = 3600; // 1 hour
+const GOOGLE_FONT_CACHE_TTL = 86_400; // 24 hours
+
+function getFarcasterUserCacheKey(fid: number): string {
+  return `onepulse:cache:farcaster_user:${fid}`;
+}
+
+function getNeynarScoreCacheKey(fids: number[]): string {
+  return `onepulse:cache:neynar_score:${fids.sort().join(",")}`;
+}
+
+function getGoogleFontCacheKey(font: string, weight: number): string {
+  return `onepulse:cache:font:${font}:${weight}`;
+}
+
+export type CachedFarcasterUser = {
+  fid: number;
+  username: string;
+  displayName: string;
+  pfpUrl: string | null;
+};
+
+export async function getCachedFarcasterUser(
+  fid: number
+): Promise<CachedFarcasterUser | null> {
+  return await redis.get<CachedFarcasterUser>(getFarcasterUserCacheKey(fid));
+}
+
+export async function setCachedFarcasterUser(
+  fid: number,
+  user: CachedFarcasterUser
+): Promise<void> {
+  await redis.set(getFarcasterUserCacheKey(fid), user, {
+    ex: FARCASTER_USER_CACHE_TTL,
+  });
+}
+
+export type CachedNeynarScore = {
+  users: { fid: number; score: number }[];
+};
+
+export async function getCachedNeynarScore(
+  fids: number[]
+): Promise<CachedNeynarScore | null> {
+  return await redis.get<CachedNeynarScore>(getNeynarScoreCacheKey(fids));
+}
+
+export async function setCachedNeynarScore(
+  fids: number[],
+  data: CachedNeynarScore
+): Promise<void> {
+  await redis.set(getNeynarScoreCacheKey(fids), data, {
+    ex: NEYNAR_SCORE_CACHE_TTL,
+  });
+}
+
+export async function getCachedGoogleFont(
+  font: string,
+  weight: number
+): Promise<string | null> {
+  // Store as base64 string since Redis can't store ArrayBuffer
+  return await redis.get<string>(getGoogleFontCacheKey(font, weight));
+}
+
+export async function setCachedGoogleFont(
+  font: string,
+  weight: number,
+  fontDataBase64: string
+): Promise<void> {
+  await redis.set(getGoogleFontCacheKey(font, weight), fontDataBase64, {
+    ex: GOOGLE_FONT_CACHE_TTL,
+  });
+}
