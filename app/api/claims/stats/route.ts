@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const count = await getDailyClaimsCount();
-    return NextResponse.json({ count });
+    const response = NextResponse.json({ count });
+    // Cache for 10 seconds to reduce repeated calls
+    response.headers.set("Cache-Control", "public, max-age=10");
+    return response;
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch claim stats" },
