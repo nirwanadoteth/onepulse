@@ -188,11 +188,45 @@ export async function checkRateLimit(
   return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
 }
 
-export async function markTransactionAsProcessed(
-  txHash: string
-): Promise<boolean> {
-  const key = `onepulse:processed_tx:${txHash.toLowerCase()}`;
-  // Set if not exists (nx: true), expire in 24h (ex: 86400)
-  const result = await redis.set(key, "1", { nx: true, ex: 86_400 });
-  return result === "OK";
+export async function processClaimTransaction(
+  txHash: string,
+  limit: number
+): Promise<{
+  status: "success" | "already_processed" | "limit_exceeded";
+  count: number;
+}> {
+  const txKey = `onepulse:processed_tx:${txHash.toLowerCase()}`;
+  const date = new Date().toISOString().split("T")[0];
+  const dailyKey = `onepulse:daily_claims:${date}`;
+
+  const script = `
+    if redis.call("SETNX", KEYS[1], "1") == 0 then
+      return {"already_processed", 0}
+    end
+    redis.call("EXPIRE", KEYS[1], ARGV[2])
+
+    local current = redis.call("GET", KEYS[2])
+    if not current then current = 0 else current = tonumber(current) end
+
+    if current < tonumber(ARGV[1]) then
+      local new_count = redis.call("INCR", KEYS[2])
+      if new_count == 1 then
+        redis.call("EXPIRE", KEYS[2], ARGV[3])
+      end
+      return {"success", new_count}
+    else
+      return {"limit_exceeded", current}
+    end
+  `;
+
+  const [status, count] = (await redis.eval(
+    script,
+    [txKey, dailyKey],
+    [limit, 86_400, 90_000]
+  )) as [string, number];
+
+  return {
+    status: status as "success" | "already_processed" | "limit_exceeded",
+    count,
+  };
 }

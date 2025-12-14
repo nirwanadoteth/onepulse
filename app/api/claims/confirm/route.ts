@@ -12,10 +12,9 @@ import {
 import { base } from "viem/chains";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
 import {
-  checkAndIncrementDailyClaims,
   checkRateLimit,
   getDailyClaimsCount,
-  markTransactionAsProcessed,
+  processClaimTransaction,
 } from "@/lib/kv";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
@@ -87,6 +86,31 @@ async function verifyTransaction(
   }
 }
 
+function validateRequestBody(body: unknown): {
+  transactionHash: string;
+  claimer: string;
+} | null {
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+
+  const { transactionHash, claimer } = body as Record<string, unknown>;
+
+  if (
+    !transactionHash ||
+    typeof transactionHash !== "string" ||
+    !isHash(transactionHash)
+  ) {
+    return null;
+  }
+
+  if (!claimer || typeof claimer !== "string" || !isAddress(claimer)) {
+    return null;
+  }
+
+  return { transactionHash, claimer };
+}
+
 /**
  * Confirms a claim was successfully executed on-chain and increments the daily limit counter.
  * This endpoint should only be called after the on-chain transaction has been confirmed.
@@ -110,34 +134,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as unknown;
+    const validated = validateRequestBody(body);
 
-    // Validate request body
-    if (!body || typeof body !== "object") {
+    if (!validated) {
       return NextResponse.json(
-        { error: "Invalid request body" },
+        { error: "Invalid request body or parameters" },
         { status: 400 }
       );
     }
 
-    const { transactionHash, claimer } = body as Record<string, unknown>;
-
-    if (
-      !transactionHash ||
-      typeof transactionHash !== "string" ||
-      !isHash(transactionHash)
-    ) {
-      return NextResponse.json(
-        { error: "Missing or invalid transactionHash" },
-        { status: 400 }
-      );
-    }
-
-    if (!claimer || typeof claimer !== "string" || !isAddress(claimer)) {
-      return NextResponse.json(
-        { error: "Missing or invalid claimer address" },
-        { status: 400 }
-      );
-    }
+    const { transactionHash, claimer } = validated;
 
     // Rate limit by claimer
     const { allowed: claimerAllowed } = await checkRateLimit(
@@ -173,10 +179,13 @@ export async function POST(req: NextRequest) {
       publicClient
     );
 
-    // Idempotency check: ensure we haven't processed this transaction before
-    const isNewTransaction = await markTransactionAsProcessed(transactionHash);
+    // Process the transaction atomically
+    const { status, count } = await processClaimTransaction(
+      transactionHash,
+      DAILY_CLAIM_LIMIT
+    );
 
-    if (!isNewTransaction) {
+    if (status === "already_processed") {
       const currentCount = await getDailyClaimsCount();
       return NextResponse.json({
         success: true,
@@ -186,15 +195,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Increment the daily claims counter
-    const { allowed, count } =
-      await checkAndIncrementDailyClaims(DAILY_CLAIM_LIMIT);
+    if (status === "limit_exceeded") {
+      return NextResponse.json({
+        success: true,
+        message: "Claim confirmed but daily limit reached",
+        count,
+        allowed: false,
+      });
+    }
 
     return NextResponse.json({
       success: true,
       message: "Claim confirmed and counter incremented",
       count,
-      allowed,
+      allowed: true,
     });
   } catch (error) {
     const message =
