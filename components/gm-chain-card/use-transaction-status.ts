@@ -7,6 +7,7 @@ type UseTransactionStatusProps = {
   onError?: (error: Error) => void;
   onRefreshError?: (error: Error) => void;
   refetchEligibility?: () => Promise<unknown>;
+  claimer?: string;
 };
 
 type TransactionStatusHandlers = {
@@ -27,12 +28,38 @@ export function useTransactionStatus({
   onError,
   onRefreshError,
   refetchEligibility,
+  claimer,
 }: UseTransactionStatusProps): TransactionStatusHandlers {
   const processedTxHashes = useRef<Set<string>>(new Set());
+
+  const confirmClaimOnBackend = useCallback(
+    async (txHash: string) => {
+      if (!claimer) {
+        return;
+      }
+
+      try {
+        await fetch("/api/claims/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactionHash: txHash,
+            claimer,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to confirm claim on backend:", error);
+      }
+    },
+    [claimer]
+  );
 
   const handleRefreshAfterSuccess = useCallback(
     async (txHash: string) => {
       try {
+        // Confirm claim was successful on-chain and increment counter
+        await confirmClaimOnBackend(txHash);
+
         // Only refetch eligibility - no need to invalidate broad query keys
         if (refetchEligibility) {
           await refetchEligibility();
@@ -54,7 +81,7 @@ export function useTransactionStatus({
         }
       }
     },
-    [refetchEligibility, onSuccess, onRefreshError]
+    [refetchEligibility, onSuccess, onRefreshError, confirmClaimOnBackend]
   );
 
   const onStatus = useCallback(
