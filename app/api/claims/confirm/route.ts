@@ -7,7 +7,7 @@ import {
 } from "viem";
 import { base } from "viem/chains";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
-import { checkAndIncrementDailyClaims } from "@/lib/kv";
+import { checkAndIncrementDailyClaims, checkRateLimit } from "@/lib/kv";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 /**
@@ -69,6 +69,13 @@ async function verifyTransaction(
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit by IP
+    const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+    const { allowed: ipAllowed } = await checkRateLimit(`ip:${ip}`, 10, 60);
+    if (!ipAllowed) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = (await req.json()) as unknown;
 
     // Validate request body
@@ -92,6 +99,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Missing or invalid claimer" },
         { status: 400 }
+      );
+    }
+
+    // Rate limit by claimer
+    const { allowed: claimerAllowed } = await checkRateLimit(
+      `claimer:${claimer}`,
+      5,
+      60
+    );
+    if (!claimerAllowed) {
+      return NextResponse.json(
+        { error: "Too many requests for this claimer" },
+        { status: 429 }
       );
     }
 

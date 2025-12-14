@@ -157,3 +157,18 @@ export async function setCachedGoogleFont(
     ex: GOOGLE_FONT_CACHE_TTL,
   });
 }
+
+export async function checkRateLimit(
+  identifier: string,
+  limit = 10,
+  windowSeconds = 60
+): Promise<{ allowed: boolean; remaining: number }> {
+  const key = `onepulse:ratelimit:${identifier}`;
+  const count = await redis.incr(key);
+
+  if (count === 1) {
+    await redis.expire(key, windowSeconds);
+  }
+
+  return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
+}
