@@ -77,6 +77,7 @@ export function useClaimEligibility({
     isError,
     refetch: refetchContract,
   } = useReadContract({
+    chainId: BASE_CHAIN_ID,
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
     functionName: "canClaimToday",
