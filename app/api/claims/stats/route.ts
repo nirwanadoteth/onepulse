@@ -8,8 +8,8 @@ export async function GET() {
   try {
     const count = await getDailyClaimsCount();
     const response = NextResponse.json({ count });
-    // Cache for 10 seconds to reduce repeated calls
-    response.headers.set("Cache-Control", "public, max-age=10");
+    // Cache in CDN for 10 seconds, but browsers revalidate immediately
+    response.headers.set("Cache-Control", "public, s-maxage=10, max-age=0");
     return response;
   } catch (error) {
     handleError(
