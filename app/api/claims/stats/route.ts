@@ -10,7 +10,8 @@ export async function GET() {
     // Cache for 10 seconds to reduce repeated calls
     response.headers.set("Cache-Control", "public, max-age=10");
     return response;
-  } catch {
+  } catch (error) {
+    console.error("Error fetching claim stats:", error);
     return NextResponse.json(
       { error: "Failed to fetch claim stats" },
       { status: 500 }
