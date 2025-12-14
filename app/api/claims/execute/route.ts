@@ -10,8 +10,6 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
-import { checkAndIncrementDailyClaims } from "@/lib/kv";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
@@ -139,22 +137,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { claimer, fid, deadline } = validation.data;
-
-    // Check daily claim limit
-    const { allowed, count } =
-      await checkAndIncrementDailyClaims(DAILY_CLAIM_LIMIT);
-
-    if (!allowed) {
-      return NextResponse.json(
-        {
-          error: "Daily claim limit reached",
-          message: "Daily claim limit reached",
-          limit: DAILY_CLAIM_LIMIT,
-          current: count,
-        },
-        { status: 429 }
-      );
-    }
 
     const authResult = await generateClaimAuthorization({
       claimer,
