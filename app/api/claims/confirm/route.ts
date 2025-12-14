@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
   createPublicClient,
+  decodeFunctionData,
   http,
   type PublicClient,
+  parseAbi,
   type Transport,
 } from "viem";
 import { base } from "viem/chains";
@@ -17,6 +19,7 @@ import { getDailyRewardsAddress } from "@/lib/utils";
 async function verifyTransaction(
   transactionHash: string,
   contractAddress: string,
+  claimer: string,
   publicClient: PublicClient<Transport, typeof base>
 ) {
   const txHash = transactionHash as `0x${string}`;
@@ -54,6 +57,22 @@ async function verifyTransaction(
   const CLAIM_FUNCTION_SELECTOR = "0x6e8aa08a";
   if (!transaction.input.startsWith(CLAIM_FUNCTION_SELECTOR)) {
     throw new Error("Transaction did not call the claim function");
+  }
+
+  // Verify the recipient in the transaction input matches the claimer
+  // This supports smart wallets where transaction.from might be the bundler
+  const abi = parseAbi([
+    "function claim(address recipient, uint256 amount, uint256 nonce, uint256 expiry, bytes signature)",
+  ]);
+
+  const { args } = decodeFunctionData({
+    abi,
+    data: transaction.input,
+  });
+
+  const recipient = args[0];
+  if (recipient.toLowerCase() !== claimer.toLowerCase()) {
+    throw new Error("Transaction recipient does not match claimer");
   }
 }
 
@@ -129,7 +148,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify the transaction
-    await verifyTransaction(transactionHash, contractAddress, publicClient);
+    await verifyTransaction(
+      transactionHash,
+      contractAddress,
+      claimer,
+      publicClient
+    );
 
     // Increment the daily claims counter
     const { allowed, count } =
