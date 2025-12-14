@@ -87,10 +87,7 @@ export function useClaimEligibility({
     },
   });
 
-  // Comprehensive refetch that includes all data sources
-  const refetch = async () => {
-    await Promise.all([refetchContract()]);
-  };
+  const refetch = refetchContract;
 
   return {
     ...formatClaimEligibility(claimStatus),
