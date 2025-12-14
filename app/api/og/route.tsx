@@ -62,16 +62,39 @@ async function loadGoogleFont(
 
   // Fetch from Google Fonts
   const url = `https://fonts.googleapis.com/css2?family=${font}:wght@${weight}`;
-  const css = await fetch(url).then((res) => res.text());
+
+  let css: string;
+  const cssController = new AbortController();
+  const cssTimeout = setTimeout(() => cssController.abort(), 3000);
+  try {
+    const res = await fetch(url, { signal: cssController.signal });
+    if (!res.ok) {
+      throw new Error("Failed to fetch font CSS");
+    }
+    css = await res.text();
+  } finally {
+    clearTimeout(cssTimeout);
+  }
+
   const resource = css.match(RES_REGEXP);
 
   if (resource) {
     if (!resource[1]) {
       throw new Error("Font URL not found in CSS");
     }
-    const fontBuffer = await fetch(resource[1]).then((res) =>
-      res.arrayBuffer()
-    );
+
+    let fontBuffer: ArrayBuffer;
+    const fontController = new AbortController();
+    const fontTimeout = setTimeout(() => fontController.abort(), 5000);
+    try {
+      const res = await fetch(resource[1], { signal: fontController.signal });
+      if (!res.ok) {
+        throw new Error("Failed to fetch font file");
+      }
+      fontBuffer = await res.arrayBuffer();
+    } finally {
+      clearTimeout(fontTimeout);
+    }
 
     // Cache in memory and Redis
     fontMemoryCache.set(cacheKey, fontBuffer);
