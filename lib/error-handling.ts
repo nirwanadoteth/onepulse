@@ -1,4 +1,28 @@
-import { toast } from "sonner";
+type SonnerToast = {
+  error: (message: string) => unknown;
+  success: (message: string) => unknown;
+  loading: (message: string) => string | number;
+  dismiss: (id?: string | number) => unknown;
+};
+
+const loadToast = async (): Promise<SonnerToast> => {
+  const mod = await import("sonner");
+  return mod.toast as unknown as SonnerToast;
+};
+
+type HandleErrorOptions = {
+  silent?: boolean;
+};
+
+function writeToStderr(line: string): void {
+  const proc = (
+    globalThis as typeof globalThis & {
+      process?: { stderr?: { write?: (chunk: string) => unknown } };
+    }
+  ).process;
+
+  proc?.stderr?.write?.(`${line}\n`);
+}
 
 /**
  * User-facing error messages for common operations
@@ -55,28 +79,79 @@ type ErrorContext = {
 export function handleError(
   error: unknown,
   userMessage: string,
-  context?: ErrorContext
+  context?: ErrorContext,
+  options?: HandleErrorOptions
 ): void {
-  // Log full error details for debugging
-  console.error(`[${context?.operation || "Error"}]:`, error, context);
+  const operation = context?.operation ?? "Error";
+  const message = extractErrorMessage(error);
+  writeToStderr(`[${operation}] ${message}`);
 
-  // Show user-friendly message
-  toast.error(userMessage);
+  if (context) {
+    try {
+      writeToStderr(`[${operation}] context=${JSON.stringify(context)}`);
+    } catch {
+      writeToStderr(`[${operation}] context=[unserializable]`);
+    }
+  }
+
+  if (options?.silent) {
+    return;
+  }
+
+  if (typeof window !== "undefined" && userMessage) {
+    loadToast()
+      .then((toast) => toast.error(userMessage))
+      .catch(() => {
+        // Best-effort: ignore toast errors
+      });
+  }
 }
 
 /**
  * Handle success with toast notification
  */
 export function handleSuccess(message: string): void {
-  toast.success(message);
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  loadToast()
+    .then((toast) => toast.success(message))
+    .catch(() => {
+      // Best-effort: ignore toast errors
+    });
 }
 
 /**
  * Show loading toast and return dismiss function
  */
 export function showLoading(message: string): () => void {
-  const toastId = toast.loading(message);
-  return () => toast.dismiss(toastId);
+  if (typeof window === "undefined") {
+    return () => {
+      // no-op on server
+    };
+  }
+
+  let toastId: string | number | undefined;
+  loadToast()
+    .then((toast) => {
+      toastId = toast.loading(message);
+    })
+    .catch(() => {
+      // Best-effort: ignore toast errors
+    });
+
+  return () => {
+    if (toastId === undefined) {
+      return;
+    }
+
+    loadToast()
+      .then((toast) => toast.dismiss(toastId))
+      .catch(() => {
+        // Best-effort: ignore toast errors
+      });
+  };
 }
 
 /**

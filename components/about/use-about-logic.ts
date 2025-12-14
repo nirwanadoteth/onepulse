@@ -1,8 +1,8 @@
 import { useOpenUrl, useViewProfile } from "@coinbase/onchainkit/minikit";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useCallback } from "react";
-import { toast } from "sonner";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
+import { handleError } from "@/lib/error-handling";
 
 export const PRODUCT_CLANK_MINIAPP_URL =
   "https://miniapp.productclank.com/frame/25a3822f-e828-4af5-868c-a2061bf66e20?referrer=52d833eb-c0b5-484f-baa9-49eb95317ecf" as const;
@@ -35,8 +35,10 @@ export const useAboutLogic = (): AboutLogic => {
       try {
         await sdk.actions.openMiniApp({ url });
       } catch (error) {
-        console.error("Failed to open Mini App:", error);
-        toast.error("Failed to open Mini App");
+        handleError(error, "Failed to open Mini App", {
+          operation: "miniapp/open",
+          url,
+        });
         openUrl(url);
       }
     },

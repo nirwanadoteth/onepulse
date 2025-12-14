@@ -7,7 +7,7 @@ import {
   verifyAppKeyWithNeynar,
 } from "@farcaster/miniapp-node";
 import type { NextRequest } from "next/server";
-
+import { handleError } from "@/lib/error-handling";
 import {
   deleteUserNotificationDetails,
   setUserNotificationDetails,
@@ -121,7 +121,20 @@ export async function POST(request: NextRequest) {
   const appFid = data.appFid;
   const event = data.event;
 
-  await processWebhookEvent(fid, appFid, event);
+  try {
+    await processWebhookEvent(fid, appFid, event);
+  } catch (error) {
+    handleError(
+      error,
+      "Webhook processing failed",
+      { operation: "webhook/process" },
+      { silent: true }
+    );
+    return Response.json(
+      { success: false, error: "Failed to process webhook" },
+      { status: 500 }
+    );
+  }
 
   return Response.json({ success: true });
 }

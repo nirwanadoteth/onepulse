@@ -1,7 +1,6 @@
 "use client";
 
 import { Copy, MessageCircle } from "lucide-react";
-import type { GmStats } from "@/hooks/use-gm-stats";
 import { cn } from "@/lib/utils";
 import { useShareGMStatusLogic } from "./share-gm-status/use-share-gm-status-logic";
 import { Button } from "./ui/button";
@@ -18,7 +17,6 @@ type ShareGMStatusProps = {
   size?: "default" | "sm" | "lg" | "icon";
   claimedToday?: boolean;
   completedAllChains?: boolean;
-  gmStats?: GmStats;
 };
 
 export function ShareGMStatus({
@@ -27,12 +25,10 @@ export function ShareGMStatus({
   size = "default",
   claimedToday = false,
   completedAllChains = false,
-  gmStats,
 }: ShareGMStatusProps) {
   const { handleShare } = useShareGMStatusLogic(
     claimedToday,
-    completedAllChains,
-    gmStats
+    completedAllChains
   );
 
   return (

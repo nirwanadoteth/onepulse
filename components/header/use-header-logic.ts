@@ -1,6 +1,6 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   type MiniAppContext,
   type UserContext,
@@ -48,19 +48,20 @@ export const useHeaderLogic = ({
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContext = useMiniAppContext();
   const { owner } = useContractOwner();
-  const [miniAppAddedLocally, setMiniAppAddedLocally] = useState(false);
+  const clientAdded = miniAppContext?.context?.client?.added;
+  const notificationsEnabled =
+    miniAppContext?.context?.client?.notificationDetails;
 
   const handleAddMiniApp = useCallback(async () => {
     try {
       const response = await sdk.actions.addMiniApp();
-
-      if (response.notificationDetails) {
+      const hasNotifications = Boolean(response.notificationDetails);
+      if (hasNotifications) {
         handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED);
       } else {
         handleSuccess(SUCCESS_MESSAGES.MINI_APP_ADDED_NO_NOTIF);
       }
 
-      setMiniAppAddedLocally(true);
       onMiniAppAddedAction();
     } catch (error) {
       handleError(error, ERROR_MESSAGES.MINI_APP_ADD, {
@@ -76,27 +77,29 @@ export const useHeaderLogic = ({
   );
 
   const user = extractUserFromContext(miniAppContext?.context);
-  const clientAdded = miniAppContext?.context?.client?.added;
-  const showSaveButton =
-    canSaveMiniApp({
-      isMiniAppReady,
-      inMiniApp,
-      clientAdded,
-    }) && !miniAppAddedLocally;
-
   const shouldShowUserInfo = !!user || !!address;
-  const showShareButton = shouldShowShareButton(gmStats);
   const showAdminButton = Boolean(
     address && owner && address.toLowerCase() === owner.toLowerCase()
   );
+  const isMiniAppSaved = Boolean(clientAdded);
+  const isNotificationsEnabled = Boolean(notificationsEnabled);
+  const canConfigureMiniApp = canSaveMiniApp({
+    isMiniAppReady,
+    inMiniApp,
+    clientAdded,
+  });
+
+  const showShareButton = shouldShowShareButton(gmStats);
 
   return {
     address,
     user,
     shouldShowUserInfo,
-    showSaveButton,
-    showShareButton,
+    canConfigureMiniApp,
+    isMiniAppSaved,
+    isNotificationsEnabled,
     showAdminButton,
+    showShareButton,
     handleAddMiniApp,
     handleShareClick,
   };

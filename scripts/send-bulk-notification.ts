@@ -25,6 +25,8 @@
 
 import { parseArgs } from "node:util";
 
+import { handleError } from "@/lib/error-handling";
+
 const DEFAULT_API_URL = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
@@ -148,16 +150,30 @@ function validateInputs(
   body: string | undefined
 ): void {
   if (!title) {
-    console.error("❌ Error: --title is required");
-    console.error(
-      "\nUsage: bun scripts/send-bulk-notification.ts --title 'Title' --body 'Message'"
+    handleError(
+      new Error("--title is required"),
+      "--title is required",
+      {
+        operation: "scripts/send-bulk-notification",
+      },
+      { silent: true }
+    );
+    process.stderr.write(
+      "\nUsage: bun scripts/send-bulk-notification.ts --title 'Title' --body 'Message'\n"
     );
     process.exit(1);
   }
   if (!body) {
-    console.error("❌ Error: --body is required");
-    console.error(
-      "\nUsage: bun scripts/send-bulk-notification.ts --title 'Title' --body 'Message'"
+    handleError(
+      new Error("--body is required"),
+      "--body is required",
+      {
+        operation: "scripts/send-bulk-notification",
+      },
+      { silent: true }
+    );
+    process.stderr.write(
+      "\nUsage: bun scripts/send-bulk-notification.ts --title 'Title' --body 'Message'\n"
     );
     process.exit(1);
   }
@@ -165,11 +181,21 @@ function validateInputs(
 
 function validateEnv(): void {
   if (!KV_URL) {
-    console.error("❌ Error: KV_REST_API_URL is required");
+    handleError(
+      new Error("KV_REST_API_URL is required"),
+      "KV_REST_API_URL is required",
+      { operation: "scripts/send-bulk-notification" },
+      { silent: true }
+    );
     process.exit(1);
   }
   if (!KV_TOKEN) {
-    console.error("❌ Error: KV_REST_API_TOKEN is required");
+    handleError(
+      new Error("KV_REST_API_TOKEN is required"),
+      "KV_REST_API_TOKEN is required",
+      { operation: "scripts/send-bulk-notification" },
+      { silent: true }
+    );
     process.exit(1);
   }
 }
@@ -303,6 +329,11 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("❌ Fatal error:", error);
+  handleError(
+    error,
+    "Fatal error",
+    { operation: "scripts/send-bulk-notification" },
+    { silent: true }
+  );
   process.exit(1);
 });

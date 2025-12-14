@@ -1,7 +1,15 @@
+"use client";
+
 import { sdk } from "@farcaster/miniapp-sdk";
 import { toast } from "sonner";
+import { handleError } from "@/lib/error-handling";
 
-export function useShareActions() {
+type ShareActions = {
+  shareToCast: (shareText: string, shareUrl: string) => Promise<void>;
+  shareToClipboard: (shareText: string, shareUrl: string) => Promise<void>;
+};
+
+export function useShareActions(): ShareActions {
   const shareToCast = async (shareText: string, shareUrl: string) => {
     try {
       await sdk.actions.composeCast({
@@ -10,16 +18,51 @@ export function useShareActions() {
       });
     } catch (error) {
       // Cast composition failure handled by copying to clipboard
-      console.error("Failed to compose cast:", error);
-      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      toast.success("Copied to clipboard");
+      handleError(
+        error,
+        "Failed to compose cast",
+        {
+          operation: "share/compose-cast",
+        },
+        { silent: true }
+      );
+      try {
+        if (!navigator.clipboard?.writeText) {
+          toast.error("Clipboard not available");
+          return;
+        }
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast.success("Copied to clipboard");
+      } catch (clipboardError) {
+        handleError(
+          clipboardError,
+          "Failed to copy to clipboard",
+          { operation: "share/copy-to-clipboard" },
+          { silent: true }
+        );
+        toast.error("Copy failed");
+      }
     }
   };
 
-  const shareToClipboard = (shareText: string, shareUrl: string) => {
+  const shareToClipboard = async (shareText: string, shareUrl: string) => {
     const fullText = `${shareText}\n${shareUrl}`;
-    navigator.clipboard.writeText(fullText);
-    toast.success("Copied to clipboard");
+    try {
+      if (!navigator.clipboard?.writeText) {
+        toast.error("Clipboard not available");
+        return;
+      }
+      await navigator.clipboard.writeText(fullText);
+      toast.success("Copied to clipboard");
+    } catch (clipboardError) {
+      handleError(
+        clipboardError,
+        "Failed to copy to clipboard",
+        { operation: "share/copy-to-clipboard" },
+        { silent: true }
+      );
+      toast.error("Copy failed");
+    }
   };
 
   return {

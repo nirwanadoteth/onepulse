@@ -9,7 +9,6 @@ export type * from "@/types/miniapp";
 type MiniAppProviderContextType = {
   context: MiniAppContext | null;
   isInMiniApp: boolean;
-  verifiedFid: number | undefined;
 } | null;
 
 const MiniAppProviderContext = createContext<MiniAppProviderContextType>(null);

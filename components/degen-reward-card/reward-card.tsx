@@ -3,7 +3,8 @@
 import { DegenClaimTransaction } from "@/components/gm-chain-card/degen-claim-transaction";
 import { ShareModal } from "@/components/share-modal";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useGmStats } from "@/hooks/use-gm-stats";
+import { Progress } from "@/components/ui/progress";
+import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
 import { type ClaimState, getStatusConfig } from "./utils";
 
 type RewardCardProps = {
@@ -17,6 +18,7 @@ type RewardCardProps = {
   onShareModalCloseAction: () => void;
   address: string | undefined;
   chainId: number | undefined;
+  dailyClaimsCount: number;
 };
 
 const DEGEN_DECIMALS = 18n;
@@ -32,11 +34,13 @@ export function RewardCard({
   isShareModalOpen,
   onClaimSuccessAction,
   onShareModalCloseAction,
-  address,
-  chainId,
+  dailyClaimsCount,
 }: RewardCardProps) {
   const config = getStatusConfig(state);
-  const { stats } = useGmStats(address, chainId);
+  const progressPercentage = Math.min(
+    (dailyClaimsCount / DAILY_CLAIM_LIMIT) * 100,
+    100
+  );
 
   return (
     <>
@@ -63,7 +67,17 @@ export function RewardCard({
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Daily Claims Limit</span>
+              <span className="font-medium">
+                {dailyClaimsCount} / {DAILY_CLAIM_LIMIT}
+              </span>
+            </div>
+            <Progress className="h-2" value={progressPercentage} />
+          </div>
+
           <DegenClaimTransaction
             disabled={!state.isEligible}
             fid={fid}
@@ -83,7 +97,6 @@ export function RewardCard({
       <ShareModal
         claimedToday={hasClaimedToday}
         description="You've claimed your daily DEGEN rewards! Share your achievement with the community."
-        gmStats={stats}
         onOpenChange={onShareModalCloseAction}
         open={isShareModalOpen}
         title="Rewards Claimed! 🎉"

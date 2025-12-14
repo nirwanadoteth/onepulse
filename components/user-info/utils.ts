@@ -1,7 +1,7 @@
 import type { GetNameReturnType } from "@coinbase/onchainkit/identity";
 import type { Address } from "viem";
+import type { UserContext } from "@/components/providers/miniapp-provider";
 import { truncateAddress } from "@/lib/ens-utils";
-import type { UserContext } from "../providers/miniapp-provider";
 
 export type UserInfoProps = {
   user?: UserContext;

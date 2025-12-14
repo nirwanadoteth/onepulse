@@ -1,13 +1,13 @@
 "use client";
 
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useMemo } from "react";
+import useSWR from "swr";
 import { useReadContract } from "wagmi";
+import { z } from "zod";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { BASE_CHAIN_ID, SCORE_THRESHOLD } from "@/lib/constants";
-import { getDailyRewardsAddress } from "@/lib/utils";
-import { useGmStats } from "./use-gm-stats";
-import { useScore } from "./use-score";
+import { BASE_CHAIN_ID } from "@/lib/constants";
+import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 
 type UseClaimEligibilityProps = {
   fid: bigint | undefined;
@@ -25,42 +25,25 @@ type ClaimEligibility = {
   minReserve: bigint;
 };
 
-const MIN_STREAK_FOR_LOW_SCORE = 3;
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
-const REFETCH_ELIGIBILITY_MS = 10_000; // 10 seconds (more responsive)
+const REFETCH_ELIGIBILITY_MS = 3000; // 3 seconds (more responsive)
 const REFETCH_VAULT_MS = 120_000; // 120 seconds
 
-function formatClaimEligibility(
-  claimStatus: ClaimEligibility | undefined,
-  scoreCheckPassed: boolean,
-  userScore: number,
-  currentStreak: number
-) {
-  // High score: can claim normally
-  if (scoreCheckPassed) {
-    return {
-      claimStatus: claimStatus as ClaimEligibility | undefined,
-      canClaim: claimStatus?.ok ?? false,
-      reward: claimStatus?.reward ?? 0n,
-      vaultBalance: claimStatus?.vaultBalance ?? 0n,
-      userScore,
-      scoreCheckPassed,
-      currentStreak,
-      streakCheckPassed: true,
-    };
-  }
+type FormattedClaimEligibility = {
+  claimStatus: ClaimEligibility | undefined;
+  canClaim: boolean;
+  reward: bigint;
+  vaultBalance: bigint;
+};
 
-  // Low score: need streak >= 3 to claim
-  const streakCheckPassed = currentStreak >= MIN_STREAK_FOR_LOW_SCORE;
+function formatClaimEligibility(
+  claimStatus: ClaimEligibility | undefined
+): FormattedClaimEligibility {
   return {
-    claimStatus: claimStatus as ClaimEligibility | undefined,
-    canClaim: (claimStatus?.ok ?? false) && streakCheckPassed,
+    claimStatus,
+    canClaim: claimStatus?.ok ?? false,
     reward: claimStatus?.reward ?? 0n,
     vaultBalance: claimStatus?.vaultBalance ?? 0n,
-    userScore,
-    scoreCheckPassed,
-    currentStreak,
-    streakCheckPassed,
   };
 }
 
@@ -69,19 +52,26 @@ function buildClaimEligibilityArgs(
   fid: bigint | undefined,
   contractAddress: string
 ): readonly [`0x${string}`, bigint] | undefined {
-  if (!(address && fid && contractAddress)) {
+  if (!address || fid === undefined || !contractAddress) {
     return;
   }
   return [address as `0x${string}`, fid as bigint];
 }
 
-function shouldQueryEligibility(
-  enabled: boolean,
-  address: string | undefined,
-  fid: bigint | undefined,
-  contractAddress: string
-): boolean {
-  return enabled && !!address && !!fid && !!contractAddress;
+function shouldQueryEligibility(params: {
+  enabled: boolean;
+  address: string | undefined;
+  fid: bigint | undefined;
+  contractAddress: string;
+  isBaseChain: boolean;
+}): boolean {
+  return (
+    params.enabled &&
+    Boolean(params.address) &&
+    params.fid !== undefined &&
+    Boolean(params.contractAddress) &&
+    params.isBaseChain
+  );
 }
 
 export function useClaimEligibility({
@@ -89,27 +79,21 @@ export function useClaimEligibility({
   enabled = true,
 }: UseClaimEligibilityProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
+  const { chainId } = useAppKitNetwork();
   const contractAddress = getDailyRewardsAddress(BASE_CHAIN_ID);
+
+  // Claims are only supported on Base.
+  // We explicitly check if the user is on Base to ensure consistency.
+  const isBaseChain = normalizeChainId(chainId) === BASE_CHAIN_ID;
+
   const args = buildClaimEligibilityArgs(address, fid, contractAddress);
-  const shouldQuery = shouldQueryEligibility(
+  const shouldQuery = shouldQueryEligibility({
     enabled,
     address,
     fid,
-    contractAddress
-  );
-
-  // Fetch user's Neynar score
-  const {
-    score,
-    isLoading: isScoreLoading,
-    mutate: mutateScore,
-  } = useScore(fid ? Number(fid) : undefined);
-  const userScore = score?.[0]?.score ?? 0;
-  const scoreCheckPassed = userScore > SCORE_THRESHOLD;
-
-  // Fetch user's GM stats to get current streak
-  const { stats: gmStats } = useGmStats(address, BASE_CHAIN_ID);
-  const currentStreak = gmStats?.currentStreak ?? 0;
+    contractAddress,
+    isBaseChain,
+  });
 
   const {
     data: claimStatus,
@@ -117,6 +101,7 @@ export function useClaimEligibility({
     isError,
     refetch: refetchContract,
   } = useReadContract({
+    chainId: BASE_CHAIN_ID,
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
     functionName: "canClaimToday",
@@ -127,23 +112,12 @@ export function useClaimEligibility({
     },
   });
 
-  // Comprehensive refetch that includes all data sources
-  const refetch = async () => {
-    await Promise.all([
-      refetchContract(),
-      mutateScore(), // Refetch score from SWR
-    ]);
-  };
+  const refetch = refetchContract;
 
   return {
-    ...formatClaimEligibility(
-      claimStatus,
-      scoreCheckPassed,
-      userScore,
-      currentStreak
-    ),
+    ...formatClaimEligibility(claimStatus),
     hasSentGMToday: claimStatus?.hasSentGMToday ?? false,
-    isPending: isPending || isScoreLoading,
+    isPending,
     isError,
     refetch,
   };
@@ -182,5 +156,65 @@ export function useRewardVaultStatus() {
     available: vaultStatus?.[2] ?? 0n,
     isPending,
     hasRewards: (vaultStatus?.[2] ?? 0n) > 0n,
+  };
+}
+
+const claimStatsSchema = z.object({
+  count: z.number().int().nonnegative(),
+});
+
+type FetchError = Error & {
+  status?: number;
+  body?: string;
+};
+
+export function useClaimStats() {
+  const { data, error, isLoading } = useSWR(
+    "/api/claims/stats",
+    async (url: string, { signal }: { signal?: AbortSignal }) => {
+      const controller = new AbortController();
+
+      // Link SWR's signal to our controller for proper cleanup
+      if (signal) {
+        signal.addEventListener("abort", () => controller.abort());
+      }
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+
+        if (!res.ok) {
+          let errorBody: string;
+          try {
+            errorBody = await res.text();
+          } catch {
+            errorBody = "(unable to read response body)";
+          }
+
+          const message = `Failed to fetch stats: ${res.status} ${res.statusText}`;
+          const fetchError: FetchError = new Error(message);
+          fetchError.status = res.status;
+          fetchError.body = errorBody;
+          throw fetchError;
+        }
+
+        const json = await res.json();
+        return claimStatsSchema.parse(json);
+      } catch (err) {
+        // Re-throw AbortError as-is to signal cancellation
+        if (err instanceof Error && err.name === "AbortError") {
+          throw err;
+        }
+        throw err;
+      }
+    },
+    {
+      refreshInterval: 30_000, // Refresh every 30 seconds
+    }
+  );
+
+  return {
+    count: data?.count ?? 0,
+    isLoading,
+    isError: Boolean(error),
   };
 }

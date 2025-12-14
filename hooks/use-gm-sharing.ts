@@ -1,13 +1,8 @@
-import {
-  type UserContext,
-  useMiniAppContext,
-} from "@/components/providers/miniapp-provider";
+import { useAppKitAccount } from "@reown/appkit/react";
+import { useEffect } from "react";
+import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { getShareText } from "@/components/share-narratives";
-import type { GmStats } from "@/hooks/use-gm-stats";
-import { generateSharePageUrl } from "@/lib/og-utils";
-
-const getUsername = (user: UserContext | null) =>
-  user?.username || user?.displayName || "User";
+import { generateSimplifiedSharePageUrl } from "@/lib/og-utils";
 
 const createShareText = (
   claimedToday: boolean,
@@ -19,23 +14,40 @@ const createShareText = (
 
 export function useGMSharing(
   claimedToday: boolean,
-  completedAllChains: boolean,
-  gmStats?: GmStats
+  completedAllChains: boolean
 ) {
+  const { address } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContextData = useMiniAppContext();
-
   const user = miniAppContextData?.context?.user;
-  const username = getUsername(user ?? null);
-  const displayName = user?.displayName || username;
-  const pfp = user?.pfpUrl || "";
 
   const shareText = createShareText(claimedToday, completedAllChains);
-  const shareUrl = generateSharePageUrl({
-    username,
-    displayName,
-    pfp,
-    chains: gmStats?.chains || [],
-  });
+  const shareUrl = address
+    ? generateSimplifiedSharePageUrl({
+        address,
+      })
+    : null;
+
+  // Store user data in KV cache for display on share page
+  useEffect(() => {
+    if (address && user?.username) {
+      fetch("/api/share/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          address,
+          data: {
+            username: user.username,
+            displayName: user.displayName || user.username,
+            pfp: user.pfpUrl,
+          },
+        }),
+      }).catch(() => {
+        // Silently fail if KV store is unavailable
+      });
+    }
+  }, [address, user?.username, user?.displayName, user?.pfpUrl]);
 
   return {
     shareText,

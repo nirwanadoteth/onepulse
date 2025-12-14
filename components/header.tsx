@@ -32,9 +32,11 @@ export const Header = memo(
       address,
       user,
       shouldShowUserInfo,
-      showSaveButton,
-      showShareButton,
+      canConfigureMiniApp,
+      isMiniAppSaved,
+      isNotificationsEnabled,
       showAdminButton,
+      showShareButton,
       handleAddMiniApp,
       handleShareClick,
     } = useHeaderLogic({
@@ -44,7 +46,6 @@ export const Header = memo(
       gmStats,
       onShareModalOpenChangeAction,
     });
-
     return (
       <div className="fixed top-0 right-0 left-0 z-50 mx-auto h-16 w-full max-w-lg bg-transparent">
         <div className="flex h-16 items-center justify-between rounded-b-lg border border-border bg-background px-4 shadow-lg">
@@ -58,17 +59,20 @@ export const Header = memo(
             )}
           </div>
           <HeaderRight
+            canConfigureMiniApp={canConfigureMiniApp}
+            inMiniApp={inMiniApp}
+            isMiniAppSaved={isMiniAppSaved}
+            notificationsEnabled={isNotificationsEnabled}
+            onNotificationToggle={handleAddMiniApp}
             onSaveClick={handleAddMiniApp}
             onShareClick={handleShareClick}
             showAdminButton={showAdminButton}
-            showSaveButton={showSaveButton}
             showShareButton={showShareButton}
           />
         </div>
 
         <ShareModal
           completedAllChains={completedAllChains}
-          gmStats={gmStats}
           onOpenChange={onShareModalOpenChangeAction}
           open={isShareModalOpen}
         />

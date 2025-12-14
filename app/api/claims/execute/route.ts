@@ -10,13 +10,9 @@ import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { BASE_CHAIN_ID, SCORE_THRESHOLD } from "@/lib/constants";
-import { getScore } from "@/lib/neynar";
-import { getGmRows } from "@/lib/spacetimedb/server-connection";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
-const MIN_STREAK_FOR_LOW_SCORE = 3;
 
 if (!BACKEND_SIGNER_PRIVATE_KEY) {
   console.warn("BACKEND_SIGNER_PRIVATE_KEY not configured");
@@ -141,46 +137,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { claimer, fid, deadline } = validation.data;
-
-    // Verify user's Neynar score
-    const scoreResponse = await getScore([Number(fid)]);
-    const userScore = scoreResponse.users?.[0]?.score ?? 0;
-
-    // If high score: allow claim normally
-    if (userScore > SCORE_THRESHOLD) {
-      const authResult = await generateClaimAuthorization({
-        claimer,
-        fid,
-        deadline,
-      });
-
-      return NextResponse.json({
-        signature: authResult.signature,
-        nonce: authResult.nonce,
-        message: "Claim authorization generated successfully",
-      });
-    }
-
-    // Low score: need to verify streak >= 3 from DB
-    const rows = await getGmRows(claimer, BASE_CHAIN_ID);
-    const userGmData = rows.find(
-      (row) =>
-        row.address.toLowerCase() === claimer.toLowerCase() &&
-        row.chainId === base.id
-    );
-    const currentStreak = userGmData?.currentStreak ?? 0;
-
-    if (currentStreak < MIN_STREAK_FOR_LOW_SCORE) {
-      return NextResponse.json(
-        {
-          error: "User does not meet eligibility requirements",
-          userScore,
-          currentStreak,
-          requiredStreak: MIN_STREAK_FOR_LOW_SCORE,
-        },
-        { status: 403 }
-      );
-    }
 
     const authResult = await generateClaimAuthorization({
       claimer,

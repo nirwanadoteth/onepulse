@@ -3,7 +3,6 @@
 import { memo } from "react";
 import { ConnectWalletCard } from "@/components/connect-wallet-card";
 import { DegenRewardCard } from "@/components/degen-reward-card";
-import { HowItWorksCard } from "@/components/how-it-works-card";
 import { MiniAppRequiredCard } from "@/components/mini-app-required-card";
 import { VaultBalanceCard } from "@/components/vault-balance-card";
 import { useRewardsLogic } from "./rewards/use-rewards-logic";
@@ -28,7 +27,6 @@ export const Rewards = memo(function GMBase({
       ) : (
         <ConnectWalletCard />
       )}
-      <HowItWorksCard />
     </div>
   );
 });

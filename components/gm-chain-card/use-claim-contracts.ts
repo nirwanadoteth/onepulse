@@ -2,13 +2,61 @@ import { useCallback } from "react";
 import type { ContractFunctionParameters } from "viem";
 
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
+import { signIn } from "@/lib/client-auth";
+import { handleError } from "@/lib/error-handling";
 
 type UseClaimContractsProps = {
   address?: string;
   fid?: bigint;
-  verifiedFid?: number;
   contractAddress?: string;
+  cachedFid?: number;
 };
+
+async function resolveFidToUse(params: {
+  fid: bigint;
+  cachedFid?: number;
+}): Promise<bigint> {
+  if (typeof params.cachedFid === "number") {
+    return BigInt(params.cachedFid);
+  }
+
+  try {
+    const verifiedFid = await signIn();
+    if (verifiedFid) {
+      return BigInt(verifiedFid);
+    }
+  } catch (error) {
+    handleError(
+      error,
+      "Failed to sign in",
+      { operation: "claims/sign-in" },
+      { silent: true }
+    );
+  }
+
+  return params.fid;
+}
+
+async function readClaimAuthorizationErrorMessage(
+  response: Response
+): Promise<string> {
+  const fallback = "Failed to get claim authorization";
+  const text = await response.text();
+  if (!text) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as { message?: unknown };
+    if (typeof parsed.message === "string" && parsed.message) {
+      return parsed.message;
+    }
+  } catch {
+    // Not JSON
+  }
+
+  return text;
+}
 
 /**
  * Hook to generate backend-signed claim contract calls.
@@ -18,17 +66,15 @@ type UseClaimContractsProps = {
 export function useClaimContracts({
   address,
   fid,
-  verifiedFid,
   contractAddress,
+  cachedFid,
 }: UseClaimContractsProps) {
   return useCallback(async (): Promise<ContractFunctionParameters[]> => {
-    const hasValidParams = address && fid && contractAddress;
-    if (!hasValidParams) {
+    if (!address || fid === undefined || !contractAddress) {
       throw new Error("Missing required parameters");
     }
 
-    // Use verified FID if available, otherwise fall back to context FID
-    const fidToUse = verifiedFid ?? Number(fid);
+    const fidToUse = await resolveFidToUse({ fid, cachedFid });
 
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
@@ -43,8 +89,8 @@ export function useClaimContracts({
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to get claim authorization");
+      const errorMessage = await readClaimAuthorizationErrorMessage(response);
+      throw new Error(errorMessage || "Failed to get claim authorization");
     }
 
     const { signature, nonce: backendNonce } = await response.json();
@@ -56,12 +102,12 @@ export function useClaimContracts({
         functionName: "claim",
         args: [
           address,
-          fid,
+          fidToUse,
           BigInt(backendNonce),
           deadline,
           signature as `0x${string}`,
         ],
       },
     ];
-  }, [address, fid, verifiedFid, contractAddress]);
+  }, [address, fid, contractAddress, cachedFid]);
 }

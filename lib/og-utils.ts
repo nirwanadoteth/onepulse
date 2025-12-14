@@ -7,6 +7,10 @@ type ShareParams = {
   chains?: { name: string; count: number }[];
 };
 
+type ShareParamsSimplified = {
+  address: string;
+};
+
 function buildSearchParams(params: ShareParams): URLSearchParams {
   const searchParams = new URLSearchParams();
 
@@ -30,10 +34,30 @@ function buildSearchParams(params: ShareParams): URLSearchParams {
   return searchParams;
 }
 
+function buildSimplifiedSearchParams(
+  params: ShareParamsSimplified
+): URLSearchParams {
+  const searchParams = new URLSearchParams();
+  searchParams.set("address", params.address);
+  return searchParams;
+}
+
 export function generateGMStatusOGUrl(params: ShareParams): string {
   return `${minikitConfig.miniapp.homeUrl}/api/og?${buildSearchParams(params)}`;
 }
 
+export function generateSimplifiedGMStatusOGUrl(
+  params: ShareParamsSimplified
+): string {
+  return `${minikitConfig.miniapp.homeUrl}/api/og?${buildSimplifiedSearchParams(params)}`;
+}
+
 export function generateSharePageUrl(params: ShareParams): string {
   return `${minikitConfig.miniapp.homeUrl}/share/view?${buildSearchParams(params)}`;
+}
+
+export function generateSimplifiedSharePageUrl(
+  params: ShareParamsSimplified
+): string {
+  return `${minikitConfig.miniapp.homeUrl}/share/view?${buildSimplifiedSearchParams(params)}`;
 }

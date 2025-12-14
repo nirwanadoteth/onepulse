@@ -1,5 +1,6 @@
 "use client";
 
+import { handleError } from "@/lib/error-handling";
 import { DbConnection } from "@/lib/module_bindings";
 import {
   cleanupConnectionListener,
@@ -102,7 +103,12 @@ const getAuthToken = () => {
  */
 const attemptReconnect = () => {
   if (!reconnectionStrategy.canRetry()) {
-    console.error("[SpacetimeDB] Max reconnection attempts reached");
+    handleError(
+      new Error("Max reconnection attempts reached"),
+      "SpacetimeDB reconnect failed",
+      { operation: "spacetimedb/reconnect" },
+      { silent: true }
+    );
     connectionStatus.isReconnecting = false;
     return;
   }
@@ -138,7 +144,15 @@ const attemptReconnect = () => {
       // Create new connection (which will trigger onConnect or onConnectError)
       singletonConnection = buildDbConnection();
     } catch (error) {
-      console.error("[SpacetimeDB] Reconnection attempt failed:", error);
+      handleError(
+        error,
+        "SpacetimeDB reconnect failed",
+        {
+          operation: "spacetimedb/reconnect",
+          attemptCount,
+        },
+        { silent: true }
+      );
       // If connection creation fails, schedule next attempt
       attemptReconnect();
     }

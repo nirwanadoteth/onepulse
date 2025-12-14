@@ -229,7 +229,6 @@ export function ContractSettingsCard({
           <CardDescription>Manage core contract parameters</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Min Vault Balance */}
           <div className="space-y-2">
             <Label>Minimum Vault Balance (DEGEN)</Label>
             <div className="flex gap-2">
@@ -269,7 +268,6 @@ export function ContractSettingsCard({
             </p>
           </div>
 
-          {/* Claim Reward Amount */}
           <div className="space-y-2">
             <Label>Claim Reward Amount (DEGEN)</Label>
             <div className="flex gap-2">
@@ -309,7 +307,6 @@ export function ContractSettingsCard({
             </p>
           </div>
 
-          {/* Daily GM Contract */}
           <div className="space-y-2">
             <Label>Daily GM Contract Address</Label>
             <div className="flex gap-2">
@@ -349,7 +346,6 @@ export function ContractSettingsCard({
             </p>
           </div>
 
-          {/* Backend Signer (Read Only) */}
           <div className="space-y-2">
             <Label>Backend Signer (Immutable)</Label>
             <Input className="bg-muted" disabled value={backendSigner || ""} />
@@ -361,7 +357,6 @@ export function ContractSettingsCard({
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialogs */}
       <AlertDialog
         onOpenChange={() => setPendingAction(null)}
         open={pendingAction === "minVaultBalance"}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpenUrl } from "@coinbase/onchainkit/minikit";
 import { type RefObject, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
@@ -34,6 +35,7 @@ function updateToastState(
     chainId?: number;
     errorMessage?: string;
     onSubmit?: () => void;
+    openUrl?: ((url: string) => void) | null;
   }
 ) {
   const {
@@ -44,6 +46,7 @@ function updateToastState(
     chainId,
     errorMessage,
     onSubmit,
+    openUrl,
   } = params;
 
   if (state === "hidden") {
@@ -66,7 +69,7 @@ function updateToastState(
     toastId.current = toast.success(SUCCESS_MESSAGES.TRANSACTION_SUCCESS, {
       className,
       description: label,
-      action: createSuccessAction(transactionHash, chainId),
+      action: createSuccessAction(transactionHash, chainId, openUrl || null),
       position,
       duration: TRANSACTION_TOAST_DURATION_MS,
     });
@@ -87,10 +90,11 @@ function updateToastState(
 
 export function useTransactionToast({
   className,
-  position = "bottom-center",
+  position = "top-center",
   label,
   onStatusChangeAction,
 }: UseTransactionToastParams) {
+  const openUrl = useOpenUrl();
   const {
     errorMessage,
     isLoading,
@@ -126,6 +130,7 @@ export function useTransactionToast({
       chainId,
       errorMessage,
       onSubmit,
+      openUrl,
     });
   }, [
     isToastVisible,
@@ -140,5 +145,6 @@ export function useTransactionToast({
     label,
     position,
     onStatusChangeAction,
+    openUrl,
   ]);
 }

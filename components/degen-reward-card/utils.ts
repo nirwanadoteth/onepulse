@@ -1,8 +1,11 @@
+import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
+
 export type ClaimState = {
   isEligible: boolean;
   hasAlreadyClaimed: boolean;
   isFidBlacklisted: boolean;
   hasSentGMToday: boolean;
+  isDailyLimitReached: boolean;
   reward: bigint;
 };
 
@@ -18,13 +21,16 @@ export type ClaimEligibility = {
 
 export function extractClaimState(
   claimStatus: ClaimEligibility | undefined,
-  hasSentGMToday: boolean
+  hasSentGMToday: boolean,
+  dailyClaimsCount: number
 ): ClaimState {
+  const isDailyLimitReached = dailyClaimsCount >= DAILY_CLAIM_LIMIT;
   return {
-    isEligible: claimStatus?.ok ?? false,
+    isEligible: (claimStatus?.ok ?? false) && !isDailyLimitReached,
     hasAlreadyClaimed: claimStatus?.claimerClaimedToday ?? false,
     isFidBlacklisted: claimStatus?.fidIsBlacklisted ?? false,
     hasSentGMToday,
+    isDailyLimitReached,
     reward: claimStatus?.reward ?? 0n,
   };
 }
@@ -42,6 +48,13 @@ export function getStatusConfig(state: ClaimState) {
       title: "Claimed Today",
       description: "You've already claimed your daily rewards",
       accentColor: "text-green-600 dark:text-green-400",
+    };
+  }
+  if (state.isDailyLimitReached) {
+    return {
+      title: "Daily Limit Reached",
+      description: `The daily claim limit of ${DAILY_CLAIM_LIMIT} users has been reached`,
+      accentColor: "text-orange-600 dark:text-orange-400",
     };
   }
   if (!state.hasSentGMToday) {

@@ -1,6 +1,9 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
-import { useMiniAppContext } from "@/components/providers/miniapp-provider";
-import { useClaimEligibility } from "@/hooks/use-degen-claim";
+import { useEffect, useState } from "react";
+import { useClaimEligibility, useClaimStats } from "@/hooks/use-degen-claim";
+import { signIn } from "@/lib/client-auth";
+import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
+import { handleError } from "@/lib/error-handling";
 import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
@@ -22,8 +25,6 @@ export function useDegenClaimTransactionLogic({
 }: UseDegenClaimTransactionLogicProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const { chainId } = useAppKitNetwork();
-  const miniAppContext = useMiniAppContext();
-  const verifiedFid = miniAppContext?.verifiedFid;
 
   const numericChainId = normalizeChainId(chainId);
   const contractAddress = numericChainId
@@ -34,22 +35,50 @@ export function useDegenClaimTransactionLogic({
     hasSentGMToday,
     isPending: isEligibilityPending,
     refetch: refetchEligibility,
-    scoreCheckPassed,
-    currentStreak,
-    streakCheckPassed,
   } = useClaimEligibility({ fid });
+
+  const { count: dailyClaimsCount } = useClaimStats();
+  const isDailyLimitReached = dailyClaimsCount >= DAILY_CLAIM_LIMIT;
+
+  const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const performSignIn = async () => {
+      try {
+        const signedInFid = await signIn();
+        if (!controller.signal.aborted && signedInFid) {
+          setCachedFid(signedInFid);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          handleError(error, "Failed to sign in", {
+            operation: "DegenClaimTransaction",
+          });
+        }
+      }
+    };
+
+    performSignIn();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const getClaimContracts = useClaimContracts({
     address,
     fid,
-    verifiedFid,
     contractAddress,
+    cachedFid,
   });
 
   const { onStatus } = useTransactionStatus({
     onSuccess,
     onError,
     refetchEligibility,
+    claimer: address,
   });
 
   const isDisabled =
@@ -59,16 +88,15 @@ export function useDegenClaimTransactionLogic({
     !contractAddress ||
     !canClaim ||
     !hasSentGMToday ||
-    isEligibilityPending;
+    isEligibilityPending ||
+    isDailyLimitReached;
 
   const buttonState = getButtonState({
     isConnected: Boolean(address),
     isEligibilityPending,
     hasSentGMToday,
     canClaim,
-    scoreCheckPassed,
-    currentStreak,
-    streakCheckPassed,
+    isDailyLimitReached,
   });
 
   return {

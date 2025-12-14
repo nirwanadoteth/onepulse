@@ -1,6 +1,9 @@
 "use client";
 
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { formatEther } from "viem";
+import { Button } from "@/components/ui/button";
 import { useDailyRewardsRead } from "@/hooks/use-daily-rewards-read";
 import { BlacklistManagementCard } from "./blacklist-management-card";
 import { ContractSettingsCard } from "./contract-settings-card";
@@ -15,6 +18,7 @@ function formatDegen(value: bigint | undefined): string {
 }
 
 export function AdminDashboard() {
+  const router = useRouter();
   const {
     vaultStatus,
     claimRewardAmount,
@@ -42,7 +46,18 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Summary Card */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <Button
+          className="flex items-center gap-2"
+          onClick={() => router.back()}
+          variant="outline"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <h1 className="text-center font-bold text-2xl">Admin Dashboard</h1>
+        <div />
+      </div>
       <div className="rounded-lg border bg-card p-6">
         <h2 className="mb-4 font-semibold text-lg">Contract Overview</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

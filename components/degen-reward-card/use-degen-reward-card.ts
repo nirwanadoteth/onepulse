@@ -3,6 +3,7 @@ import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useState } from "react";
 import {
   useClaimEligibility,
+  useClaimStats,
   useRewardVaultStatus,
 } from "@/hooks/use-degen-claim";
 import { isSponsoredOnChain, normalizeChainId } from "@/lib/utils";
@@ -28,6 +29,7 @@ export function useDegenRewardCard({
     enabled: isConnected,
   });
   const { hasRewards } = useRewardVaultStatus();
+  const { count: dailyClaimsCount } = useClaimStats();
 
   const hasClaimedToday = claimStatus?.claimerClaimedToday ?? false;
 
@@ -36,7 +38,11 @@ export function useDegenRewardCard({
   };
 
   const isSponsored = isSponsoredOnChain(sponsored, numericChainId);
-  const claimState = extractClaimState(claimStatus, hasSentGMToday);
+  const claimState = extractClaimState(
+    claimStatus,
+    hasSentGMToday,
+    dailyClaimsCount
+  );
 
   const isWrongNetwork = numericChainId !== base.id;
   const isDisconnected = !(isConnected && address);
@@ -54,5 +60,6 @@ export function useDegenRewardCard({
     isWrongNetwork,
     isDisconnected,
     hasRewards,
+    dailyClaimsCount,
   };
 }

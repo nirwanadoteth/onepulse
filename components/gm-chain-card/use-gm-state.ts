@@ -1,9 +1,9 @@
 import type { Address } from "viem";
 import { useReadContract } from "wagmi";
+import type { Chain } from "@/components/home/chain-config";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
 import { SECONDS_PER_DAY } from "@/lib/constants";
 import { getCurrentTimestampSeconds, timestampToDayNumber } from "@/lib/utils";
-import type { Chain } from "../home/chain-config";
 
 type ComputeGMStateParams = {
   address: Address | undefined;

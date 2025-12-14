@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { GmStats } from "@/hooks/use-gm-stats";
 
 type ShareModalProps = {
   open: boolean;
@@ -18,7 +17,6 @@ type ShareModalProps = {
   description?: string;
   claimedToday?: boolean;
   completedAllChains?: boolean;
-  gmStats?: GmStats;
 };
 
 /**
@@ -33,7 +31,6 @@ export const ShareModal = memo(
     description = "Share your GM achievements with the community",
     claimedToday = false,
     completedAllChains = false,
-    gmStats,
   }: ShareModalProps) => (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
@@ -46,7 +43,6 @@ export const ShareModal = memo(
           <ShareGMStatus
             claimedToday={claimedToday}
             completedAllChains={completedAllChains}
-            gmStats={gmStats}
             size="default"
             variant="outline"
           />

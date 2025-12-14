@@ -5,6 +5,7 @@ import { useAppKitNetwork } from "@reown/appkit/react";
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 import { cn } from "@/lib/utils";
 
 type StatusCardProps = {
@@ -63,7 +64,10 @@ export function WrongNetworkCard() {
       setIsSwitching(true);
       await switchNetwork(base);
     } catch (error) {
-      console.error("Failed to switch network:", error);
+      handleError(error, ERROR_MESSAGES.NETWORK_SWITCH, {
+        operation: "wallet/switch-network",
+        targetChain: base.name ?? "base",
+      });
     } finally {
       setIsSwitching(false);
     }

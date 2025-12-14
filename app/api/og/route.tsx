@@ -1,10 +1,231 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
+import { isAddress } from "viem";
+import { SUPPORTED_CHAINS } from "@/lib/constants";
+import { handleError } from "@/lib/error-handling";
+import { fetchFarcasterUser } from "@/lib/farcaster";
+import { getCachedGoogleFont, setCachedGoogleFont } from "@/lib/kv";
+import { getGmRows } from "@/lib/spacetimedb/server-connection";
 
-export const runtime = "edge";
+const RES_REGEXP =
+  /src: url\((.+)\) format\('(opentype|truetype|woff|woff2)'\)/g;
 
-function parseGMStatusParams(searchParams: URLSearchParams) {
+// Formats supported by Satori/next/og, in order of preference
+// WOFF2 is excluded because next/og does not support it (use WOFF instead)
+const SUPPORTED_FONT_FORMATS = ["woff", "opentype", "truetype"] as const;
+
+const FONT_CSS_TIMEOUT_MS = 3000;
+const FONT_FILE_TIMEOUT_MS = 5000;
+
+type SupportedFontFormat = (typeof SUPPORTED_FONT_FORMATS)[number];
+
+/**
+ * Parse all available font formats from Google Fonts CSS and return the first supported one.
+ * Preference order: woff > opentype > truetype (avoids woff2 which next/og doesn't support)
+ */
+function findSupportedFontUrl(
+  css: string
+): { url: string; format: SupportedFontFormat } | null {
+  const matches = Array.from(css.matchAll(RES_REGEXP));
+
+  // Group all matches by format
+  const formatMap = new Map<string, string>();
+  for (const match of matches) {
+    const url = match[1];
+    const format = match[2];
+    if (url && format && !formatMap.has(format)) {
+      formatMap.set(format, url);
+    }
+  }
+
+  // Select the first supported format in preference order
+  for (const preferredFormat of SUPPORTED_FONT_FORMATS) {
+    const url = formatMap.get(preferredFormat);
+    if (url) {
+      return { url, format: preferredFormat };
+    }
+  }
+
+  return null;
+}
+
+// In-memory cache for fonts (survives across requests in the same serverless instance)
+const fontMemoryCache = new Map<string, ArrayBuffer>();
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(buffer).toString("base64");
+  }
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i += 1024) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 1024));
+  }
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  if (typeof Buffer !== "undefined") {
+    const buf = Buffer.from(base64, "base64");
+    return buf.buffer.slice(
+      buf.byteOffset,
+      buf.byteOffset + buf.byteLength
+    ) as ArrayBuffer;
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer as ArrayBuffer;
+}
+
+async function loadGoogleFont(
+  font: string,
+  weight: number
+): Promise<ArrayBuffer> {
+  const cacheKey = `${font}:${weight}`;
+
+  // Check in-memory cache first (fastest, no I/O)
+  const memCached = fontMemoryCache.get(cacheKey);
+  if (memCached) {
+    return memCached;
+  }
+
+  // Check Redis cache second
+  const cached = await getCachedGoogleFont(font, weight);
+  if (cached) {
+    const buffer = base64ToArrayBuffer(cached);
+    fontMemoryCache.set(cacheKey, buffer);
+    return buffer;
+  }
+
+  // Fetch from Google Fonts
+  const url = `https://fonts.googleapis.com/css2?family=${font}:wght@${weight}`;
+
+  let css: string;
+  const cssController = new AbortController();
+  const cssTimeout = setTimeout(
+    () => cssController.abort(),
+    FONT_CSS_TIMEOUT_MS
+  );
+  try {
+    const res = await fetch(url, { signal: cssController.signal });
+    if (!res.ok) {
+      throw new Error("Failed to fetch font CSS");
+    }
+    css = await res.text();
+  } finally {
+    clearTimeout(cssTimeout);
+  }
+
+  // Parse CSS and find the first supported font format
+  const fontResource = findSupportedFontUrl(css);
+
+  if (fontResource) {
+    const { url: fontUrl, format } = fontResource;
+
+    let fontBuffer: ArrayBuffer;
+    const fontController = new AbortController();
+    const fontTimeout = setTimeout(
+      () => fontController.abort(),
+      FONT_FILE_TIMEOUT_MS
+    );
+    try {
+      const res = await fetch(fontUrl, { signal: fontController.signal });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch font file (${format})`);
+      }
+      fontBuffer = await res.arrayBuffer();
+    } finally {
+      clearTimeout(fontTimeout);
+    }
+
+    // Cache in memory and Redis
+    fontMemoryCache.set(cacheKey, fontBuffer);
+    await setCachedGoogleFont(font, weight, arrayBufferToBase64(fontBuffer));
+
+    return fontBuffer;
+  }
+
+  throw new Error("Failed to load font");
+}
+
+function getChainName(chainId: number): string {
+  return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
+}
+
+function formatAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+async function getDataFromAddress(address: string): Promise<GMStatusParams> {
+  let displayName = formatAddress(address);
+  let username = formatAddress(address);
+  let pfp: string | null = null;
+  let chains: { name: string; count: number }[] = [];
+
+  try {
+    const rows = await getGmRows(address);
+
+    // Process chains
+    chains = rows
+      .map((r) => ({
+        name: getChainName(r.chainId),
+        count: r.allTimeGmCount ?? 0,
+      }))
+      .filter((c) => c.count > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Find FID and fetch Farcaster profile
+    const fid = rows.find((r) => r.fid)?.fid;
+    if (fid) {
+      const fcUser = await fetchFarcasterUser(Number(fid));
+      if (fcUser) {
+        displayName = fcUser.displayName || fcUser.username || displayName;
+        username = fcUser.username || username;
+        pfp = fcUser.pfp.url || null;
+      }
+    }
+  } catch (error) {
+    handleError(
+      error,
+      "Error fetching GM stats for OG",
+      {
+        operation: "og/fetch-gm-stats",
+      },
+      { silent: true }
+    );
+  }
+
+  return {
+    displayName,
+    username,
+    pfp,
+    chains,
+  };
+}
+
+type GMStatusParams = {
+  displayName: string;
+  username: string;
+  pfp: string | null;
+  chains: { name: string; count: number }[];
+};
+
+async function fetchGMStatusParams(
+  searchParams: URLSearchParams
+): Promise<GMStatusParams> {
+  const address = searchParams.get("address");
   const chainsParam = searchParams.get("chains");
+
+  // If address is provided, fetch data from SpacetimeDB and Farcaster
+  if (address && isAddress(address)) {
+    return await getDataFromAddress(address);
+  }
+
+  // Fallback to legacy parameter format
   const chains = chainsParam
     ? chainsParam.split(",").map((c) => {
         const [name, count] = c.split(":");
@@ -34,37 +255,34 @@ function generateProfileSection(
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 24,
-        top: 40,
+        gap: 32,
       }}
     >
       {pfp ? (
         // biome-ignore lint: OG image generation requires img for next/og
         <img
           alt="Profile"
-          height={160}
+          height={200}
           src={pfp}
           style={{
             borderRadius: "50%",
             objectFit: "cover",
-            boxShadow:
-              "0 0 0 4px rgba(255,255,255,0.1), 0 20px 40px rgba(0,0,0,0.4)",
+            boxShadow: "0 0 0 8px rgba(255,255,255,0.1)",
           }}
-          width={160}
+          width={200}
         />
       ) : (
         <div
           style={{
-            width: 160,
-            height: 160,
+            width: 200,
+            height: 200,
             borderRadius: "50%",
             background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 72,
-            boxShadow:
-              "0 0 0 4px rgba(255,255,255,0.1), 0 20px 40px rgba(0,0,0,0.4)",
+            fontSize: 80,
+            boxShadow: "0 0 0 8px rgba(255,255,255,0.1)",
             color: "white",
           }}
         >
@@ -77,18 +295,18 @@ function generateProfileSection(
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 4,
+          gap: 8,
         }}
       >
         <div
           style={{
             display: "flex",
-            fontSize: 56,
+            fontSize: 72,
             fontWeight: 800,
-            letterSpacing: -1,
-            color: "#0f172a",
+            letterSpacing: -2,
+            color: "#ffffff",
             textAlign: "center",
-            lineHeight: 1.1,
+            lineHeight: 1,
           }}
         >
           {displayName}
@@ -96,9 +314,9 @@ function generateProfileSection(
         <div
           style={{
             display: "flex",
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: 500,
-            color: "#64748b",
+            color: "#94a3b8",
             textAlign: "center",
           }}
         >
@@ -109,17 +327,33 @@ function generateProfileSection(
   );
 }
 
-const CHAIN_COLORS: Record<string, { bg: string; border: string }> = {
-  base: { bg: "rgba(0, 82, 255, 0.1)", border: "rgba(0, 82, 255, 0.5)" },
-  celo: { bg: "rgba(252, 255, 82, 0.1)", border: "rgba(252, 255, 82, 0.5)" },
-  optimism: { bg: "rgba(255, 4, 32, 0.1)", border: "rgba(255, 4, 32, 0.5)" },
+const CHAIN_COLORS: Record<
+  string,
+  { bg: string; border: string; text: string }
+> = {
+  base: {
+    bg: "rgba(0, 0, 255, 1)",
+    border: "rgba(0, 0, 255, 0.3)",
+    text: "#0a0a0a",
+  },
+  celo: {
+    bg: "rgba(252, 255, 82, 1)",
+    border: "rgba(252, 255, 82, 0.3)",
+    text: "#0a0a0a",
+  },
+  optimism: {
+    bg: "rgba(255, 4, 32, 1)",
+    border: "rgba(255, 4, 32, 0.3)",
+    text: "#0a0a0a",
+  },
 };
 
 function generateGmStats(chains: { name: string; count: number }[]) {
   const stats = chains.map((chain) => {
     const colors = CHAIN_COLORS[chain.name.toLowerCase()] || {
-      bg: "rgba(0, 0, 0, 0.1)",
-      border: "rgba(0, 0, 0, 0.5)",
+      bg: "rgba(255, 255, 255, 0.05)",
+      border: "rgba(255, 255, 255, 0.1)",
+      text: "#0a0a0a",
     };
     return {
       ...chain,
@@ -131,8 +365,8 @@ function generateGmStats(chains: { name: string; count: number }[]) {
     <div
       style={{
         display: "flex",
-        gap: 24,
-        marginTop: 56,
+        gap: 32,
+        marginTop: 64,
         width: "100%",
         justifyContent: "center",
       }}
@@ -145,20 +379,21 @@ function generateGmStats(chains: { name: string; count: number }[]) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            padding: "24px 32px",
-            borderRadius: 24,
+            padding: "32px 48px",
+            borderRadius: 32,
             background: chain.bg,
             border: `1px solid ${chain.border}`,
-            minWidth: 200,
+            minWidth: 240,
           }}
         >
           <div
             style={{
               display: "flex",
-              fontSize: 48,
+              fontSize: 64,
               fontWeight: 800,
               lineHeight: 1,
-              marginBottom: 8,
+              marginBottom: 12,
+              color: "#0a0a0a",
             }}
           >
             {chain.count}
@@ -166,10 +401,11 @@ function generateGmStats(chains: { name: string; count: number }[]) {
           <div
             style={{
               display: "flex",
-              fontSize: 20,
-              fontWeight: 600,
+              fontSize: 24,
+              fontWeight: 800,
               textTransform: "uppercase",
-              letterSpacing: 1,
+              letterSpacing: 2,
+              color: chain.text,
             }}
           >
             {chain.name}
@@ -180,7 +416,9 @@ function generateGmStats(chains: { name: string; count: number }[]) {
   );
 }
 
-function generateMainOGImage(params: ReturnType<typeof parseGMStatusParams>) {
+function generateMainOGImage(
+  params: Awaited<ReturnType<typeof fetchGMStatusParams>>
+) {
   const { displayName, username, pfp, chains } = params;
 
   return (
@@ -192,49 +430,30 @@ function generateMainOGImage(params: ReturnType<typeof parseGMStatusParams>) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "#ffffff",
-        fontFamily:
-          "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+        background: "#0a0a0a",
+        backgroundImage:
+          "radial-gradient(circle at 50% 0%, #171717 0%, #0a0a0a 100%)",
+        fontFamily: "Geist, sans-serif",
+        color: "white",
       }}
     >
+      {/* Watermark */}
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 1080,
-          height: 540,
-          borderRadius: 40,
-          background: "#f8fafc",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1)",
-          padding: 48,
-          position: "relative",
+          position: "absolute",
+          bottom: 40,
+          fontSize: 24,
+          fontWeight: 600,
+          color: "#a1a1a1",
+          letterSpacing: 4,
+          textTransform: "uppercase",
         }}
       >
-        {/* Header Label */}
-        <div
-          style={{
-            display: "flex",
-            position: "absolute",
-            top: 24,
-            fontSize: 16,
-            fontWeight: 600,
-            color: "#64748b",
-            textTransform: "uppercase",
-            letterSpacing: 2,
-            background: "#e2e8f0",
-            padding: "6px 16px",
-            borderRadius: 100,
-          }}
-        >
-          Daily GM Status
-        </div>
-
-        {generateProfileSection(displayName, username, pfp)}
-        {generateGmStats(chains)}
+        OnePulse
       </div>
+
+      {generateProfileSection(displayName, username, pfp)}
+      {generateGmStats(chains)}
     </div>
   );
 }
@@ -261,20 +480,60 @@ function generateFallbackImage() {
   );
 }
 
-export function GET(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const params = parseGMStatusParams(searchParams);
 
-    return new ImageResponse(generateMainOGImage(params), {
+    // Load fonts and fetch params in parallel to reduce I/O wait time
+    const [params, geistMedium, geistSemiBold, geistBold] = await Promise.all([
+      fetchGMStatusParams(searchParams),
+      loadGoogleFont("Geist", 500),
+      loadGoogleFont("Geist", 600),
+      loadGoogleFont("Geist", 800),
+    ]);
+
+    const imageResponse = new ImageResponse(generateMainOGImage(params), {
       width: 1200,
-      height: 630,
+      height: 800,
+      fonts: [
+        {
+          name: "Geist",
+          data: geistMedium,
+          style: "normal",
+          weight: 500,
+        },
+        {
+          name: "Geist",
+          data: geistSemiBold,
+          style: "normal",
+          weight: 600,
+        },
+        {
+          name: "Geist",
+          data: geistBold,
+          style: "normal",
+          weight: 800,
+        },
+      ],
     });
-  } catch {
-    // OG image generation failed - returning fallback image
+
+    // Add cache headers - cache for 5 minutes, stale-while-revalidate for 1 hour
+    imageResponse.headers.set(
+      "Cache-Control",
+      "public, max-age=300, stale-while-revalidate=3600"
+    );
+
+    return imageResponse;
+  } catch (error) {
+    handleError(
+      error,
+      "OG image generation failed",
+      { operation: "og/generate-image" },
+      { silent: true }
+    );
     return new ImageResponse(generateFallbackImage(), {
       width: 1200,
-      height: 630,
+      height: 800,
     });
   }
 }

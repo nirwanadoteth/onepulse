@@ -66,7 +66,6 @@ export async function performGmReporting({
   chainId,
   txHash,
   user,
-  verifiedFid,
   queryClient,
   refetchLastGmDay,
   onReported,
@@ -75,13 +74,12 @@ export async function performGmReporting({
   chainId: number;
   txHash?: string;
   user: MiniAppUser | undefined;
-  verifiedFid?: number;
   queryClient: QueryClient;
   refetchLastGmDay?: () => Promise<unknown>;
   onReported?: () => void;
 }) {
-  // Use verified FID if available, otherwise fall back to context user FID
-  const fid = verifiedFid ?? user?.fid;
+  // Use context user FID
+  const fid = user?.fid;
 
   await reportToApi({
     address,
