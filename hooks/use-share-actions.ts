@@ -4,7 +4,12 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import { toast } from "sonner";
 import { handleError } from "@/lib/error-handling";
 
-export function useShareActions() {
+type ShareActions = {
+  shareToCast: (shareText: string, shareUrl: string) => Promise<void>;
+  shareToClipboard: (shareText: string, shareUrl: string) => Promise<void>;
+};
+
+export function useShareActions(): ShareActions {
   const shareToCast = async (shareText: string, shareUrl: string) => {
     try {
       await sdk.actions.composeCast({
