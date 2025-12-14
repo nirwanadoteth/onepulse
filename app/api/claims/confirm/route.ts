@@ -11,6 +11,7 @@ import {
 } from "viem";
 import { base } from "viem/chains";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
+import { handleError } from "@/lib/error-handling";
 import {
   checkRateLimit,
   getDailyClaimsCount,
@@ -230,7 +231,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.error("Internal server error in claims/confirm:", error);
+    handleError(
+      error,
+      "Internal server error in claims/confirm",
+      {
+        operation: "claims/confirm",
+      },
+      { silent: true }
+    );
     return NextResponse.json(
       {
         error: "Internal server error",
