@@ -46,6 +46,12 @@ export function generateGMStatusOGUrl(params: ShareParams): string {
   return `${minikitConfig.miniapp.homeUrl}/api/og?${buildSearchParams(params)}`;
 }
 
+export function generateSimplifiedGMStatusOGUrl(
+  params: ShareParamsSimplified
+): string {
+  return `${minikitConfig.miniapp.homeUrl}/api/og?${buildSimplifiedSearchParams(params)}`;
+}
+
 export function generateSharePageUrl(params: ShareParams): string {
   return `${minikitConfig.miniapp.homeUrl}/share/view?${buildSearchParams(params)}`;
 }
