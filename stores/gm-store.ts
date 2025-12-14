@@ -1,4 +1,5 @@
 import type { Infer } from "spacetimedb";
+import { handleError } from "@/lib/error-handling";
 import type { DbConnection } from "@/lib/module_bindings";
 import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 import {
@@ -176,7 +177,15 @@ class GmStatsByAddressStore {
         ]);
     } catch (error) {
       // Subscription setup failed - fallback to empty stats with retry on next request
-      console.error("Failed to subscribe to GM stats:", error);
+      handleError(
+        error,
+        "Failed to subscribe to GM stats",
+        {
+          operation: "spacetimedb/subscribe",
+          address,
+        },
+        { silent: true }
+      );
       this.subscriptionReady = false;
       this.emitChange();
     }
