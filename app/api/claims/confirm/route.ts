@@ -9,7 +9,12 @@ import {
 } from "viem";
 import { base } from "viem/chains";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
-import { checkAndIncrementDailyClaims, checkRateLimit } from "@/lib/kv";
+import {
+  checkAndIncrementDailyClaims,
+  checkRateLimit,
+  getDailyClaimsCount,
+  markTransactionAsProcessed,
+} from "@/lib/kv";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 /**
@@ -154,6 +159,19 @@ export async function POST(req: NextRequest) {
       claimer,
       publicClient
     );
+
+    // Idempotency check: ensure we haven't processed this transaction before
+    const isNewTransaction = await markTransactionAsProcessed(transactionHash);
+
+    if (!isNewTransaction) {
+      const currentCount = await getDailyClaimsCount();
+      return NextResponse.json({
+        success: true,
+        message: "Claim already processed",
+        count: currentCount,
+        allowed: true,
+      });
+    }
 
     // Increment the daily claims counter
     const { allowed, count } =

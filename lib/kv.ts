@@ -172,3 +172,12 @@ export async function checkRateLimit(
 
   return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
 }
+
+export async function markTransactionAsProcessed(
+  txHash: string
+): Promise<boolean> {
+  const key = `onepulse:processed_tx:${txHash.toLowerCase()}`;
+  // Set if not exists (nx: true), expire in 24h (ex: 86400)
+  const result = await redis.set(key, "1", { nx: true, ex: 86_400 });
+  return result === "OK";
+}
