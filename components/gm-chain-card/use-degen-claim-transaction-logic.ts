@@ -1,9 +1,9 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { useClaimEligibility, useClaimStats } from "@/hooks/use-degen-claim";
 import { signIn } from "@/lib/client-auth";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
+import { handleError } from "@/lib/error-handling";
 import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
@@ -43,16 +43,20 @@ export function useDegenClaimTransactionLogic({
   const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    signIn()
-      .then((signedInFid) => {
+    const performSignIn = async () => {
+      try {
+        const signedInFid = await signIn();
         if (signedInFid) {
           setCachedFid(signedInFid);
         }
-      })
-      .catch((error) => {
-        console.error("Sign-in error:", error);
-        toast.error("Failed to sign in");
-      });
+      } catch (error) {
+        handleError(error, "Failed to sign in", {
+          operation: "DegenClaimTransaction",
+        });
+      }
+    };
+
+    performSignIn();
   }, []);
 
   const getClaimContracts = useClaimContracts({
