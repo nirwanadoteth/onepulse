@@ -3,6 +3,8 @@ import {
   createPublicClient,
   decodeFunctionData,
   http,
+  isAddress,
+  isHash,
   type PublicClient,
   parseAbi,
   type Transport,
@@ -98,7 +100,10 @@ async function verifyTransaction(
 export async function POST(req: NextRequest) {
   try {
     // Rate limit by IP
-    const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const ip = forwardedFor
+      ? forwardedFor.split(",")[0]?.trim() || "unknown"
+      : "unknown";
     const { allowed: ipAllowed } = await checkRateLimit(`ip:${ip}`, 10, 60);
     if (!ipAllowed) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -116,16 +121,20 @@ export async function POST(req: NextRequest) {
 
     const { transactionHash, claimer } = body as Record<string, unknown>;
 
-    if (!transactionHash || typeof transactionHash !== "string") {
+    if (
+      !transactionHash ||
+      typeof transactionHash !== "string" ||
+      !isHash(transactionHash)
+    ) {
       return NextResponse.json(
         { error: "Missing or invalid transactionHash" },
         { status: 400 }
       );
     }
 
-    if (!claimer || typeof claimer !== "string") {
+    if (!claimer || typeof claimer !== "string" || !isAddress(claimer)) {
       return NextResponse.json(
-        { error: "Missing or invalid claimer" },
+        { error: "Missing or invalid claimer address" },
         { status: 400 }
       );
     }
