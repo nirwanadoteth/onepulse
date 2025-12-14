@@ -47,6 +47,7 @@ export function useDegenClaimTransactionLogic({
     onSuccess,
     onError,
     refetchEligibility,
+    claimer: address,
   });
 
   const isDisabled =
