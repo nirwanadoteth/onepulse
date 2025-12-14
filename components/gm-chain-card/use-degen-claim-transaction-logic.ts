@@ -1,5 +1,7 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
+import { useEffect, useState } from "react";
 import { useClaimEligibility, useClaimStats } from "@/hooks/use-degen-claim";
+import { signIn } from "@/lib/client-auth";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
 import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
@@ -37,10 +39,21 @@ export function useDegenClaimTransactionLogic({
   const { count: dailyClaimsCount } = useClaimStats();
   const isDailyLimitReached = dailyClaimsCount >= DAILY_CLAIM_LIMIT;
 
+  const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    signIn().then((signedInFid) => {
+      if (signedInFid) {
+        setCachedFid(signedInFid);
+      }
+    });
+  }, []);
+
   const getClaimContracts = useClaimContracts({
     address,
     fid,
     contractAddress,
+    cachedFid,
   });
 
   const { onStatus } = useTransactionStatus({

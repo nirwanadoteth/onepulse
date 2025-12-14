@@ -8,6 +8,7 @@ type UseClaimContractsProps = {
   address?: string;
   fid?: bigint;
   contractAddress?: string;
+  cachedFid?: number;
 };
 
 /**
@@ -19,6 +20,7 @@ export function useClaimContracts({
   address,
   fid,
   contractAddress,
+  cachedFid,
 }: UseClaimContractsProps) {
   return useCallback(async (): Promise<ContractFunctionParameters[]> => {
     const hasValidParams = address && fid && contractAddress;
@@ -29,9 +31,13 @@ export function useClaimContracts({
     // Use verified FID if available, otherwise fall back to context FID
     let fidToUse = Number(fid);
 
-    const verifiedFid = await signIn();
-    if (verifiedFid) {
-      fidToUse = verifiedFid;
+    if (cachedFid) {
+      fidToUse = cachedFid;
+    } else {
+      const verifiedFid = await signIn();
+      if (verifiedFid) {
+        fidToUse = verifiedFid;
+      }
     }
 
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
@@ -67,5 +73,5 @@ export function useClaimContracts({
         ],
       },
     ];
-  }, [address, fid, contractAddress]);
+  }, [address, fid, contractAddress, cachedFid]);
 }
