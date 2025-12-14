@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn, getChainExplorer } from "@/lib/utils";
 
@@ -34,29 +35,35 @@ export function getTransactionState(params: {
 
 export function createSuccessAction(
   txHash: string | undefined,
-  txChainId: number | undefined
+  txChainId: number | undefined,
+  openUrl: ((url: string) => void) | null
 ): ReactNode {
-  const isValidChain = typeof txChainId === "number" && txChainId > 0;
   if (!txHash) {
     return null;
   }
+  if (!openUrl) {
+    return null;
+  }
+  const isValidChain = typeof txChainId === "number" && txChainId > 0;
   if (!isValidChain) {
     return null;
   }
   const chainExplorer = getChainExplorer(txChainId);
+
   return (
-    <a
+    <button
       className="ml-auto"
-      href={`${chainExplorer}/tx/${txHash}`}
-      rel="noopener noreferrer"
-      target="_blank"
+      onClick={() => openUrl(`${chainExplorer}/tx/${txHash}`)}
+      type="button"
     >
       <span
-        className={cn("font-ock font-semibold text-sm", "text-ock-primary")}
+        className={cn(
+          "inline-flex items-center gap-1 font-ock font-semibold text-ock-primary text-sm"
+        )}
       >
-        View transaction
+        View <ExternalLink className="size-4" />
       </span>
-    </a>
+    </button>
   );
 }
 
