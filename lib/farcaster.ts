@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   type CachedFarcasterUser,
   getCachedFarcasterUser,
@@ -19,6 +20,24 @@ export type FarcasterUserResponse = {
     user: FarcasterUser;
   };
 };
+
+const farcasterUserSchema = z.object({
+  fid: z.number(),
+  username: z.string(),
+  displayName: z.string(),
+  pfp: z
+    .object({
+      url: z.string(),
+      verified: z.boolean(),
+    })
+    .optional(),
+});
+
+const farcasterUserResponseSchema = z.object({
+  result: z.object({
+    user: farcasterUserSchema,
+  }),
+});
 
 export async function fetchFarcasterUser(
   fid: number
@@ -45,7 +64,8 @@ export async function fetchFarcasterUser(
     if (!response.ok) {
       return null;
     }
-    const data = (await response.json()) as FarcasterUserResponse;
+    const json = await response.json();
+    const data = farcasterUserResponseSchema.parse(json);
     const user = data.result.user;
 
     // Cache the result
@@ -58,7 +78,10 @@ export async function fetchFarcasterUser(
     };
     await setCachedFarcasterUser(fid, cacheData);
 
-    return user;
+    return {
+      ...user,
+      pfp: user.pfp ?? { url: "", verified: false },
+    };
   } catch (error) {
     console.error("Error fetching Farcaster user:", error);
     return null;
