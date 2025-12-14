@@ -8,10 +8,46 @@ import { getCachedGoogleFont, setCachedGoogleFont } from "@/lib/kv";
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
 
 const RES_REGEXP =
-  /src: url\((.+)\) format\('(opentype|truetype|woff|woff2)'\)/;
+  /src: url\((.+)\) format\('(opentype|truetype|woff|woff2)'\)/g;
+
+// Formats supported by Satori/next/og, in order of preference
+// WOFF2 is excluded because next/og does not support it (use WOFF instead)
+const SUPPORTED_FONT_FORMATS = ["woff", "opentype", "truetype"] as const;
 
 const FONT_CSS_TIMEOUT_MS = 3000;
 const FONT_FILE_TIMEOUT_MS = 5000;
+
+type SupportedFontFormat = (typeof SUPPORTED_FONT_FORMATS)[number];
+
+/**
+ * Parse all available font formats from Google Fonts CSS and return the first supported one.
+ * Preference order: woff > opentype > truetype (avoids woff2 which next/og doesn't support)
+ */
+function findSupportedFontUrl(
+  css: string
+): { url: string; format: SupportedFontFormat } | null {
+  const matches = Array.from(css.matchAll(RES_REGEXP));
+
+  // Group all matches by format
+  const formatMap = new Map<string, string>();
+  for (const match of matches) {
+    const url = match[1];
+    const format = match[2];
+    if (url && format && !formatMap.has(format)) {
+      formatMap.set(format, url);
+    }
+  }
+
+  // Select the first supported format in preference order
+  for (const preferredFormat of SUPPORTED_FONT_FORMATS) {
+    const url = formatMap.get(preferredFormat);
+    if (url) {
+      return { url, format: preferredFormat };
+    }
+  }
+
+  return null;
+}
 
 // In-memory cache for fonts (survives across requests in the same serverless instance)
 const fontMemoryCache = new Map<string, ArrayBuffer>();
@@ -84,12 +120,11 @@ async function loadGoogleFont(
     clearTimeout(cssTimeout);
   }
 
-  const resource = css.match(RES_REGEXP);
+  // Parse CSS and find the first supported font format
+  const fontResource = findSupportedFontUrl(css);
 
-  if (resource) {
-    if (!resource[1]) {
-      throw new Error("Font URL not found in CSS");
-    }
+  if (fontResource) {
+    const { url: fontUrl, format } = fontResource;
 
     let fontBuffer: ArrayBuffer;
     const fontController = new AbortController();
@@ -98,9 +133,9 @@ async function loadGoogleFont(
       FONT_FILE_TIMEOUT_MS
     );
     try {
-      const res = await fetch(resource[1], { signal: fontController.signal });
+      const res = await fetch(fontUrl, { signal: fontController.signal });
       if (!res.ok) {
-        throw new Error("Failed to fetch font file");
+        throw new Error(`Failed to fetch font file (${format})`);
       }
       fontBuffer = await res.arrayBuffer();
     } finally {
@@ -125,7 +160,7 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-async function getDataFromAddress(address: string) {
+async function getDataFromAddress(address: string): Promise<GMStatusParams> {
   let displayName = formatAddress(address);
   let username = formatAddress(address);
   let pfp: string | null = null;
