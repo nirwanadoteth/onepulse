@@ -29,15 +29,15 @@ export function useClaimContracts({
     }
 
     // Use verified FID if available, otherwise fall back to context FID
-    let fidToUse = Number(fid);
+    let fidToUse = fid; // bigint
 
-    if (cachedFid) {
-      fidToUse = cachedFid;
+    if (typeof cachedFid === "number") {
+      fidToUse = BigInt(cachedFid);
     } else {
       try {
         const verifiedFid = await signIn();
         if (verifiedFid) {
-          fidToUse = verifiedFid;
+          fidToUse = BigInt(verifiedFid);
         }
       } catch (error) {
         console.error(
@@ -73,7 +73,7 @@ export function useClaimContracts({
         functionName: "claim",
         args: [
           address,
-          fid,
+          fidToUse,
           BigInt(backendNonce),
           deadline,
           signature as `0x${string}`,
