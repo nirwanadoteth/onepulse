@@ -43,20 +43,28 @@ export function useDegenClaimTransactionLogic({
   const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const performSignIn = async () => {
       try {
         const signedInFid = await signIn();
-        if (signedInFid) {
+        if (!controller.signal.aborted && signedInFid) {
           setCachedFid(signedInFid);
         }
       } catch (error) {
-        handleError(error, "Failed to sign in", {
-          operation: "DegenClaimTransaction",
-        });
+        if (!controller.signal.aborted) {
+          handleError(error, "Failed to sign in", {
+            operation: "DegenClaimTransaction",
+          });
+        }
       }
     };
 
     performSignIn();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const getClaimContracts = useClaimContracts({
