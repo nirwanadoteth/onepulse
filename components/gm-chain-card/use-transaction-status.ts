@@ -67,11 +67,6 @@ export function useTransactionStatus({
           await refetchEligibility();
         }
       } catch (error) {
-        // Log but don't block success flow - transaction already succeeded
-        console.error(
-          "Failed to refresh eligibility after transaction:",
-          error
-        );
         if (onRefreshError) {
           onRefreshError(
             error instanceof Error ? error : new Error(String(error))
