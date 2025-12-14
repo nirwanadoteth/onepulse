@@ -46,7 +46,7 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <Button
           className="flex items-center gap-2"
           onClick={() => router.back()}
@@ -55,8 +55,8 @@ export function AdminDashboard() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
-        <h1 className="font-bold text-2xl">Admin Dashboard</h1>
-        <div className="w-[100px]" />
+        <h1 className="text-center font-bold text-2xl">Admin Dashboard</h1>
+        <div />
       </div>
       <div className="rounded-lg border bg-card p-6">
         <h2 className="mb-4 font-semibold text-lg">Contract Overview</h2>
