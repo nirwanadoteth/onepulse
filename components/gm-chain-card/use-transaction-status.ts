@@ -37,9 +37,8 @@ export function useTransactionStatus({
       if (!claimer) {
         return;
       }
-
       try {
-        await fetch("/api/claims/confirm", {
+        const response = await fetch("/api/claims/confirm", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -47,6 +46,9 @@ export function useTransactionStatus({
             claimer,
           }),
         });
+        if (!response.ok) {
+          console.error("Backend confirmation failed:", response.status);
+        }
       } catch (error) {
         console.error("Failed to confirm claim on backend:", error);
       }
