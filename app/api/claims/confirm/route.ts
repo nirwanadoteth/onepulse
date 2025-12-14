@@ -18,6 +18,13 @@ import {
 } from "@/lib/kv";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
 const CLAIM_ABI = parseAbi([
   "function claim(address recipient, uint256 amount, uint256 nonce, uint256 expiry, bytes signature)",
 ]);
@@ -41,32 +48,34 @@ async function verifyTransaction(
   ]);
 
   if (!receipt) {
-    throw new Error("Transaction not found on-chain");
+    throw new ValidationError("Transaction not found on-chain");
   }
 
   if (receipt.status !== "success") {
-    throw new Error(`Transaction failed on-chain: ${receipt.status}`);
+    throw new ValidationError(`Transaction failed on-chain: ${receipt.status}`);
   }
 
   if (
     !receipt.to ||
     receipt.to.toLowerCase() !== contractAddress.toLowerCase()
   ) {
-    throw new Error("Transaction is not to the DailyRewards contract");
+    throw new ValidationError(
+      "Transaction is not to the DailyRewards contract"
+    );
   }
 
   if (!transaction) {
-    throw new Error("Transaction input not found");
+    throw new ValidationError("Transaction input not found");
   }
 
   if (!transaction.input) {
-    throw new Error("Transaction input not found");
+    throw new ValidationError("Transaction input not found");
   }
 
   // The function selector for claim(address,uint256,uint256,uint256,bytes)
   const CLAIM_FUNCTION_SELECTOR = "0x6e8aa08a";
   if (!transaction.input.startsWith(CLAIM_FUNCTION_SELECTOR)) {
-    throw new Error("Transaction did not call the claim function");
+    throw new ValidationError("Transaction did not call the claim function");
   }
 
   // Verify the recipient in the transaction input matches the claimer
@@ -77,12 +86,12 @@ async function verifyTransaction(
   });
 
   if (!args || typeof args[0] !== "string") {
-    throw new Error("Invalid transaction arguments");
+    throw new ValidationError("Invalid transaction arguments");
   }
 
   const recipient = args[0];
   if (recipient.toLowerCase() !== claimer.toLowerCase()) {
-    throw new Error("Transaction recipient does not match claimer");
+    throw new ValidationError("Transaction recipient does not match claimer");
   }
 }
 
@@ -211,14 +220,22 @@ export async function POST(req: NextRequest) {
       allowed: true,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred";
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        {
+          error: "Failed to confirm claim",
+          message: error.message,
+        },
+        { status: 400 }
+      );
+    }
+
+    console.error("Internal server error in claims/confirm:", error);
     return NextResponse.json(
       {
-        error: "Failed to confirm claim",
-        message,
+        error: "Internal server error",
       },
-      { status: 400 }
+      { status: 500 }
     );
   }
 }
