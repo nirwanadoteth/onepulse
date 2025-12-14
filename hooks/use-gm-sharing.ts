@@ -2,7 +2,6 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useEffect } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { getShareText } from "@/components/share-narratives";
-import { setUserShareData } from "@/lib/kv";
 import { generateSimplifiedSharePageUrl } from "@/lib/og-utils";
 
 const createShareText = (
@@ -31,10 +30,19 @@ export function useGMSharing(
   // Store user data in KV cache for display on share page
   useEffect(() => {
     if (address && user?.username) {
-      setUserShareData(address, {
-        username: user.username,
-        displayName: user.displayName || user.username,
-        pfp: user.pfpUrl,
+      fetch("/api/share/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          address,
+          data: {
+            username: user.username,
+            displayName: user.displayName || user.username,
+            pfp: user.pfpUrl,
+          },
+        }),
       }).catch(() => {
         // Silently fail if KV store is unavailable
       });
