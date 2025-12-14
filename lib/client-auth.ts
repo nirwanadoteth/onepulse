@@ -18,16 +18,14 @@ async function verifyFidWithQuickAuth(
         success?: boolean;
         user?: { fid?: number };
       };
-    } catch (parseError) {
-      console.error("Failed to parse auth response", parseError);
+    } catch {
       return;
     }
 
     if (data.success && data.user?.fid) {
       return data.user.fid;
     }
-  } catch (e) {
-    console.error("Failed to verify FID", e);
+  } catch {
     toast.error("Failed to verify FID");
   }
 }
@@ -46,8 +44,7 @@ export async function signIn(): Promise<number | undefined> {
     const authJWT = await getToken();
     const verifiedFid = await verifyFidWithQuickAuth(authJWT);
     return verifiedFid;
-  } catch (e) {
-    console.error("Sign in failed", e);
+  } catch {
     return;
   }
 }
