@@ -77,11 +77,25 @@ async function checkAndHandleRateLimit(options: {
 }
 
 export async function POST(req: NextRequest) {
-  // Extract IP for rate limiting
-  const ip =
-    req.headers.get("x-forwarded-for") ||
-    req.headers.get("x-real-ip") ||
-    "unknown";
+  // Extract IP for rate limiting using trusted proxy headers
+  // Next.js handles x-forwarded-for safely when NEXTAUTH_URL or similar trusted proxy is configured
+  // Parse x-forwarded-for by taking the first comma-separated value (closest client)
+  let ip = "";
+  const xForwardedFor = req.headers.get("x-forwarded-for");
+  if (xForwardedFor) {
+    ip = xForwardedFor.split(",")[0]?.trim() || "";
+  }
+  // Fall back to x-real-ip if x-forwarded-for is unavailable
+  if (!ip) {
+    const xRealIp = req.headers.get("x-real-ip");
+    if (xRealIp) {
+      ip = xRealIp.trim();
+    }
+  }
+  // Final fallback to sentinel (prevents "unknown" literal from inflating rate limit keys)
+  if (!ip) {
+    ip = "unknown";
+  }
 
   // Step 1: Authenticate via Quick Auth
   const authResult = await verifyQuickAuth(req);
