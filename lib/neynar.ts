@@ -5,6 +5,7 @@ import {
   isApiErrorResponse,
   NeynarAPIClient,
 } from "@neynar/nodejs-sdk";
+import { handleError } from "@/lib/error-handling";
 import { getCachedNeynarScore, setCachedNeynarScore } from "./kv";
 
 type ScoreResponse = {
@@ -40,9 +41,23 @@ export async function getScore(fids: number[]): Promise<ScoreResponse> {
     return result;
   } catch (error) {
     if (isApiErrorResponse(error)) {
-      console.error("API Error:", error.response.data);
+      handleError(
+        error.response.data,
+        "Neynar API error",
+        {
+          operation: "neynar/getScore",
+        },
+        { silent: true }
+      );
     } else {
-      console.error("Error fetching user:", error);
+      handleError(
+        error,
+        "Error fetching Neynar user",
+        {
+          operation: "neynar/getScore",
+        },
+        { silent: true }
+      );
     }
     return { users: [] };
   }
