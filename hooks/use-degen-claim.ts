@@ -163,16 +163,49 @@ const claimStatsSchema = z.object({
   count: z.number().int().nonnegative(),
 });
 
+type FetchError = Error & {
+  status?: number;
+  body?: string;
+};
+
 export function useClaimStats() {
   const { data, error, isLoading } = useSWR(
     "/api/claims/stats",
-    async (url: string) => {
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error("Failed to fetch stats");
+    async (url: string, { signal }: { signal?: AbortSignal }) => {
+      const controller = new AbortController();
+
+      // Link SWR's signal to our controller for proper cleanup
+      if (signal) {
+        signal.addEventListener("abort", () => controller.abort());
       }
-      const json = await res.json();
-      return claimStatsSchema.parse(json);
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+
+        if (!res.ok) {
+          let errorBody: string;
+          try {
+            errorBody = await res.text();
+          } catch {
+            errorBody = "(unable to read response body)";
+          }
+
+          const message = `Failed to fetch stats: ${res.status} ${res.statusText}`;
+          const fetchError: FetchError = new Error(message);
+          fetchError.status = res.status;
+          fetchError.body = errorBody;
+          throw fetchError;
+        }
+
+        const json = await res.json();
+        return claimStatsSchema.parse(json);
+      } catch (err) {
+        // Re-throw AbortError as-is to signal cancellation
+        if (err instanceof Error && err.name === "AbortError") {
+          throw err;
+        }
+        throw err;
+      }
     },
     {
       refreshInterval: 30_000, // Refresh every 30 seconds
