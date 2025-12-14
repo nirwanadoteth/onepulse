@@ -89,21 +89,10 @@ export async function getScore(fids: number[]): Promise<ScoreResponse> {
   if (normalizedFids.length === 0) {
     return { users: [] };
   }
-  // Check cache first
-  try {
-    const cached = await getCachedNeynarScore(normalizedFids);
-    if (cached) {
-      return cached;
-    }
-  } catch (error) {
-    handleError(
-      error,
-      "Error accessing Neynar score cache",
-      {
-        operation: "neynar/cache-access",
-      },
-      { silent: true }
-    );
+  // Check cache first (errors handled silently inside getCachedNeynarScore)
+  const cached = await getCachedNeynarScore(normalizedFids);
+  if (cached) {
+    return cached;
   }
 
   // Fetch from Neynar API with exponential backoff retry
@@ -118,19 +107,8 @@ export async function getScore(fids: number[]): Promise<ScoreResponse> {
       })),
     };
 
-    // Cache the result
-    try {
-      await setCachedNeynarScore(normalizedFids, result);
-    } catch (error) {
-      handleError(
-        error,
-        "Error setting Neynar score cache",
-        {
-          operation: "neynar/cache-set",
-        },
-        { silent: true }
-      );
-    }
+    // Cache the result (errors handled silently inside setCachedNeynarScore)
+    await setCachedNeynarScore(normalizedFids, result);
 
     return result;
   } catch (error) {
