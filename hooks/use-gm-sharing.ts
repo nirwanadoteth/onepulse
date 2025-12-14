@@ -22,9 +22,11 @@ export function useGMSharing(
   const user = miniAppContextData?.context?.user;
 
   const shareText = createShareText(claimedToday, completedAllChains);
-  const shareUrl = generateSimplifiedSharePageUrl({
-    address: address || null,
-  });
+  const shareUrl = address
+    ? generateSimplifiedSharePageUrl({
+        address,
+      })
+    : null;
 
   // Store user data in KV cache for display on share page
   useEffect(() => {
