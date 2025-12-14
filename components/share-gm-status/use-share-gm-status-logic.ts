@@ -12,6 +12,10 @@ export function useShareGMStatusLogic(
   const { shareToCast, shareToClipboard } = useShareActions();
 
   const handleShare = async (platform: "cast" | "copy") => {
+    if (!shareUrl) {
+      return;
+    }
+
     if (platform === "cast") {
       await shareToCast(shareText, shareUrl);
     } else {
