@@ -16,7 +16,7 @@ export function useGMSharing(
   claimedToday: boolean,
   completedAllChains: boolean
 ) {
-  const { address } = useAppKitAccount();
+  const { address } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContextData = useMiniAppContext();
   const user = miniAppContextData?.context?.user;
 
