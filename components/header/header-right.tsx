@@ -219,7 +219,6 @@ export const HeaderRight = memo(
                     </Toggle>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
               </>
             )}
 
