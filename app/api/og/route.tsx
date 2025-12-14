@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { isAddress } from "viem";
 import { SUPPORTED_CHAINS } from "@/lib/constants";
+import { handleError } from "@/lib/error-handling";
 import { fetchFarcasterUser } from "@/lib/farcaster";
 import { getCachedGoogleFont, setCachedGoogleFont } from "@/lib/kv";
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
@@ -144,7 +145,14 @@ async function getDataFromAddress(address: string) {
       }
     }
   } catch (error) {
-    console.error("Error fetching GM stats for OG:", error);
+    handleError(
+      error,
+      "Error fetching GM stats for OG",
+      {
+        operation: "og/fetch-gm-stats",
+      },
+      { silent: true }
+    );
   }
 
   return {
