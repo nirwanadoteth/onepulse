@@ -340,6 +340,7 @@ export async function GET(request: NextRequest) {
     const params = await fetchGMStatusParams(searchParams);
 
     const geistMedium = await loadGoogleFont("Geist", 500);
+    const geistSemiBold = await loadGoogleFont("Geist", 600);
     const geistBold = await loadGoogleFont("Geist", 800);
 
     return new ImageResponse(generateMainOGImage(params), {
@@ -351,6 +352,12 @@ export async function GET(request: NextRequest) {
           data: geistMedium,
           style: "normal",
           weight: 500,
+        },
+        {
+          name: "Geist",
+          data: geistSemiBold,
+          style: "normal",
+          weight: 600,
         },
         {
           name: "Geist",
