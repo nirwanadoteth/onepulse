@@ -70,7 +70,7 @@ export function useClaimContracts({
   cachedFid,
 }: UseClaimContractsProps) {
   return useCallback(async (): Promise<ContractFunctionParameters[]> => {
-    if (!(address && fid && contractAddress)) {
+    if (!address || fid === undefined || !contractAddress) {
       throw new Error("Missing required parameters");
     }
 
