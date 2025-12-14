@@ -94,7 +94,7 @@ export default async function RootLayout({
         <RootProvider initialState={initialState}>
           {children}
           <Toaster
-            className="max-w-[80%] self-center justify-self-center"
+            className="mx-auto max-w-[80%] self-center justify-self-center"
             closeButton={true}
             position="top-center"
             richColors={true}
