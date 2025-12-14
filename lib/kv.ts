@@ -72,14 +72,27 @@ export async function checkAndIncrementDailyClaims(
 ): Promise<{ allowed: boolean; count: number }> {
   const date = new Date().toISOString().split("T")[0];
   const key = `onepulse:daily_claims:${date}`;
-  const count = await redis.incr(key);
 
-  if (count === 1) {
-    // Set expiry for 24 hours (plus a bit of buffer) to clean up
-    await redis.expire(key, 60 * 60 * 25);
-  }
+  const script = `
+    local current = redis.call("GET", KEYS[1])
+    if not current then current = 0 else current = tonumber(current) end
+    if current < tonumber(ARGV[1]) then
+      local new_count = redis.call("INCR", KEYS[1])
+      if new_count == 1 then
+        redis.call("EXPIRE", KEYS[1], 90000)
+      end
+      return {1, new_count}
+    else
+      return {0, current}
+    end
+  `;
 
-  return { allowed: count <= limit, count };
+  const [allowed, count] = (await redis.eval(script, [key], [limit])) as [
+    number,
+    number,
+  ];
+
+  return { allowed: allowed === 1, count };
 }
 
 // Cache TTLs in seconds
