@@ -1,5 +1,6 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
@@ -35,6 +36,7 @@ export function useTransactionStatus({
   const confirmClaimOnBackend = useCallback(
     async (txHash: string) => {
       if (!claimer) {
+        toast.error("No claimer address provided");
         return;
       }
       try {
@@ -46,18 +48,25 @@ export function useTransactionStatus({
             claimer,
           }),
         });
-        if (!response.ok) {
+        if (response.ok) {
+          const result = await response.json();
+          toast.success(`Counter updated: ${result.count}`);
+        } else {
+          const errorBody = await response.text();
+          toast.error(`Confirm failed: ${response.status} - ${errorBody}`);
           handleError(
             new Error(`Backend confirmation failed: ${response.status}`),
             ERROR_MESSAGES.CLAIM_FAILED,
             {
               operation: "claims/confirm",
               status: response.status,
+              errorBody,
             },
             { silent: true }
           );
         }
       } catch (error) {
+        toast.error(`Confirm error: ${error}`);
         handleError(
           error,
           ERROR_MESSAGES.CLAIM_FAILED,

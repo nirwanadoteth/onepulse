@@ -1,13 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
   createPublicClient,
-  decodeFunctionData,
+  decodeEventLog,
   http,
   isAddress,
   isHash,
+  keccak256,
   type PublicClient,
   parseAbi,
   type Transport,
+  toBytes,
 } from "viem";
 import { base } from "viem/chains";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
@@ -26,13 +28,19 @@ class ValidationError extends Error {
   }
 }
 
-const CLAIM_ABI = parseAbi([
-  "function claim(address recipient, uint256 amount, uint256 nonce, uint256 expiry, bytes signature)",
+const CLAIMED_EVENT_ABI = parseAbi([
+  "event Claimed(address indexed recipient, uint256 indexed fid, uint256 amount)",
 ]);
 
+// Compute event topic at runtime to ensure correctness
+const CLAIMED_EVENT_TOPIC = keccak256(
+  toBytes("Claimed(address,uint256,uint256)")
+);
+
 /**
- * Verifies the transaction was to the correct contract and called the claim function.
- * Fetches receipt and transaction in parallel to minimize active CPU wait time.
+ * Verifies the transaction emitted a Claimed event from the DailyRewards contract.
+ * This approach works for both direct transactions and sponsored/smart wallet transactions
+ * where the outer transaction may go through a paymaster or entrypoint contract.
  */
 async function verifyTransaction(
   transactionHash: string,
@@ -42,11 +50,7 @@ async function verifyTransaction(
 ) {
   const txHash = transactionHash as `0x${string}`;
 
-  // Fetch both in parallel to reduce I/O wait time
-  const [receipt, transaction] = await Promise.all([
-    publicClient.getTransactionReceipt({ hash: txHash }),
-    publicClient.getTransaction({ hash: txHash }),
-  ]);
+  const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
 
   if (!receipt) {
     throw new ValidationError("Transaction not found on-chain");
@@ -56,43 +60,30 @@ async function verifyTransaction(
     throw new ValidationError(`Transaction failed on-chain: ${receipt.status}`);
   }
 
-  if (
-    !receipt.to ||
-    receipt.to.toLowerCase() !== contractAddress.toLowerCase()
-  ) {
+  // Find the Claimed event from the DailyRewards contract in the logs
+  // This works for both direct calls and calls through paymasters/smart wallets
+  const claimedLog = receipt.logs.find(
+    (log) =>
+      log.address.toLowerCase() === contractAddress.toLowerCase() &&
+      log.topics[0] === CLAIMED_EVENT_TOPIC
+  );
+
+  if (!claimedLog) {
     throw new ValidationError(
-      "Transaction is not to the DailyRewards contract"
+      "No Claimed event found from DailyRewards contract"
     );
   }
 
-  if (!transaction) {
-    throw new ValidationError("Transaction input not found");
-  }
-
-  if (!transaction.input) {
-    throw new ValidationError("Transaction input not found");
-  }
-
-  // The function selector for claim(address,uint256,uint256,uint256,bytes)
-  const CLAIM_FUNCTION_SELECTOR = "0x6e8aa08a";
-  if (!transaction.input.startsWith(CLAIM_FUNCTION_SELECTOR)) {
-    throw new ValidationError("Transaction did not call the claim function");
-  }
-
-  // Verify the recipient in the transaction input matches the claimer
-  // This supports smart wallets where transaction.from might be the bundler
-  const { args } = decodeFunctionData({
-    abi: CLAIM_ABI,
-    data: transaction.input,
+  // Decode the event to verify the recipient matches the claimer
+  const decodedEvent = decodeEventLog({
+    abi: CLAIMED_EVENT_ABI,
+    data: claimedLog.data,
+    topics: claimedLog.topics,
   });
 
-  if (!args || typeof args[0] !== "string") {
-    throw new ValidationError("Invalid transaction arguments");
-  }
-
-  const recipient = args[0];
+  const recipient = decodedEvent.args.recipient as string;
   if (recipient.toLowerCase() !== claimer.toLowerCase()) {
-    throw new ValidationError("Transaction recipient does not match claimer");
+    throw new ValidationError("Claimed event recipient does not match claimer");
   }
 }
 
