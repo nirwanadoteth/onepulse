@@ -180,7 +180,12 @@ export function useClaimStats() {
       }
 
       try {
-        const res = await fetch(url, { signal: controller.signal });
+        // Add cache-busting timestamp to bypass CDN cache when fetching fresh data
+        const cacheBustUrl = `${url}?_t=${Date.now()}`;
+        const res = await fetch(cacheBustUrl, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
 
         if (!res.ok) {
           let errorBody: string;

@@ -61,8 +61,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const count = await getDailyClaimsCount();
     const response = NextResponse.json({ count });
-    // Cache in CDN for 10 seconds, but browsers revalidate immediately
-    response.headers.set("Cache-Control", "public, s-maxage=10, max-age=0");
+    // Disable caching to ensure fresh data for real-time claim counts
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate"
+    );
     return response;
   } catch (error) {
     handleError(
