@@ -29,12 +29,14 @@ export function useDegenRewardCard({
     enabled: isConnected,
   });
   const { hasRewards } = useRewardVaultStatus();
-  const { count: dailyClaimsCount } = useClaimStats();
+  const { count: dailyClaimsCount, mutate: mutateClaimStats } = useClaimStats();
 
   const hasClaimedToday = claimStatus?.claimerClaimedToday ?? false;
 
   const handleClaimSuccess = () => {
     setIsShareModalOpen(true);
+    // Immediately refetch claim stats to update the counter
+    mutateClaimStats();
   };
 
   const isSponsored = isSponsoredOnChain(sponsored, numericChainId);

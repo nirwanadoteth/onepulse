@@ -169,7 +169,7 @@ type FetchError = Error & {
 };
 
 export function useClaimStats() {
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     "/api/claims/stats",
     async (url: string, { signal }: { signal?: AbortSignal }) => {
       const controller = new AbortController();
@@ -216,5 +216,6 @@ export function useClaimStats() {
     count: data?.count ?? 0,
     isLoading,
     isError: Boolean(error),
+    mutate,
   };
 }
