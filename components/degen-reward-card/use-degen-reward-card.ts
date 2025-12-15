@@ -1,6 +1,7 @@
 import { base } from "@reown/appkit/networks";
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import {
   useClaimEligibility,
   useClaimStats,
@@ -39,7 +40,8 @@ export function useDegenRewardCard({
     await new Promise((resolve) => setTimeout(resolve, 500));
     // Force immediate refetch of claim stats (bypass cache) to update the counter
     // revalidate: true forces SWR to fetch fresh data from the server
-    mutateClaimStats(undefined, { revalidate: true });
+    const result = await mutateClaimStats();
+    toast.info(`UI refreshed, new count: ${result?.count ?? "unknown"}`);
   }, [mutateClaimStats]);
 
   const isSponsored = isSponsoredOnChain(sponsored, numericChainId);
