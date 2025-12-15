@@ -171,19 +171,11 @@ type FetchError = Error & {
 export function useClaimStats() {
   const { data, error, isLoading, mutate } = useSWR(
     "/api/claims/stats",
-    async (url: string, { signal }: { signal?: AbortSignal }) => {
-      const controller = new AbortController();
-
-      // Link SWR's signal to our controller for proper cleanup
-      if (signal) {
-        signal.addEventListener("abort", () => controller.abort());
-      }
-
+    async (url: string) => {
       try {
         // Add cache-busting timestamp to bypass CDN cache when fetching fresh data
         const cacheBustUrl = `${url}?_t=${Date.now()}`;
         const res = await fetch(cacheBustUrl, {
-          signal: controller.signal,
           cache: "no-store",
         });
 
@@ -214,6 +206,8 @@ export function useClaimStats() {
     },
     {
       refreshInterval: 30_000, // Refresh every 30 seconds
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
     }
   );
 

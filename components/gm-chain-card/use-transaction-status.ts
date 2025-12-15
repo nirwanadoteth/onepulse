@@ -1,6 +1,6 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useCallback, useRef } from "react";
-import { toast } from "sonner";
+import { useClaimStats } from "@/hooks/use-degen-claim";
 import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
@@ -32,11 +32,11 @@ export function useTransactionStatus({
   claimer,
 }: UseTransactionStatusProps): TransactionStatusHandlers {
   const processedTxHashes = useRef<Set<string>>(new Set());
+  const { mutate: mutateClaimStats } = useClaimStats();
 
   const confirmClaimOnBackend = useCallback(
     async (txHash: string) => {
       if (!claimer) {
-        toast.error("No claimer address provided");
         return;
       }
       try {
@@ -48,12 +48,8 @@ export function useTransactionStatus({
             claimer,
           }),
         });
-        if (response.ok) {
-          const result = await response.json();
-          toast.success(`Counter updated: ${result.count}`);
-        } else {
+        if (!response.ok) {
           const errorBody = await response.text();
-          toast.error(`Confirm failed: ${response.status} - ${errorBody}`);
           handleError(
             new Error(`Backend confirmation failed: ${response.status}`),
             ERROR_MESSAGES.CLAIM_FAILED,
@@ -66,7 +62,6 @@ export function useTransactionStatus({
           );
         }
       } catch (error) {
-        toast.error(`Confirm error: ${error}`);
         handleError(
           error,
           ERROR_MESSAGES.CLAIM_FAILED,
@@ -87,6 +82,9 @@ export function useTransactionStatus({
         // Confirm claim was successful on-chain and increment counter
         await confirmClaimOnBackend(txHash);
 
+        // Directly mutate claim stats to update the UI counter
+        await mutateClaimStats();
+
         // Only refetch eligibility - no need to invalidate broad query keys
         if (refetchEligibility) {
           await refetchEligibility();
@@ -103,7 +101,13 @@ export function useTransactionStatus({
         }
       }
     },
-    [refetchEligibility, onSuccess, onRefreshError, confirmClaimOnBackend]
+    [
+      refetchEligibility,
+      onSuccess,
+      onRefreshError,
+      confirmClaimOnBackend,
+      mutateClaimStats,
+    ]
   );
 
   const onStatus = useCallback(
