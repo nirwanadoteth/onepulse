@@ -42,7 +42,10 @@ export function MultiChainRewardsManagement() {
     currentTokenSymbol,
     currentTokenDecimals,
   } = useDailyRewardsV2Config();
-  const rewardStatus = useDailyRewardsV2Read(currentContractAddress);
+  const rewardStatus = useDailyRewardsV2Read(
+    currentContractAddress,
+    selectedChainId
+  );
 
   const [newClaimRewardAmount, setNewClaimRewardAmount] = useState("");
   const [newMinVaultBalance, setNewMinVaultBalance] = useState("");

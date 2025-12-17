@@ -22,7 +22,10 @@ type DailyRewardsV2Status = {
   refetch: () => void;
 };
 
-export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
+export function useDailyRewardsV2Read(
+  contractAddress: `0x${string}` | "",
+  chainId?: number
+) {
   const [status, setStatus] = useState<DailyRewardsV2Status>({
     backendSigner: undefined,
     rewardToken: undefined,
@@ -52,6 +55,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "backendSigner",
+    chainId,
     query: { enabled },
   });
 
@@ -63,6 +67,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "rewardToken",
+    chainId,
     query: { enabled },
   });
 
@@ -74,6 +79,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "claimRewardAmount",
+    chainId,
     query: { enabled },
   });
 
@@ -85,6 +91,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "minVaultBalance",
+    chainId,
     query: { enabled },
   });
 
@@ -96,6 +103,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "dailyClaimLimit",
+    chainId,
     query: { enabled },
   });
 
@@ -107,6 +115,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "dailyGMContract",
+    chainId,
     query: { enabled },
   });
 
@@ -118,6 +127,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "getVaultStatus",
+    chainId,
     query: { enabled },
   });
 
@@ -129,6 +139,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "owner",
+    chainId,
     query: { enabled },
   });
 
@@ -140,6 +151,7 @@ export function useDailyRewardsV2Read(contractAddress: `0x${string}` | "") {
     address: validAddress,
     abi: dailyRewardsV2Abi,
     functionName: "pendingOwner",
+    chainId,
     query: { enabled },
   });
 

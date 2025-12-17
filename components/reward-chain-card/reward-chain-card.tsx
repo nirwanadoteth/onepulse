@@ -81,8 +81,10 @@ export const RewardChainCard = memo(
     });
 
     const contractAddress = getDailyRewardsV2Address(chainId);
-    const { claimRewardAmount, dailyClaimLimit } =
-      useDailyRewardsV2Read(contractAddress);
+    const { claimRewardAmount, dailyClaimLimit } = useDailyRewardsV2Read(
+      contractAddress,
+      chainId
+    );
 
     const chainIconName = getChainIconName(chainId);
     const tokenSymbol = getTokenSymbol(chainId);
