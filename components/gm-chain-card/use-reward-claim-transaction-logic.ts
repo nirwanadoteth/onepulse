@@ -42,7 +42,8 @@ export function useRewardClaimTransactionLogic({
     claimStatus &&
     claimStatus.vaultBalance > 0n &&
     claimStatus.vaultBalance <= claimStatus.minReserve;
-  const hasAlreadyClaimed = claimStatus?.claimerClaimedToday ?? false;
+  const hasAlreadyClaimed =
+    (claimStatus?.fidClaimedToday || claimStatus?.claimerClaimedToday) ?? false;
   const isDailyLimitReached =
     claimStatus?.ok === false && !hasAlreadyClaimed && !isVaultDepleted;
 
