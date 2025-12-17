@@ -54,6 +54,7 @@ export async function generateMetadata(): Promise<Metadata> {
     other: {
       "fc:frame": JSON.stringify(frame),
       "fc:miniapp": JSON.stringify(frame),
+      "base:app_id": "69023f41aa8286a3a56039a9",
     },
   };
 }
