@@ -1,6 +1,6 @@
 import { base, celo, optimism } from "@reown/appkit/networks";
 import { useAppKitNetwork } from "@reown/appkit/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { extractClaimState } from "@/components/reward-card/utils";
 import {
   useClaimEligibility,
@@ -11,7 +11,7 @@ import {
   CELO_CHAIN_ID,
   OPTIMISM_CHAIN_ID,
 } from "@/lib/constants";
-import { normalizeChainId } from "@/lib/utils";
+import { getChainBtnClasses, normalizeChainId } from "@/lib/utils";
 
 type UseRewardChainCardLogicProps = {
   chainId: number;
@@ -49,19 +49,6 @@ export function useRewardChainCardLogic({
     dailyClaimCount
   );
 
-  const getChainButtonClasses = (targetChainId: number): string => {
-    switch (targetChainId) {
-      case BASE_CHAIN_ID:
-        return "bg-blue-500 hover:bg-blue-600 text-white";
-      case CELO_CHAIN_ID:
-        return "bg-green-500 hover:bg-green-600 text-white";
-      case OPTIMISM_CHAIN_ID:
-        return "bg-red-500 hover:bg-red-600 text-white";
-      default:
-        return "";
-    }
-  };
-
   const getNetworkObject = (targetChainId: number) => {
     switch (targetChainId) {
       case BASE_CHAIN_ID:
@@ -85,12 +72,14 @@ export function useRewardChainCardLogic({
     }
   };
 
+  const chainBtnClasses = useMemo(() => getChainBtnClasses(chainId), [chainId]);
+
   return {
     isCorrectChain,
     claimState,
     isCheckingEligibility,
     dailyClaimCount,
-    chainBtnClasses: getChainButtonClasses(chainId),
+    chainBtnClasses,
     handleSwitchChain,
     isSwitching,
   };
