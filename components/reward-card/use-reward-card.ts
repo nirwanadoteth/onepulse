@@ -1,4 +1,3 @@
-import { base } from "@reown/appkit/networks";
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useCallback, useState } from "react";
 import {
@@ -7,6 +6,11 @@ import {
   useMultichainDailyClaimCounts,
   useMultichainVaultStatus,
 } from "@/hooks/use-reward-claim";
+import {
+  BASE_CHAIN_ID,
+  CELO_CHAIN_ID,
+  OPTIMISM_CHAIN_ID,
+} from "@/lib/constants";
 import { isSponsoredOnChain, normalizeChainId } from "@/lib/utils";
 import { extractClaimState } from "./utils";
 
@@ -28,6 +32,7 @@ export function useRewardCard({
   } = useClaimEligibility({
     fid,
     enabled: isConnected,
+    chainId: numericChainId,
   });
   const { hasAnyRewards } = useMultichainVaultStatus();
   const dailyClaimsCount = useDailyClaimCount();
@@ -46,7 +51,9 @@ export function useRewardCard({
     dailyClaimsCount
   );
 
-  const isWrongNetwork = numericChainId !== base.id;
+  const isWrongNetwork =
+    numericChainId === undefined ||
+    ![BASE_CHAIN_ID, CELO_CHAIN_ID, OPTIMISM_CHAIN_ID].includes(numericChainId);
   const isDisconnected = !(isConnected && address);
   // Check if ANY chain has rewards, not just the current one
   const hasRewards = hasAnyRewards;

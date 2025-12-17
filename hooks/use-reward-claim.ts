@@ -15,6 +15,7 @@ import { getDailyRewardsV2Address, normalizeChainId } from "@/lib/utils";
 type UseClaimEligibilityProps = {
   fid: bigint | undefined;
   enabled?: boolean;
+  chainId?: number;
 };
 
 type ClaimEligibility = {
@@ -80,14 +81,23 @@ function shouldQueryEligibility(params: {
 export function useClaimEligibility({
   fid,
   enabled = true,
+  chainId: targetChainId,
 }: UseClaimEligibilityProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
-  const { chainId } = useAppKitNetwork();
-  const contractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
+  const { chainId: connectedChainId } = useAppKitNetwork();
+  const normalizedConnectedChainId = normalizeChainId(connectedChainId);
 
-  // Claims are only supported on Base.
-  // We explicitly check if the user is on Base to ensure consistency.
-  const isBaseChain = normalizeChainId(chainId) === BASE_CHAIN_ID;
+  // Use target chain if provided, otherwise use connected chain
+  const activeChainId =
+    targetChainId ?? normalizedConnectedChainId ?? BASE_CHAIN_ID;
+  const contractAddress = getDailyRewardsV2Address(activeChainId);
+
+  // Check if user is on a supported chain
+  const isSupportedChain = [
+    BASE_CHAIN_ID,
+    CELO_CHAIN_ID,
+    OPTIMISM_CHAIN_ID,
+  ].includes(activeChainId);
 
   const args = buildClaimEligibilityArgs(address, fid, contractAddress);
   const shouldQuery = shouldQueryEligibility({
@@ -95,7 +105,7 @@ export function useClaimEligibility({
     address,
     fid,
     contractAddress,
-    isBaseChain,
+    isBaseChain: isSupportedChain,
   });
 
   const {
@@ -104,7 +114,7 @@ export function useClaimEligibility({
     isError,
     refetch: refetchContract,
   } = useReadContract({
-    chainId: BASE_CHAIN_ID,
+    chainId: activeChainId,
     address: (contractAddress as `0x${string}`) || undefined,
     abi: dailyRewardsAbi,
     functionName: "canClaimToday",

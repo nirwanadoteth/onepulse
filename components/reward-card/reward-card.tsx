@@ -4,6 +4,7 @@ import { ShareModal } from "@/components/share-modal";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
+import { REWARD_TOKEN_SYMBOLS } from "@/lib/constants/daily-rewards-v2";
 import { RewardClaimTransaction } from "../gm-chain-card/reward-claim-transaction";
 import { type ClaimState, getStatusConfig } from "./utils";
 
@@ -27,9 +28,14 @@ type RewardCardProps = {
   };
 };
 
-const DEGEN_DECIMALS = 18n;
+const DISPLAY_REWARD_AMOUNT = "0.01";
 
-const DEGEN_SCALING_FACTOR = 10n ** DEGEN_DECIMALS;
+function getTokenSymbol(chainId: number | undefined): string {
+  if (!chainId) {
+    return "USDC";
+  }
+  return REWARD_TOKEN_SYMBOLS[chainId] || "USDC";
+}
 
 export function RewardCard({
   fid,
@@ -40,6 +46,7 @@ export function RewardCard({
   isShareModalOpen,
   onClaimSuccessAction,
   onShareModalCloseAction,
+  chainId,
   dailyClaimsCount,
   multichainCounts,
 }: RewardCardProps) {
@@ -51,6 +58,7 @@ export function RewardCard({
   const totalPercentage = multichainCounts
     ? Math.min((multichainCounts.total / (DAILY_CLAIM_LIMIT * 3)) * 100, 100)
     : progressPercentage;
+  const tokenSymbol = getTokenSymbol(chainId);
 
   return (
     <>
@@ -65,13 +73,13 @@ export function RewardCard({
                 {config.description}
               </p>
             </div>
-            {!isCheckingEligibility && state.reward > 0n && (
+            {!isCheckingEligibility && state.isEligible && (
               <div className="text-right">
                 <div className="font-light text-3xl tracking-tight">
-                  {(state.reward / DEGEN_SCALING_FACTOR).toString()}
+                  {DISPLAY_REWARD_AMOUNT}
                 </div>
                 <div className="text-muted-foreground text-xs uppercase tracking-wider">
-                  DEGEN
+                  {tokenSymbol}
                 </div>
               </div>
             )}
@@ -140,7 +148,7 @@ export function RewardCard({
 
       <ShareModal
         claimedToday={hasClaimedToday}
-        description="You've claimed your daily DEGEN rewards! Share your achievement with the community."
+        description="You've claimed your daily rewards! Share your achievement with the community."
         onOpenChange={onShareModalCloseAction}
         open={isShareModalOpen}
         title="Rewards Claimed! 🎉"
