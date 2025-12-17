@@ -122,6 +122,7 @@ export const RewardChainCard = memo(
 
           {isCorrectChain && (
             <RewardClaimTransaction
+              className={chainBtnClasses}
               disabled={!isEligible}
               fid={fid}
               onSuccess={onClaimSuccess}
