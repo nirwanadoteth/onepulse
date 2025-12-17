@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useClaimEligibility } from "@/hooks/use-reward-claim";
 import { signIn } from "@/lib/client-auth";
 import { handleError } from "@/lib/error-handling";
-import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
+import { getDailyRewardsV2Address, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
 import { useTransactionStatus } from "./use-transaction-status";
@@ -27,7 +27,7 @@ export function useRewardClaimTransactionLogic({
 
   const numericChainId = normalizeChainId(chainId);
   const contractAddress = numericChainId
-    ? getDailyRewardsAddress(numericChainId)
+    ? getDailyRewardsV2Address(numericChainId)
     : undefined;
   const {
     canClaim,

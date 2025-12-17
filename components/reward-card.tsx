@@ -29,6 +29,7 @@ export const RewardCard = memo(({ fid, sponsored }: RewardCardProps) => {
     isDisconnected,
     hasRewards,
     dailyClaimsCount,
+    multichainCounts,
   } = useRewardCard({ fid, sponsored });
 
   if (isDisconnected) {
@@ -52,6 +53,7 @@ export const RewardCard = memo(({ fid, sponsored }: RewardCardProps) => {
       hasClaimedToday={hasClaimedToday}
       isCheckingEligibility={isCheckingEligibility}
       isShareModalOpen={isShareModalOpen}
+      multichainCounts={multichainCounts}
       onClaimSuccessAction={handleClaimSuccess}
       onShareModalCloseAction={() => setIsShareModalOpen(false)}
       sponsored={isSponsored}

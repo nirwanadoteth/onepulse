@@ -5,7 +5,7 @@ import {
   useClaimEligibility,
   useDailyClaimCount,
   useMultichainDailyClaimCounts,
-  useRewardVaultStatus,
+  useMultichainVaultStatus,
 } from "@/hooks/use-reward-claim";
 import { isSponsoredOnChain, normalizeChainId } from "@/lib/utils";
 import { extractClaimState } from "./utils";
@@ -29,7 +29,7 @@ export function useRewardCard({
     fid,
     enabled: isConnected,
   });
-  const { hasRewards } = useRewardVaultStatus();
+  const { hasAnyRewards } = useMultichainVaultStatus();
   const dailyClaimsCount = useDailyClaimCount();
   const multichainCounts = useMultichainDailyClaimCounts();
 
@@ -48,6 +48,8 @@ export function useRewardCard({
 
   const isWrongNetwork = numericChainId !== base.id;
   const isDisconnected = !(isConnected && address);
+  // Check if ANY chain has rewards, not just the current one
+  const hasRewards = hasAnyRewards;
 
   return {
     isShareModalOpen,

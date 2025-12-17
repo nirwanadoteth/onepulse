@@ -16,7 +16,7 @@ import {
   CELO_CHAIN_ID,
   OPTIMISM_CHAIN_ID,
 } from "@/lib/constants";
-import { getDailyRewardsAddress } from "@/lib/utils";
+import { getDailyRewardsV2Address } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
 
@@ -107,7 +107,7 @@ async function generateClaimAuthorization(params: {
     transport: http(),
   });
 
-  const contractAddress = getDailyRewardsAddress(params.chainId);
+  const contractAddress = getDailyRewardsV2Address(params.chainId);
 
   if (!contractAddress) {
     throw new Error("Contract address not configured");

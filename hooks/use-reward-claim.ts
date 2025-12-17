@@ -10,7 +10,7 @@ import {
   CELO_CHAIN_ID,
   OPTIMISM_CHAIN_ID,
 } from "@/lib/constants";
-import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
+import { getDailyRewardsV2Address, normalizeChainId } from "@/lib/utils";
 
 type UseClaimEligibilityProps = {
   fid: bigint | undefined;
@@ -83,7 +83,7 @@ export function useClaimEligibility({
 }: UseClaimEligibilityProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const { chainId } = useAppKitNetwork();
-  const contractAddress = getDailyRewardsAddress(BASE_CHAIN_ID);
+  const contractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
 
   // Claims are only supported on Base.
   // We explicitly check if the user is on Base to ensure consistency.
@@ -140,7 +140,7 @@ export function useClaimDeadline(customDeadline?: bigint): bigint {
 }
 
 export function useRewardVaultStatus() {
-  const contractAddress = getDailyRewardsAddress(BASE_CHAIN_ID);
+  const contractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
 
   const { data: vaultStatus, isPending } = useReadContract({
     address: (contractAddress as `0x${string}`) || undefined,
@@ -163,6 +163,66 @@ export function useRewardVaultStatus() {
 }
 
 /**
+ * Hook to check if any supported chain has available rewards.
+ * Returns true if at least one chain has a non-zero vault balance.
+ */
+export function useMultichainVaultStatus() {
+  const baseContractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
+  const celoContractAddress = getDailyRewardsV2Address(CELO_CHAIN_ID);
+  const optimismContractAddress = getDailyRewardsV2Address(OPTIMISM_CHAIN_ID);
+
+  const { data: baseVault, isPending: baseLoading } = useReadContract({
+    address: (baseContractAddress as `0x${string}`) || undefined,
+    abi: dailyRewardsAbi,
+    functionName: "getVaultStatus",
+    chainId: BASE_CHAIN_ID,
+    query: {
+      enabled: baseContractAddress !== "",
+      refetchInterval: REFETCH_VAULT_MS,
+    },
+  });
+
+  const { data: celoVault, isPending: celoLoading } = useReadContract({
+    address: (celoContractAddress as `0x${string}`) || undefined,
+    abi: dailyRewardsAbi,
+    functionName: "getVaultStatus",
+    chainId: CELO_CHAIN_ID,
+    query: {
+      enabled: celoContractAddress !== "",
+      refetchInterval: REFETCH_VAULT_MS,
+    },
+  });
+
+  const { data: optimismVault, isPending: optimismLoading } = useReadContract({
+    address: (optimismContractAddress as `0x${string}`) || undefined,
+    abi: dailyRewardsAbi,
+    functionName: "getVaultStatus",
+    chainId: OPTIMISM_CHAIN_ID,
+    query: {
+      enabled: optimismContractAddress !== "",
+      refetchInterval: REFETCH_VAULT_MS,
+    },
+  });
+
+  const baseAvailable = baseVault?.[2] ?? 0n;
+  const celoAvailable = celoVault?.[2] ?? 0n;
+  const optimismAvailable = optimismVault?.[2] ?? 0n;
+  const hasAnyRewards =
+    baseAvailable > 0n || celoAvailable > 0n || optimismAvailable > 0n;
+
+  return {
+    base: { available: baseAvailable, hasRewards: baseAvailable > 0n },
+    celo: { available: celoAvailable, hasRewards: celoAvailable > 0n },
+    optimism: {
+      available: optimismAvailable,
+      hasRewards: optimismAvailable > 0n,
+    },
+    hasAnyRewards,
+    isPending: baseLoading || celoLoading || optimismLoading,
+  };
+}
+
+/**
  * Hook to get today's daily claim count from a specific chain.
  * This shows how many claims have been made today on that chain.
  * If no chainId is provided, defaults to the current connected chain.
@@ -171,7 +231,7 @@ export function useDailyClaimCount(chainId?: number) {
   const { chainId: connectedChainId } = useAppKitNetwork();
   const normalizedConnectedChainId = normalizeChainId(connectedChainId);
   const activeChainId = chainId ?? normalizedConnectedChainId ?? BASE_CHAIN_ID;
-  const contractAddress = getDailyRewardsAddress(activeChainId);
+  const contractAddress = getDailyRewardsV2Address(activeChainId);
 
   const secondsPerDay = 86_400;
   const today = BigInt(Math.floor(Date.now() / 1000 / secondsPerDay));
