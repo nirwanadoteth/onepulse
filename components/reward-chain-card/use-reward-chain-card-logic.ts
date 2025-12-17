@@ -31,23 +31,17 @@ export function useRewardChainCardLogic({
   const isCorrectChain = normalizedConnectedChainId === chainId;
   const [isSwitching, setIsSwitching] = useState(false);
 
-  const {
-    claimStatus,
-    hasSentGMToday,
-    isPending: isCheckingEligibility,
-  } = useClaimEligibility({
-    fid,
-    enabled: isConnected && !!address,
-    chainId,
-  });
+  const { claimStatus, isPending: isCheckingEligibility } = useClaimEligibility(
+    {
+      fid,
+      enabled: isConnected && !!address,
+      chainId,
+    }
+  );
 
   const dailyClaimCount = useDailyClaimCount(chainId);
 
-  const claimState = extractClaimState(
-    claimStatus,
-    hasSentGMToday,
-    dailyClaimCount
-  );
+  const claimState = extractClaimState(claimStatus);
 
   const getNetworkObject = (targetChainId: number) => {
     switch (targetChainId) {

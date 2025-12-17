@@ -22,7 +22,7 @@ type ClaimEligibility = {
   ok: boolean;
   fidIsBlacklisted: boolean;
   fidClaimedToday: boolean;
-  claimerClaimedToday: boolean;
+  globalLimitReached: boolean;
   hasSentGMToday: boolean;
   reward: bigint;
   vaultBalance: bigint;
@@ -116,7 +116,7 @@ export function useClaimEligibility({
   } = useReadContract({
     chainId: activeChainId,
     address: (contractAddress as `0x${string}`) || undefined,
-    abi: dailyRewardsAbi,
+    abi: dailyRewardsV2Abi,
     functionName: "canClaimToday",
     args,
     query: {
@@ -254,7 +254,7 @@ export function useDailyClaimCount(chainId?: number) {
     chainId: activeChainId as number,
     query: {
       enabled: contractAddress !== "",
-      refetchInterval: 60_000, // Refresh every minute
+      refetchInterval: 1000, // Refresh every 1 second
     },
   });
 

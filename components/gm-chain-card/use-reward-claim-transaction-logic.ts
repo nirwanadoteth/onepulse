@@ -46,10 +46,8 @@ export function useRewardClaimTransactionLogic({
   const isVaultDepleted =
     claimStatus && claimStatus.vaultBalance <= claimStatus.minReserve;
   const fidBlacklisted = claimStatus?.fidIsBlacklisted ?? false;
-  const hasAlreadyClaimed =
-    (claimStatus?.fidClaimedToday || claimStatus?.claimerClaimedToday) ?? false;
-  const isDailyLimitReached =
-    claimStatus?.ok === false && !hasAlreadyClaimed && !isVaultDepleted;
+  const hasAlreadyClaimed = claimStatus?.fidClaimedToday ?? false;
+  const isDailyLimitReached = claimStatus?.globalLimitReached ?? false;
 
   const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
 
