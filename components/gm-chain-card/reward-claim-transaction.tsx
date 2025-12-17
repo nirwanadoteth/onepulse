@@ -1,8 +1,10 @@
 import {
   Transaction,
   TransactionButton,
+  TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
-import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+import { Spinner } from "../ui/spinner";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
 import { useRewardClaimTransactionLogic } from "./use-reward-claim-transaction-logic";
 
@@ -49,10 +51,27 @@ export function RewardClaimTransaction({
       onStatus={onStatus}
     >
       <TransactionButton
-        className={cn("h-10 w-full rounded-md px-6 has-[>svg]:px-4", className)}
         disabled={isDisabled}
-        text={buttonState.label}
+        render={({ onSubmit, status }) => (
+          <Button
+            aria-busy={isDisabled || status === "pending"}
+            className={`w-full ${className}`}
+            disabled={isDisabled || status === "pending"}
+            onClick={onSubmit}
+            size="lg"
+          >
+            {status === "pending" ? (
+              <>
+                <Spinner />
+                Processing...
+              </>
+            ) : (
+              buttonState.label
+            )}
+          </Button>
+        )}
       />
+      {sponsored && <TransactionSponsor />}
     </Transaction>
   );
 }
