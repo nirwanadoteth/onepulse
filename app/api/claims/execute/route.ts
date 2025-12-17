@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
+  type Chain,
   createPublicClient,
   createWalletClient,
   encodePacked,
@@ -7,9 +8,14 @@ import {
   keccak256,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base } from "viem/chains";
+import { base, celo, optimism } from "viem/chains";
 
-import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
+import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
+import {
+  BASE_CHAIN_ID,
+  CELO_CHAIN_ID,
+  OPTIMISM_CHAIN_ID,
+} from "@/lib/constants";
 import { getDailyRewardsAddress } from "@/lib/utils";
 
 const BACKEND_SIGNER_PRIVATE_KEY = process.env.BACKEND_SIGNER_PRIVATE_KEY;
@@ -24,6 +30,7 @@ type ValidationSuccess = {
     claimer: string;
     fid: number | bigint;
     deadline: number | bigint;
+    chainId: number;
   };
 };
 
@@ -35,7 +42,7 @@ type ValidationFailure = {
 function validateRequest(
   body: Record<string, unknown>
 ): ValidationSuccess | ValidationFailure {
-  const { claimer, fid, deadline } = body;
+  const { claimer, fid, deadline, chainId } = body;
   const missing: string[] = [];
 
   if (!claimer) {
@@ -46,6 +53,9 @@ function validateRequest(
   }
   if (!deadline) {
     missing.push("deadline");
+  }
+  if (!chainId) {
+    missing.push("chainId");
   }
 
   if (missing.length > 0) {
@@ -58,6 +68,7 @@ function validateRequest(
       claimer: claimer as string,
       fid: fid as number | bigint,
       deadline: deadline as number | bigint,
+      chainId: Number(chainId),
     },
   };
 }
@@ -70,23 +81,33 @@ async function generateClaimAuthorization(params: {
   claimer: string;
   fid: number | bigint;
   deadline: number | bigint;
+  chainId: number;
 }) {
   const account = privateKeyToAccount(
     BACKEND_SIGNER_PRIVATE_KEY as `0x${string}`
   );
 
+  // Select the correct chain based on chainId
+  const chainMap: Record<number, Chain> = {
+    [BASE_CHAIN_ID]: base,
+    [CELO_CHAIN_ID]: celo,
+    [OPTIMISM_CHAIN_ID]: optimism,
+  };
+
+  const chain = chainMap[params.chainId] ?? base;
+
   const walletClient = createWalletClient({
     account,
-    chain: base,
+    chain,
     transport: http(),
   });
 
   const publicClient = createPublicClient({
-    chain: base,
+    chain,
     transport: http(),
   });
 
-  const contractAddress = getDailyRewardsAddress(base.id);
+  const contractAddress = getDailyRewardsAddress(params.chainId);
 
   if (!contractAddress) {
     throw new Error("Contract address not configured");
@@ -94,7 +115,7 @@ async function generateClaimAuthorization(params: {
 
   const nonce = await publicClient.readContract({
     address: contractAddress as `0x${string}`,
-    abi: dailyRewardsAbi,
+    abi: dailyRewardsV2Abi,
     functionName: "nonces",
     args: [params.claimer as `0x${string}`],
   });
@@ -136,12 +157,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { claimer, fid, deadline } = validation.data;
+    const { claimer, fid, deadline, chainId } = validation.data;
 
     const authResult = await generateClaimAuthorization({
       claimer,
       fid,
       deadline,
+      chainId,
     });
 
     return NextResponse.json({

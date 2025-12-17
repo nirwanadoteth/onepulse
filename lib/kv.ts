@@ -105,58 +105,10 @@ export async function getUserShareData(
   }
 }
 
-export async function getDailyClaimsCount(): Promise<number> {
-  try {
-    const date = new Date().toISOString().split("T")[0];
-    const key = `onepulse:daily_claims:${date}`;
-    const count = await redis.get<number>(key);
-    return count ?? 0;
-  } catch (error) {
-    reportKvError(error, "getDailyClaimsCount", {});
-    throw error;
-  }
-}
-
-export async function checkAndIncrementDailyClaims(
-  limit: number
-): Promise<{ allowed: boolean; count: number }> {
-  try {
-    const date = new Date().toISOString().split("T")[0];
-    const key = `onepulse:daily_claims:${date}`;
-
-    const script = `
-    local current = redis.call("GET", KEYS[1])
-    if not current then current = 0 else current = tonumber(current) end
-    if current < tonumber(ARGV[1]) then
-      local new_count = redis.call("INCR", KEYS[1])
-      if new_count == 1 then
-        redis.call("EXPIRE", KEYS[1], ARGV[2])
-      end
-      return {1, new_count}
-    else
-      return {0, current}
-    end
-  `;
-
-    const [allowed, count] = (await redis.eval(
-      script,
-      [key],
-      [limit, DAILY_KEY_EXPIRY_SECONDS]
-    )) as [number, number];
-
-    return { allowed: allowed === 1, count };
-  } catch (error) {
-    reportKvError(error, "checkAndIncrementDailyClaims", { limit });
-    throw error;
-  }
-}
-
 // Cache TTLs in seconds
 const FARCASTER_USER_CACHE_TTL = 300; // 5 minutes
 const NEYNAR_SCORE_CACHE_TTL = 3600; // 1 hour
 const GOOGLE_FONT_CACHE_TTL = 86_400; // 24 hours
-const TX_EXPIRY_SECONDS = 86_400; // 24 hours
-const DAILY_KEY_EXPIRY_SECONDS = 90_000; // ~25 hours
 
 function getFarcasterUserCacheKey(fid: number): string {
   return `onepulse:cache:farcaster_user:${fid}`;
@@ -278,54 +230,6 @@ export async function checkRateLimit(
       limit,
       windowSeconds,
     });
-    throw error;
-  }
-}
-
-export async function processClaimTransaction(
-  txHash: string,
-  limit: number
-): Promise<{
-  status: "success" | "already_processed" | "limit_exceeded";
-  count: number;
-}> {
-  try {
-    const txKey = `onepulse:processed_tx:${txHash.toLowerCase()}`;
-    const date = new Date().toISOString().split("T")[0];
-    const dailyKey = `onepulse:daily_claims:${date}`;
-
-    const script = `
-    if redis.call("SETNX", KEYS[1], "1") == 0 then
-      return {"already_processed", 0}
-    end
-    redis.call("EXPIRE", KEYS[1], ARGV[2])
-
-    local current = redis.call("GET", KEYS[2])
-    if not current then current = 0 else current = tonumber(current) end
-
-    if current < tonumber(ARGV[1]) then
-      local new_count = redis.call("INCR", KEYS[2])
-      if new_count == 1 then
-        redis.call("EXPIRE", KEYS[2], ARGV[3])
-      end
-      return {"success", new_count}
-    else
-      return {"limit_exceeded", current}
-    end
-  `;
-
-    const [status, count] = (await redis.eval(
-      script,
-      [txKey, dailyKey],
-      [limit, TX_EXPIRY_SECONDS, DAILY_KEY_EXPIRY_SECONDS]
-    )) as [string, number];
-
-    return {
-      status: status as "success" | "already_processed" | "limit_exceeded",
-      count,
-    };
-  } catch (error) {
-    reportKvError(error, "processClaimTransaction", { txHash, limit });
     throw error;
   }
 }
