@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useDailyRewardsRead } from "@/hooks/use-daily-rewards-read";
 import { BlacklistManagementCard } from "./blacklist-management-card";
 import { ContractSettingsCard } from "./contract-settings-card";
+import { MultiChainRewardsManagement } from "./multi-chain-rewards-management";
 import { OwnershipCard } from "./ownership-card";
 import { VaultStatusCard } from "./vault-status-card";
 
@@ -115,6 +116,13 @@ export function AdminDashboard() {
         owner={owner}
         pendingOwner={pendingOwner}
       />
+
+      <div className="border-t pt-8">
+        <h2 className="mb-6 font-semibold text-lg">
+          Multi-Chain Rewards Management (V2)
+        </h2>
+        <MultiChainRewardsManagement />
+      </div>
     </div>
   );
 }
