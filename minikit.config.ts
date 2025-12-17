@@ -1,7 +1,7 @@
 const ROOT_URL =
   process.env.NEXT_PUBLIC_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
     : "http://localhost:3000");
 
 /**
@@ -36,6 +36,7 @@ export const minikitConfig = {
     ogDescription: "Build streaks and get rewarded",
     ogImageUrl: `${ROOT_URL}/hero.png`,
     noindex: false,
+    canonicalDomain: "onepulse.nirwana.lol",
   },
   baseBuilder: {
     ownerAddress: "0x0e2d4eF0a0A82cd818f0B3cfFe52F4Ebcbf0d96e",

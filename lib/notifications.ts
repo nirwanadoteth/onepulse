@@ -5,8 +5,9 @@ import {
 
 import { handleError } from "@/lib/error-handling";
 import { getUserNotificationDetails } from "@/lib/kv";
+import { minikitConfig } from "@/minikit.config";
 
-const appUrl = process.env.NEXT_PUBLIC_URL || "";
+const appUrl = minikitConfig.miniapp.homeUrl;
 
 // Allowlist of permitted notification service hostnames
 const NOTIFICATION_ENDPOINT_ALLOWLIST = new Set<string>([

@@ -19,6 +19,7 @@ import {
   OPTIMISM_CHAIN_ID,
   SECONDS_PER_DAY,
 } from "./constants";
+import { DAILY_REWARDS_V2_ADDRESSES } from "./constants/daily-rewards-v2";
 
 const digitRegex = /^\d+$/;
 const EIP155_REGEX = /^eip155:(\d+)$/;
@@ -46,6 +47,13 @@ export function getDailyRewardsAddress(chainId?: number): `0x${string}` | "" {
     return DAILY_REWARDS_ADDRESS as `0x${string}` | "";
   }
   return DAILY_REWARDS_ADDRESSES[chainId] || ("" as const);
+}
+
+export function getDailyRewardsV2Address(chainId?: number): `0x${string}` | "" {
+  if (!chainId) {
+    return DAILY_REWARDS_V2_ADDRESSES[BASE_CHAIN_ID] as `0x${string}` | "";
+  }
+  return DAILY_REWARDS_V2_ADDRESSES[chainId] || ("" as const);
 }
 
 const publicClient = createPublicClient({

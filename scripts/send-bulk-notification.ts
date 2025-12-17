@@ -26,8 +26,9 @@
 import { parseArgs } from "node:util";
 
 import { handleError } from "@/lib/error-handling";
+import { minikitConfig } from "@/minikit.config";
 
-const DEFAULT_API_URL = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+const DEFAULT_API_URL = minikitConfig.miniapp.homeUrl;
 const KV_URL = process.env.KV_REST_API_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN;
 

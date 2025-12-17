@@ -1,5 +1,6 @@
 import { createClient, Errors } from "@farcaster/quick-auth";
 import type { NextRequest } from "next/server";
+import { minikitConfig } from "@/minikit.config";
 
 const client = createClient();
 
@@ -23,15 +24,7 @@ function getUrlHost(request: NextRequest): string {
     return host;
   }
 
-  let urlValue: string;
-  if (process.env.VERCEL_ENV === "production") {
-    urlValue =
-      process.env.NEXT_PUBLIC_URL || "https://onepulse-ruby.vercel.app";
-  } else if (process.env.VERCEL_URL) {
-    urlValue = `https://${process.env.VERCEL_URL}`;
-  } else {
-    urlValue = "http://localhost:3000";
-  }
+  const urlValue = minikitConfig.miniapp.homeUrl;
 
   const url = new URL(urlValue);
   return url.host;

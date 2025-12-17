@@ -6,7 +6,7 @@ export function AboutContent() {
       <div className="space-y-2">
         <p className="text-muted-foreground text-sm leading-5">
           OnePulse helps you send a daily on-chain GM, track your streaks across
-          multiple networks, and earn DEGEN token rewards.
+          multiple networks, and earn rewards.
         </p>
       </div>
 
@@ -29,8 +29,8 @@ export function AboutContent() {
           Rewards
         </h2>
         <p className="text-sm leading-5">
-          Earn 10 DEGEN tokens per successful daily GM on Base. Rewards reset
-          daily and are subject to change.
+          Earn rewards per successful daily GM on each supported network.
+          Rewards reset daily and are subject to change.
         </p>
       </div>
     </div>

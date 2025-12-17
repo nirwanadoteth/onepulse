@@ -2,7 +2,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 
 export function useRewardsLogic() {
-  const { isConnected } = useAppKitAccount({ namespace: "eip155" });
+  const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
   const miniAppContextData = useMiniAppContext();
 
   const fid = miniAppContextData?.context?.user?.fid
@@ -12,5 +12,6 @@ export function useRewardsLogic() {
   return {
     isConnected,
     fid,
+    address,
   };
 }

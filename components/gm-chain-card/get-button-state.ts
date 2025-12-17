@@ -1,15 +1,17 @@
 export type ButtonState = {
   label: string;
   disabled: boolean;
-  showFallback: "wallet" | "gm-first" | "limit-reached" | null;
 };
 
 type GetButtonStateParams = {
   isConnected: boolean;
   isEligibilityPending: boolean;
+  fidBlacklisted: boolean;
   hasSentGMToday: boolean;
   canClaim: boolean;
   isDailyLimitReached: boolean;
+  isVaultDepleted?: boolean;
+  hasAlreadyClaimed?: boolean;
 };
 
 /**
@@ -19,31 +21,17 @@ type GetButtonStateParams = {
 export function getButtonState({
   isConnected,
   isEligibilityPending,
+  fidBlacklisted,
   hasSentGMToday,
   canClaim,
   isDailyLimitReached,
+  isVaultDepleted,
+  hasAlreadyClaimed,
 }: GetButtonStateParams): ButtonState {
   if (!isConnected) {
     return {
       label: "Connect wallet",
       disabled: true,
-      showFallback: "wallet",
-    };
-  }
-
-  if (isDailyLimitReached) {
-    return {
-      label: "Daily Limit Reached",
-      disabled: true,
-      showFallback: "limit-reached",
-    };
-  }
-
-  if (!hasSentGMToday) {
-    return {
-      label: "Send GM First",
-      disabled: true,
-      showFallback: "gm-first",
     };
   }
 
@@ -51,21 +39,53 @@ export function getButtonState({
     return {
       label: "Checking eligibility...",
       disabled: true,
-      showFallback: null,
+    };
+  }
+
+  if (fidBlacklisted) {
+    return {
+      label: "Fid is blacklisted",
+      disabled: true,
+    };
+  }
+
+  if (hasAlreadyClaimed) {
+    return {
+      label: "Already claimed",
+      disabled: true,
+    };
+  }
+
+  if (isVaultDepleted) {
+    return {
+      label: "Vault is depleted",
+      disabled: true,
+    };
+  }
+
+  if (isDailyLimitReached) {
+    return {
+      label: "Daily limit reached",
+      disabled: true,
+    };
+  }
+
+  if (!hasSentGMToday) {
+    return {
+      label: "Send GM first",
+      disabled: true,
     };
   }
 
   if (!canClaim) {
     return {
-      label: "Already Claimed",
+      label: "Not eligible",
       disabled: true,
-      showFallback: null,
     };
   }
 
   return {
-    label: "Claim Rewards",
+    label: "Claim rewards",
     disabled: false,
-    showFallback: null,
   };
 }

@@ -41,6 +41,7 @@ export function GET() {
       ogTitle: minikitConfig.miniapp.ogTitle,
       ogDescription: minikitConfig.miniapp.ogDescription,
       ogImageUrl: minikitConfig.miniapp.ogImageUrl,
+      canonicalDomain: minikitConfig.miniapp.canonicalDomain,
     }),
   };
 

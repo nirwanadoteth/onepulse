@@ -11,7 +11,7 @@ export function ConnectWalletCard() {
             Connect Wallet
           </CardTitle>
           <p className="text-muted-foreground text-sm">
-            Connect your wallet to access daily DEGEN rewards
+            Connect your wallet to access daily rewards
           </p>
         </div>
       </CardContent>

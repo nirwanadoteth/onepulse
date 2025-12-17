@@ -1,10 +1,10 @@
 import { base } from "viem/chains";
 import { useReadContracts } from "wagmi";
 import { dailyRewardsAbi } from "@/lib/abi/daily-rewards";
-import { getDailyRewardsAddress } from "@/lib/utils";
+import { getDailyRewardsV2Address } from "@/lib/utils";
 
 export function useDailyRewardsRead() {
-  const contractAddress = getDailyRewardsAddress(base.id) as `0x${string}`;
+  const contractAddress = getDailyRewardsV2Address(base.id) as `0x${string}`;
 
   const { data, isLoading, refetch } = useReadContracts({
     contracts: [

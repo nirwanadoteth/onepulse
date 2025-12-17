@@ -36,6 +36,11 @@ export const DAILY_REWARDS_ADDRESSES: Record<
 > = {
   [BASE_CHAIN_ID]:
     (process.env.NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_BASE as `0x${string}`) || "",
+  [CELO_CHAIN_ID]:
+    (process.env.NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_CELO as `0x${string}`) || "",
+  [OPTIMISM_CHAIN_ID]:
+    (process.env.NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_OPTIMISM as `0x${string}`) ||
+    "",
 };
 
 export const DAILY_REWARDS_ADDRESS =

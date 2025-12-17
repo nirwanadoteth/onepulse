@@ -1,6 +1,5 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useCallback, useRef } from "react";
-import { useClaimStats } from "@/hooks/use-degen-claim";
 import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
@@ -29,68 +28,13 @@ export function useTransactionStatus({
   onError,
   onRefreshError,
   refetchEligibility,
-  claimer,
 }: UseTransactionStatusProps): TransactionStatusHandlers {
   const processedTxHashes = useRef<Set<string>>(new Set());
-  const { mutate: mutateClaimStats } = useClaimStats();
-
-  const confirmClaimOnBackend = useCallback(
-    async (txHash: string) => {
-      if (!claimer) {
-        return;
-      }
-
-      const attemptConfirm = async () => {
-        const response = await fetch("/api/claims/confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            transactionHash: txHash,
-            claimer,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorBody = await response.text();
-          throw new Error(
-            `Backend confirmation failed: ${response.status} - ${errorBody}`
-          );
-        }
-      };
-
-      try {
-        await attemptConfirm();
-      } catch (_error) {
-        try {
-          // Single retry after 1 second delay
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          await attemptConfirm();
-        } catch (retryError) {
-          handleError(
-            retryError,
-            ERROR_MESSAGES.CLAIM_FAILED,
-            {
-              operation: "claims/confirm",
-              txHash,
-            },
-            { silent: true }
-          );
-        }
-      }
-    },
-    [claimer]
-  );
 
   const handleRefreshAfterSuccess = useCallback(
     async (txHash: string) => {
       try {
-        // Confirm claim was successful on-chain and increment counter
-        await confirmClaimOnBackend(txHash);
-
-        // Directly mutate claim stats to update the UI counter
-        await mutateClaimStats();
-
-        // Only refetch eligibility - no need to invalidate broad query keys
+        // Refetch eligibility to update claim state from on-chain contract
         if (refetchEligibility) {
           await refetchEligibility();
         }
@@ -106,13 +50,7 @@ export function useTransactionStatus({
         }
       }
     },
-    [
-      refetchEligibility,
-      onSuccess,
-      onRefreshError,
-      confirmClaimOnBackend,
-      mutateClaimStats,
-    ]
+    [refetchEligibility, onSuccess, onRefreshError]
   );
 
   const onStatus = useCallback(
@@ -135,7 +73,7 @@ export function useTransactionStatus({
           status.statusData.message || ERROR_MESSAGES.CLAIM_FAILED
         );
         handleError(error, ERROR_MESSAGES.CLAIM_FAILED, {
-          operation: "degen-claim",
+          operation: "reward-claim",
           statusData: status.statusData,
         });
         onError(error);

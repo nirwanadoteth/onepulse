@@ -15,7 +15,7 @@ export function MiniAppRequiredCard() {
             Mini App Required
           </CardTitle>
           <p className="text-muted-foreground text-sm">
-            DEGEN rewards require identity verification.
+            Daily rewards require identity verification.
             <br />
             Please open this app from within Farcaster or Base app.
           </p>

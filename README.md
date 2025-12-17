@@ -289,7 +289,7 @@ Ensure `sdk.actions.ready()` is called in your Mini App initialization.
 
 ## 🔗 Links
 
-- [🌐 Live Demo](https://onepulse-ruby.vercel.app)
+- [🌐 Live Demo](https://onepulse.nirwana.lol)
 - [📖 Farcaster Documentation](https://docs.farcaster.xyz)
 - [🔗 Reown AppKit](https://docs.reown.com)
 - [🛠 OnchainKit](https://onchainkit.xyz)

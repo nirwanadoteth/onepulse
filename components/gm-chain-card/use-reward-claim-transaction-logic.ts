@@ -1,15 +1,14 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
-import { useClaimEligibility, useClaimStats } from "@/hooks/use-degen-claim";
+import { useClaimEligibility } from "@/hooks/use-reward-claim";
 import { signIn } from "@/lib/client-auth";
-import { DAILY_CLAIM_LIMIT } from "@/lib/constants";
 import { handleError } from "@/lib/error-handling";
-import { getDailyRewardsAddress, normalizeChainId } from "@/lib/utils";
+import { getDailyRewardsV2Address, normalizeChainId } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
 import { useTransactionStatus } from "./use-transaction-status";
 
-type UseDegenClaimTransactionLogicProps = {
+type UseRewardClaimTransactionLogicProps = {
   fid: bigint | undefined;
   sponsored: boolean;
   onSuccess?: (txHash: string) => void;
@@ -17,28 +16,33 @@ type UseDegenClaimTransactionLogicProps = {
   disabled?: boolean;
 };
 
-export function useDegenClaimTransactionLogic({
+export function useRewardClaimTransactionLogic({
   fid,
   onSuccess,
   onError,
   disabled = false,
-}: UseDegenClaimTransactionLogicProps) {
+}: UseRewardClaimTransactionLogicProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const { chainId } = useAppKitNetwork();
 
   const numericChainId = normalizeChainId(chainId);
   const contractAddress = numericChainId
-    ? getDailyRewardsAddress(numericChainId)
+    ? getDailyRewardsV2Address(numericChainId)
     : undefined;
   const {
     canClaim,
+    claimStatus,
     hasSentGMToday,
     isPending: isEligibilityPending,
     refetch: refetchEligibility,
   } = useClaimEligibility({ fid });
 
-  const { count: dailyClaimsCount } = useClaimStats();
-  const isDailyLimitReached = dailyClaimsCount >= DAILY_CLAIM_LIMIT;
+  // Determine specific reason why claim is not possible
+  const isVaultDepleted =
+    claimStatus && claimStatus.vaultBalance <= claimStatus.minReserve;
+  const fidBlacklisted = claimStatus?.fidIsBlacklisted ?? false;
+  const hasAlreadyClaimed = claimStatus?.fidClaimedToday ?? false;
+  const isDailyLimitReached = claimStatus?.globalLimitReached ?? false;
 
   const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
 
@@ -54,7 +58,7 @@ export function useDegenClaimTransactionLogic({
       } catch (error) {
         if (!controller.signal.aborted) {
           handleError(error, "Failed to sign in", {
-            operation: "DegenClaimTransaction",
+            operation: "RewardClaimTransaction",
           });
         }
       }
@@ -72,6 +76,7 @@ export function useDegenClaimTransactionLogic({
     fid,
     contractAddress,
     cachedFid,
+    chainId: numericChainId,
   });
 
   const { onStatus } = useTransactionStatus({
@@ -81,6 +86,28 @@ export function useDegenClaimTransactionLogic({
     claimer: address,
   });
 
+  const buttonState = getButtonState({
+    isConnected: Boolean(address),
+    isEligibilityPending,
+    fidBlacklisted,
+    hasSentGMToday,
+    canClaim,
+    isDailyLimitReached,
+    isVaultDepleted,
+    hasAlreadyClaimed,
+  });
+
+  // If already claimed, disable regardless of network
+  if (hasAlreadyClaimed) {
+    return {
+      numericChainId,
+      getClaimContracts,
+      onStatus,
+      isDisabled: true,
+      buttonState,
+    };
+  }
+
   const isDisabled =
     disabled ||
     !address ||
@@ -89,15 +116,8 @@ export function useDegenClaimTransactionLogic({
     !canClaim ||
     !hasSentGMToday ||
     isEligibilityPending ||
-    isDailyLimitReached;
-
-  const buttonState = getButtonState({
-    isConnected: Boolean(address),
-    isEligibilityPending,
-    hasSentGMToday,
-    canClaim,
-    isDailyLimitReached,
-  });
+    isDailyLimitReached ||
+    buttonState.disabled;
 
   return {
     numericChainId,

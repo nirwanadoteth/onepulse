@@ -1,4 +1,4 @@
-import { useRewardVaultStatus } from "@/hooks/use-degen-claim";
+import { useRewardVaultStatus } from "@/hooks/use-reward-claim";
 
 export function useVaultBalanceLogic() {
   const { available, isPending } = useRewardVaultStatus();
