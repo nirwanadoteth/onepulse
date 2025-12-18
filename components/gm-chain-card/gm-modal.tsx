@@ -1,8 +1,8 @@
 "use client";
 
 import { memo } from "react";
+import type { Address } from "viem";
 import { Card } from "@/components/ui/card";
-
 import { GmToMode } from "./gm-to-mode";
 import { MainMode } from "./main-mode";
 import { useGMModalLogic } from "./use-gm-modal-logic";
@@ -10,7 +10,7 @@ import { useGMModalLogic } from "./use-gm-modal-logic";
 type GMModalProps = {
   isOpen: boolean;
   chainId: number;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   isSponsored: boolean;
   isContractReady: boolean;
   processing: boolean;

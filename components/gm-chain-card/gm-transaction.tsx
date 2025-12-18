@@ -6,6 +6,7 @@ import {
   TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
 import { memo } from "react";
+import type { Address } from "viem";
 import { ProcessingMirror } from "@/components/gm-chain-card/processing-mirror";
 import { SuccessReporter } from "@/components/gm-chain-card/success-reporter";
 import { TransactionToast } from "@/components/transaction-toast";
@@ -15,7 +16,7 @@ import { useGMTransactionLogic } from "./use-gm-transaction-logic";
 
 type GMTransactionProps = {
   chainId: number;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   isSponsored: boolean;
   isContractReady: boolean;
   processing: boolean;

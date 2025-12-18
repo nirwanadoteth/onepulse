@@ -1,5 +1,6 @@
 import { useAppKitNetwork } from "@reown/appkit/react";
 import { useCallback, useEffect, useMemo } from "react";
+import type { Address } from "viem";
 import {
   getChainBtnClasses,
   getChainIconName,
@@ -9,7 +10,7 @@ import { useGMState } from "./use-gm-state";
 
 type UseGMChainCardLogicProps = {
   chainId: number;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   isConnected: boolean;
   address?: string;
   onStatusChange?: (status: {

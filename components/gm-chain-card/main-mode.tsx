@@ -1,13 +1,14 @@
 "use client";
 
 import { memo } from "react";
+import type { Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GMTransaction } from "./gm-transaction";
 
 type MainModeProps = {
   chainId: number;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   isSponsored: boolean;
   isContractReady: boolean;
   processing: boolean;

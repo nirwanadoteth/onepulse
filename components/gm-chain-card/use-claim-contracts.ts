@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { ContractFunctionParameters } from "viem";
+import type { Address, ContractFunctionParameters } from "viem";
 
 import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
 import { signIn } from "@/lib/client-auth";
@@ -100,7 +100,7 @@ export function useClaimContracts({
 
     return [
       {
-        address: contractAddress as `0x${string}`,
+        address: contractAddress as Address,
         abi: dailyRewardsV2Abi,
         functionName: "claim",
         args: [

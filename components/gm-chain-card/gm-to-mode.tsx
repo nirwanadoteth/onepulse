@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import type { Address } from "viem";
 import {
   CardContent,
   CardFooter,
@@ -13,7 +14,7 @@ import { useGmToModeLogic } from "./use-gm-to-mode-logic";
 
 type GmToModeProps = {
   chainId: number;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   isSponsored: boolean;
   isContractReady: boolean;
   processing: boolean;

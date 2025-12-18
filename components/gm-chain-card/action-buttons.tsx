@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import type { Address } from "viem";
 import { Button } from "@/components/ui/button";
 import { GMTransaction } from "./gm-transaction";
 import { useActionButtonsLogic } from "./use-action-buttons-logic";
@@ -12,7 +13,7 @@ type ActionButtonsProps = {
   sanitizedRecipient: string;
   chainBtnClasses: string;
   chainId: number;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   isSponsored: boolean;
   resolvedAddress: string | null;
   recipient: string;

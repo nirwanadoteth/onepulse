@@ -1,7 +1,8 @@
+import type { Address } from "viem";
 import { useGMCalls } from "./use-gm-calls";
 
 type UseGMTransactionLogicProps = {
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   transactionType: "gm" | "gmTo";
   recipient?: string;
 };

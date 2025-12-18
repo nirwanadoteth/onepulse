@@ -3,7 +3,7 @@ import { type Address, isAddress } from "viem";
 import { dailyGMAbi } from "@/lib/abi/daily-gm";
 
 type UseGMCallsParams = {
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   transactionType: "gm" | "gmTo";
   recipient?: string;
 };
