@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyRewardsV2Config } from "@/hooks/use-daily-rewards-v2-config";
 import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
+import { useErc20Metadata } from "@/hooks/use-erc20-metadata";
 import { BlacklistManagementCard } from "./blacklist-management-card";
 import { ContractSettingsCard } from "./contract-settings-card";
 import { OwnershipCard } from "./ownership-card";
@@ -122,6 +123,17 @@ export function AdminDashboard() {
     refetch,
   } = useDailyRewardsV2Read(currentContractAddress, selectedChainId);
 
+  // Fetch dynamic token metadata from the reward token contract
+  const { decimals: dynamicTokenDecimals, symbol: dynamicTokenSymbol } =
+    useErc20Metadata(
+      (rewardToken || currentTokenAddress) as `0x${string}` | undefined,
+      selectedChainId
+    );
+
+  // Use dynamic metadata if available, fall back to configured values
+  const tokenDecimals = dynamicTokenDecimals ?? currentTokenDecimals;
+  const tokenSymbol = dynamicTokenSymbol ?? currentTokenSymbol;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -164,8 +176,8 @@ export function AdminDashboard() {
                   chainName={getChainName(chainId)}
                   claimRewardAmount={claimRewardAmount}
                   currentBalance={vaultStatus?.currentBalance}
-                  currentTokenDecimals={currentTokenDecimals}
-                  currentTokenSymbol={currentTokenSymbol}
+                  currentTokenDecimals={tokenDecimals}
+                  currentTokenSymbol={tokenSymbol}
                   dailyClaimLimit={dailyClaimLimit}
                   minVaultBalance={minVaultBalance}
                 />
@@ -175,8 +187,8 @@ export function AdminDashboard() {
                   contractAddress={currentContractAddress}
                   onRefetchAction={refetch}
                   tokenAddress={currentTokenAddress}
-                  tokenDecimals={currentTokenDecimals}
-                  tokenSymbol={currentTokenSymbol}
+                  tokenDecimals={tokenDecimals}
+                  tokenSymbol={tokenSymbol}
                   vaultStatus={vaultStatus}
                 />
 
@@ -189,8 +201,8 @@ export function AdminDashboard() {
                   minVaultBalance={minVaultBalance}
                   onRefetchAction={refetch}
                   rewardToken={rewardToken}
-                  tokenDecimals={currentTokenDecimals}
-                  tokenSymbol={currentTokenSymbol}
+                  tokenDecimals={tokenDecimals}
+                  tokenSymbol={tokenSymbol}
                 />
 
                 <BlacklistManagementCard
