@@ -53,7 +53,7 @@ export const Home = memo(
         <div className="space-y-2">
           <h2 className="font-semibold text-lg">Daily GM</h2>
           <p className="text-muted-foreground text-sm">
-            {minikitConfig.miniapp.description}
+            {minikitConfig.miniapp.subtitle}
           </p>
         </div>
 
