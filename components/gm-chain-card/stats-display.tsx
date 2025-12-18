@@ -9,8 +9,8 @@ type StatColumnProps = {
 
 const StatColumn = memo(({ value, label }: StatColumnProps) => (
   <div className="flex flex-col items-center gap-1">
-    <span className="font-bold text-2xl tracking-tight">
-      {value !== undefined ? value : <Spinner className="inline h-6 w-6" />}
+    <span className="font-bold text-xl tracking-tight">
+      {value !== undefined ? value : <Spinner className="inline h-4 w-4" />}
     </span>
     <span className="font-medium text-muted-foreground text-xs">{label}</span>
   </div>
@@ -33,7 +33,7 @@ export const StatsDisplay = memo(
     }
 
     return (
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-3 gap-2 text-center">
         <StatColumn
           label="Current"
           value={isStatsReady ? stats.currentStreak : undefined}

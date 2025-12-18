@@ -4,8 +4,8 @@ import { memo } from "react";
 import { Icons } from "@/components/icons";
 import {
   Item,
+  ItemActions,
   ItemContent,
-  ItemDescription,
   ItemFooter,
   ItemMedia,
 } from "@/components/ui/item";
@@ -62,7 +62,7 @@ export const GMChainCard = memo(
 
     return (
       <Item variant="outline">
-        <ItemContent>
+        <ItemContent className="items-start">
           <ItemMedia>
             {Icons[chainIconName as keyof typeof Icons]?.({
               className: "h-8 w-24 text-current",
@@ -71,16 +71,15 @@ export const GMChainCard = memo(
               focusable: false,
             })}
           </ItemMedia>
-          <ItemDescription>Amplify your {name} GM</ItemDescription>
         </ItemContent>
+        <ItemActions>
+          <StatsDisplay
+            isConnected={isConnected}
+            isStatsReady={isStatsReady}
+            stats={stats}
+          />
+        </ItemActions>
         <ItemFooter className="flex-col">
-          <div className="mb-4 w-full">
-            <StatsDisplay
-              isConnected={isConnected}
-              isStatsReady={isStatsReady}
-              stats={stats}
-            />
-          </div>
           <ActionButton
             chainBtnClasses={chainBtnClasses}
             chainId={chainId}
