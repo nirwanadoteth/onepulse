@@ -23,7 +23,10 @@ fn pk_for(address: &str, chain_id: i32) -> String {
 #[table(
     name = gm_stats_by_address,
     public,
-    index(name = address_chainid, btree(columns = [address, chain_id]))
+    index(name = address_chainid, btree(columns = [address, chain_id])),
+    index(name = address, btree(columns = [address])),
+    index(name = chain_id, btree(columns = [chain_id])),
+    index(name = updated_at, btree(columns = [updated_at]))
 )]
 #[derive(Clone)]
 pub struct GmStatsByAddress {
@@ -32,10 +35,8 @@ pub struct GmStatsByAddress {
     address_chain: String,
 
     // Address and chain_id are stored as separate fields for convenient querying
-    #[index(btree)]
     address: String,
 
-    #[index(btree)]
     chain_id: i32,
 
     current_streak: i32,
