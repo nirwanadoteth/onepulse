@@ -1,3 +1,4 @@
+import type { Address } from "viem";
 import { base } from "viem/chains";
 import { useReadContract } from "wagmi";
 import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
@@ -7,7 +8,7 @@ export function useContractOwner() {
   const contractAddress = getDailyRewardsV2Address(base.id);
 
   const { data: owner, isLoading } = useReadContract({
-    address: contractAddress as `0x${string}`,
+    address: contractAddress as Address,
     abi: dailyRewardsV2Abi,
     functionName: "owner",
     chainId: base.id,
@@ -17,7 +18,7 @@ export function useContractOwner() {
   });
 
   return {
-    owner: owner as `0x${string}` | undefined,
+    owner: owner as Address | undefined,
     isLoading,
   };
 }

@@ -1,5 +1,6 @@
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
+import type { Address } from "viem";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { detectCoinbaseSmartWallet } from "@/lib/utils";
 
@@ -14,7 +15,7 @@ export function usePageState() {
       return;
     }
     (async () => {
-      const result = await detectCoinbaseSmartWallet(address as `0x${string}`);
+      const result = await detectCoinbaseSmartWallet(address as Address);
       setIsSmartWallet(result);
     })();
   }, [isConnected, address]);

@@ -2,6 +2,7 @@
 
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useMemo } from "react";
+import type { Address } from "viem";
 import { useReadContract } from "wagmi";
 import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
 import {
@@ -54,11 +55,11 @@ function buildClaimEligibilityArgs(
   address: string | undefined,
   fid: bigint | undefined,
   contractAddress: string
-): readonly [`0x${string}`, bigint] | undefined {
+): readonly [Address, bigint] | undefined {
   if (!address || fid === undefined || !contractAddress) {
     return;
   }
-  return [address as `0x${string}`, fid as bigint];
+  return [address as Address, fid as bigint];
 }
 
 function shouldQueryEligibility(params: {
@@ -114,7 +115,7 @@ export function useClaimEligibility({
     refetch: refetchContract,
   } = useReadContract({
     chainId: activeChainId,
-    address: (contractAddress as `0x${string}`) || undefined,
+    address: (contractAddress as Address) || undefined,
     abi: dailyRewardsV2Abi,
     functionName: "canClaimToday",
     args,
@@ -152,7 +153,7 @@ export function useRewardVaultStatus() {
   const contractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
 
   const { data: vaultStatus, isPending } = useReadContract({
-    address: (contractAddress as `0x${string}`) || undefined,
+    address: (contractAddress as Address) || undefined,
     abi: dailyRewardsV2Abi,
     functionName: "getVaultStatus",
     chainId: BASE_CHAIN_ID,
@@ -181,7 +182,7 @@ export function useMultichainVaultStatus() {
   const optimismContractAddress = getDailyRewardsV2Address(OPTIMISM_CHAIN_ID);
 
   const { data: baseVault, isPending: baseLoading } = useReadContract({
-    address: (baseContractAddress as `0x${string}`) || undefined,
+    address: (baseContractAddress as Address) || undefined,
     abi: dailyRewardsV2Abi,
     functionName: "getVaultStatus",
     chainId: BASE_CHAIN_ID,
@@ -192,7 +193,7 @@ export function useMultichainVaultStatus() {
   });
 
   const { data: celoVault, isPending: celoLoading } = useReadContract({
-    address: (celoContractAddress as `0x${string}`) || undefined,
+    address: (celoContractAddress as Address) || undefined,
     abi: dailyRewardsV2Abi,
     functionName: "getVaultStatus",
     chainId: CELO_CHAIN_ID,
@@ -203,7 +204,7 @@ export function useMultichainVaultStatus() {
   });
 
   const { data: optimismVault, isPending: optimismLoading } = useReadContract({
-    address: (optimismContractAddress as `0x${string}`) || undefined,
+    address: (optimismContractAddress as Address) || undefined,
     abi: dailyRewardsV2Abi,
     functionName: "getVaultStatus",
     chainId: OPTIMISM_CHAIN_ID,
@@ -246,7 +247,7 @@ export function useDailyClaimCount(chainId?: number) {
   const today = BigInt(Math.floor(Date.now() / 1000 / secondsPerDay));
 
   const { data: dailyCount } = useReadContract({
-    address: (contractAddress as `0x${string}`) || undefined,
+    address: (contractAddress as Address) || undefined,
     abi: dailyRewardsV2Abi,
     functionName: "dailyClaimCount",
     args: [today],
