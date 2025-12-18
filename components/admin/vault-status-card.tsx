@@ -3,7 +3,7 @@
 import { ArrowDownCircle, ArrowUpCircle, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { formatUnits, parseUnits } from "viem";
+import { type Address, formatUnits, parseUnits } from "viem";
 import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,9 +26,9 @@ type VaultStatus = {
 
 type VaultStatusCardProps = {
   vaultStatus?: VaultStatus;
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   chainId: number;
-  tokenAddress: `0x${string}`;
+  tokenAddress: Address;
   tokenSymbol: string;
   tokenDecimals: number;
   onRefetchAction: () => void;

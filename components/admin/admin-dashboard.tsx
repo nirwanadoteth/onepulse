@@ -2,7 +2,7 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { formatUnits } from "viem";
+import { type Address, formatUnits } from "viem";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyRewardsV2Config } from "@/hooks/use-daily-rewards-v2-config";
@@ -13,7 +13,7 @@ import { ContractSettingsCard } from "./contract-settings-card";
 import { OwnershipCard } from "./ownership-card";
 import { VaultStatusCard } from "./vault-status-card";
 
-function isValidAddress(address: string | undefined): address is `0x${string}` {
+function isValidAddress(address: string | undefined): address is Address {
   return (
     typeof address === "string" &&
     address.startsWith("0x") &&
@@ -126,7 +126,7 @@ export function AdminDashboard() {
   // Fetch dynamic token metadata from the reward token contract
   const { decimals: dynamicTokenDecimals, symbol: dynamicTokenSymbol } =
     useErc20Metadata(
-      (rewardToken || currentTokenAddress) as `0x${string}` | undefined,
+      (rewardToken || currentTokenAddress) as Address | undefined,
       selectedChainId
     );
 

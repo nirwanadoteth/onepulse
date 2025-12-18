@@ -3,7 +3,7 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { formatUnits, parseUnits } from "viem";
+import { type Address, formatUnits, parseUnits } from "viem";
 import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import {
   AlertDialog,
@@ -185,10 +185,10 @@ export function MultiChainRewardsManagement() {
 
     const depositAmountParsed = parseUnits(depositAmount, currentTokenDecimals);
     writeContract({
-      address: currentTokenAddress as `0x${string}`,
+      address: currentTokenAddress as Address,
       abi: ERC20_ABI,
       functionName: "approve",
-      args: [currentContractAddress as `0x${string}`, depositAmountParsed],
+      args: [currentContractAddress as Address, depositAmountParsed],
     });
     setPendingDepositAmount(depositAmountParsed);
   };

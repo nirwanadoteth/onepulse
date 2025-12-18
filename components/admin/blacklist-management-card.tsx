@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import type { Address } from "viem";
 import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
 
 type BlacklistManagementCardProps = {
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   onRefetchAction: () => void;
 };
 

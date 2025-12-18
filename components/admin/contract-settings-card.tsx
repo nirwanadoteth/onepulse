@@ -3,7 +3,7 @@
 import { AlertCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { formatUnits, isAddress, parseUnits } from "viem";
+import { type Address, formatUnits, isAddress, parseUnits } from "viem";
 import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import {
   AlertDialog,
@@ -72,7 +72,7 @@ function SettingField({
 }
 
 type ContractSettingsCardProps = {
-  contractAddress: `0x${string}`;
+  contractAddress: Address;
   chainId: number;
   tokenSymbol: string;
   tokenDecimals: number;
@@ -175,18 +175,14 @@ export function ContractSettingsCard({
     if (!value) {
       return "Contract address is required";
     }
-    return isAddress(value as `0x${string}`)
-      ? undefined
-      : "Invalid Ethereum address";
+    return isAddress(value as Address) ? undefined : "Invalid Ethereum address";
   };
 
   const validateRewardToken = (value: string): string | undefined => {
     if (!value) {
       return "Token address is required";
     }
-    return isAddress(value as `0x${string}`)
-      ? undefined
-      : "Invalid Ethereum address";
+    return isAddress(value as Address) ? undefined : "Invalid Ethereum address";
   };
 
   const handleMinVaultBalanceClick = () => {
@@ -239,10 +235,7 @@ export function ContractSettingsCard({
     setValidationErrors({});
   };
 
-  const executeWrite = (
-    functionName: string,
-    args: (bigint | `0x${string}`)[]
-  ) => {
+  const executeWrite = (functionName: string, args: (bigint | Address)[]) => {
     writeContract(
       {
         address: contractAddress,
@@ -253,7 +246,7 @@ export function ContractSettingsCard({
           | "setDailyGMContract"
           | "setBackendSigner"
           | "setRewardToken",
-        args: args as unknown as readonly [bigint | `0x${string}`],
+        args: args as unknown as readonly [bigint | Address],
         chainId,
       },
       {
@@ -291,17 +284,15 @@ export function ContractSettingsCard({
         break;
       }
       case "dailyGMContract": {
-        executeWrite("setDailyGMContract", [
-          newDailyGMContract as `0x${string}`,
-        ]);
+        executeWrite("setDailyGMContract", [newDailyGMContract as Address]);
         break;
       }
       case "backendSigner": {
-        executeWrite("setBackendSigner", [newBackendSigner as `0x${string}`]);
+        executeWrite("setBackendSigner", [newBackendSigner as Address]);
         break;
       }
       case "rewardToken": {
-        executeWrite("setRewardToken", [newRewardToken as `0x${string}`]);
+        executeWrite("setRewardToken", [newRewardToken as Address]);
         break;
       }
       default: {

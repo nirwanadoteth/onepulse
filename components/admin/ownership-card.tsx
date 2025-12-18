@@ -3,7 +3,7 @@
 import { Crown, Loader2, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { isAddress } from "viem";
+import { type Address, isAddress } from "viem";
 import {
   useAccount,
   useWaitForTransactionReceipt,
@@ -32,9 +32,9 @@ import { Label } from "@/components/ui/label";
 import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
 
 type OwnershipCardProps = {
-  contractAddress: `0x${string}`;
-  owner: `0x${string}` | undefined;
-  pendingOwner: `0x${string}` | undefined;
+  contractAddress: Address;
+  owner: Address | undefined;
+  pendingOwner: Address | undefined;
   onRefetchAction: () => void;
 };
 
@@ -69,9 +69,7 @@ export function OwnershipCard({
     if (!value) {
       return "Address is required";
     }
-    return isAddress(value as `0x${string}`)
-      ? undefined
-      : "Invalid Ethereum address";
+    return isAddress(value as Address) ? undefined : "Invalid Ethereum address";
   };
 
   const handleTransferOwnership = () => {
@@ -110,7 +108,7 @@ export function OwnershipCard({
           address: contractAddress,
           abi: dailyRewardsV2Abi,
           functionName: "transferOwnership",
-          args: [newOwnerAddress as `0x${string}`],
+          args: [newOwnerAddress as Address],
         },
         {
           onSuccess: () => {
