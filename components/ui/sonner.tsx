@@ -1,11 +1,13 @@
 "use client";
 
 import {
+  CheckIcon,
   CircleCheckIcon,
   InfoIcon,
   Loader2Icon,
   OctagonXIcon,
   TriangleAlertIcon,
+  XIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
@@ -17,10 +19,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
+        success: <CheckIcon className="size-4 bg-green-600 rounded-full p-1 stroke-4 text-background" />,
+        info: <InfoIcon className="size-4 bg-blue-600 rounded-full p-1 stroke-4 text-background" />,
+        warning: <TriangleAlertIcon className="size-4 bg-yellow-600 rounded-full p-1 stroke-4 text-background" />,
+        error: <XIcon className="size-4 bg-red-600 rounded-full p-1 stroke-4 text-background" />,
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       style={
@@ -28,14 +30,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--border-radius": "var(--radius-3xl)",
         } as React.CSSProperties
       }
       theme={theme as ToasterProps["theme"]}
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg !max-w-[85vw] mx-auto",
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg max-w-fit mx-auto",
           description: "group-[.toast]:text-muted-foreground",
           actionButton:
             "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",

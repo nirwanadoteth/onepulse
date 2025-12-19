@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Toaster } from "@/components/ui/sonner";
 import { minikitConfig } from "@/minikit.config";
 import { RootProvider } from "./root-provider";
 
@@ -92,16 +91,7 @@ export default async function RootLayout({
         )}
         cz-shortcut-listen="true"
       >
-        <RootProvider initialState={initialState}>
-          {children}
-          <Toaster
-            className="mx-auto max-w-[80%] self-center justify-self-center"
-            closeButton={true}
-            position="top-center"
-            richColors={true}
-            swipeDirections={["top"]}
-          />
-        </RootProvider>
+        <RootProvider initialState={initialState}>{children}</RootProvider>
       </body>
     </html>
   );

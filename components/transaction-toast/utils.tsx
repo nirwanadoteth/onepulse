@@ -1,6 +1,6 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLinkIcon, RotateCcwIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn, getChainExplorer } from "@/lib/utils";
+import { getChainExplorer } from "@/lib/utils";
 
 export function getTransactionState(params: {
   isToastVisible: boolean;
@@ -56,13 +56,7 @@ export function createSuccessAction(
       onClick={() => openUrl(`${chainExplorer}/tx/${txHash}`)}
       type="button"
     >
-      <span
-        className={cn(
-          "inline-flex items-center gap-1 font-ock font-semibold text-ock-primary text-sm"
-        )}
-      >
-        View <ExternalLink className="size-4" />
-      </span>
+      <ExternalLinkIcon className="size-4 bg-background stroke-3 text-green-600" />
     </button>
   );
 }
@@ -74,12 +68,8 @@ export function createErrorAction(
     return null;
   }
   return (
-    <button className="ml-auto" onClick={onSubmit} type="button">
-      <span
-        className={cn("font-ock font-semibold text-sm", "text-ock-primary")}
-      >
-        Try again
-      </span>
+    <button className="ml-auto align-middle" onClick={onSubmit} type="button">
+      <RotateCcwIcon className="size-4 bg-background stroke-3 text-red-600" />
     </button>
   );
 }
