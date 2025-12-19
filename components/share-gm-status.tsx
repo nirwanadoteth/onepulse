@@ -1,6 +1,7 @@
 "use client";
 
 import { Copy, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { cn } from "@/lib/utils";
 import { useShareGMStatusLogic } from "./share-gm-status/use-share-gm-status-logic";
@@ -27,7 +28,9 @@ export function ShareGMStatus({
   claimedToday = false,
   completedAllChains = false,
 }: ShareGMStatusProps) {
-  const { isCopied, copyToClipboard } = useCopyToClipboard();
+  const { isCopied, copyToClipboard } = useCopyToClipboard({
+    onCopyAction: () => toast.success("Copied to clipboard"),
+  });
   const { handleShare, shareText, shareUrl } = useShareGMStatusLogic(
     claimedToday,
     completedAllChains
