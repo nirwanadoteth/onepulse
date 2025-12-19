@@ -1,5 +1,4 @@
 import type { Infer } from "spacetimedb";
-import { handleError } from "@/lib/error-handling";
 import type { DbConnection } from "@/lib/module_bindings";
 import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_address_table";
 import {
@@ -28,6 +27,7 @@ class GmStatsByAddressStore {
   private readonly serverSnapshot: GmStatsByAddress[] = [];
   private subscribedAddress: string | null = null;
   private subscriptionReady = false;
+  private refreshListeners: Array<(address: string) => void> = [];
 
   constructor() {
     onSubscriptionChange(() => {
@@ -89,8 +89,6 @@ class GmStatsByAddressStore {
     }
   }
 
-  private refreshListeners: Array<(address: string) => void> = [];
-
   onRefresh(callback: (address: string) => void) {
     this.refreshListeners.push(callback);
     return () => {
@@ -131,7 +129,6 @@ class GmStatsByAddressStore {
     const conn = this.getConnection();
 
     if (!connectionStatus.isConnected) {
-      // Wait for connection
       await new Promise<void>((resolve) => {
         const unsubscribe = onConnectionChange(() => {
           if (connectionStatus.isConnected) {
@@ -139,7 +136,6 @@ class GmStatsByAddressStore {
             resolve();
           }
         });
-        // Timeout after 5 seconds
         setTimeout(() => {
           unsubscribe();
           resolve();
@@ -155,7 +151,6 @@ class GmStatsByAddressStore {
     }
 
     if (!connectionStatus.isConnected) {
-      // Connection failed to establish
       this.subscriptionReady = false;
       this.emitChange();
       return;
@@ -176,15 +171,9 @@ class GmStatsByAddressStore {
           `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`,
         ]);
     } catch (error) {
-      // Subscription setup failed - fallback to empty stats with retry on next request
-      handleError(
-        error,
-        "Failed to subscribe to GM stats",
-        {
-          operation: "spacetimedb/subscribe",
-          address,
-        },
-        { silent: true }
+      console.error(
+        `[GmStore] Failed to subscribe to GM stats for ${address}:`,
+        error
       );
       this.subscriptionReady = false;
       this.emitChange();
