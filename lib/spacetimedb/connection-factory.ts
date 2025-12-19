@@ -18,6 +18,47 @@ let singletonConnection: DbConnection | null = null;
 let reconnectionTimeoutId: ReturnType<typeof setTimeout> | null = null;
 const reconnectionStrategy = new ExponentialBackoffReconnectionStrategy();
 
+type ClientSpacetimeDbConfig = {
+  uri: string;
+  moduleName: string;
+  token: string;
+};
+
+function getClientConfig(): ClientSpacetimeDbConfig {
+  const uri =
+    process.env.SPACETIMEDB_HOST ||
+    process.env.SPACETIMEDB_HOST_URL ||
+    "wss://maincloud.spacetimedb.com";
+  const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse";
+  const token = getAuthToken();
+
+  validateConfig(uri);
+
+  return { uri, moduleName, token };
+}
+
+function validateConfig(uri: string): void {
+  if (process.env.NODE_ENV === "production" && !uri.startsWith("wss://")) {
+    throw new Error(
+      `Production requires WSS (wss://) protocol. Received: ${uri}. ` +
+        "Please update SPACETIMEDB_HOST or SPACETIMEDB_HOST_URL to use wss:// for secure connections."
+    );
+  }
+
+  if (
+    process.env.NODE_ENV === "development" &&
+    uri.startsWith("ws://") &&
+    !uri.includes("127.0.0.1") &&
+    !uri.includes("localhost")
+  ) {
+    console.warn(
+      "⚠️  Security Warning: Using ws:// (unencrypted) for non-local connection. " +
+        "Production MUST use wss:// protocol. Current URI: " +
+        uri
+    );
+  }
+}
+
 export const getDbConnection = (): DbConnection => {
   const isSSR = typeof window === "undefined";
   if (isSSR) {
@@ -33,47 +74,15 @@ export const getDbConnection = (): DbConnection => {
 };
 
 export const getConnectionBuilder = () => {
-  const uri =
-    process.env.SPACETIMEDB_HOST ||
-    process.env.SPACETIMEDB_HOST_URL ||
-    "wss://maincloud.spacetimedb.com";
-  const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse";
+  const config = getClientConfig();
 
-  if (process.env.NODE_ENV === "production" && !uri.startsWith("wss://")) {
-    // SEC-001: Enforce WSS (WebSocket Secure) in production environments
-    throw new Error(
-      `Production requires WSS (wss://) protocol. Received: ${uri}. ` +
-        "Please update SPACETIMEDB_HOST or SPACETIMEDB_HOST_URL to use wss:// for secure connections."
-    );
-  }
-
-  if (
-    process.env.NODE_ENV === "development" &&
-    uri.startsWith("ws://") &&
-    !uri.includes("127.0.0.1") &&
-    !uri.includes("localhost")
-  ) {
-    // Development warning for unencrypted connections
-    console.warn(
-      "⚠️  Security Warning: Using ws:// (unencrypted) for non-local connection. " +
-        "Production MUST use wss:// protocol. Current URI: " +
-        uri
-    );
-  }
-
-  const token = getAuthToken();
-  const builder = DbConnection.builder()
-    .withUri(uri)
-    .withModuleName(moduleName)
+  return DbConnection.builder()
+    .withUri(config.uri)
+    .withModuleName(config.moduleName)
     .onConnect(onConnect)
     .onDisconnect(onDisconnect)
-    .onConnectError(onConnectError);
-
-  if (token) {
-    builder.withToken(token);
-  }
-
-  return builder;
+    .onConnectError(onConnectError)
+    .withToken(config.token);
 };
 
 const buildDbConnection = () => {

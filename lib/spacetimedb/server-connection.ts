@@ -4,8 +4,13 @@ import type GmStatsByAddressSchema from "@/lib/module_bindings/gm_stats_by_addre
 
 type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
-// Helper to resolve SpacetimeDB config from environment
-function getSpacetimeDbConfig() {
+type SpacetimeDbConfig = {
+  uri: string;
+  moduleName: string;
+  token: string;
+};
+
+function getSpacetimeDbConfig(): SpacetimeDbConfig {
   return {
     uri:
       process.env.SPACETIMEDB_HOST ||
@@ -16,12 +21,7 @@ function getSpacetimeDbConfig() {
   };
 }
 
-// Helper to create a DbConnection builder with config
-function createDbConnectionBuilder(config: {
-  uri: string;
-  moduleName: string;
-  token: string;
-}) {
+function createConnectionBuilder(config: SpacetimeDbConfig) {
   const builder = DbConnection.builder()
     .withUri(config.uri)
     .withModuleName(config.moduleName);
@@ -31,77 +31,98 @@ function createDbConnectionBuilder(config: {
   return builder;
 }
 
-// Server-only SpacetimeDB connection builder
 export function buildServerDbConnection(): DbConnection {
-  const uri =
-    process.env.SPACETIMEDB_HOST ||
-    process.env.SPACETIMEDB_HOST_URL ||
-    "wss://maincloud.spacetimedb.com";
-  const moduleName = process.env.SPACETIMEDB_MODULE || "onepulse";
-  const token = process.env.SPACETIMEDB_TOKEN || "";
-  const builder = DbConnection.builder()
-    .withUri(uri)
-    .withModuleName(moduleName);
-  if (token) {
-    builder.withToken(token);
-  }
-  return builder.build();
+  const config = getSpacetimeDbConfig();
+  return createConnectionBuilder(config).build();
 }
 
-export async function subscribeOnce(
+export function subscribeOnce(
   conn: DbConnection,
   queries: string[],
   timeoutMs = 3000
 ): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error("SpacetimeDB subscribe timeout"));
-    }, timeoutMs);
-    conn
-      .subscriptionBuilder()
-      .onApplied(() => {
-        clearTimeout(timer);
-        resolve();
-      })
-      .onError(() => {
-        clearTimeout(timer);
-        reject(new Error("SpacetimeDB subscribe error"));
-      })
-      .subscribe(queries);
-  });
-}
-
-// Ensure connection is established before attempting subscribe/reducer calls
-export async function connectServerDbConnection(
-  timeoutMs = 5000
-): Promise<DbConnection> {
-  const config = getSpacetimeDbConfig();
-  return await new Promise<DbConnection>((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     let resolved = false;
     const timer = setTimeout(() => {
       if (!resolved) {
-        reject(new Error("SpacetimeDB connect timeout"));
+        resolved = true;
+        reject(
+          new Error(`SpacetimeDB subscription timeout after ${timeoutMs}ms`)
+        );
       }
     }, timeoutMs);
 
-    const handleConnect = (connection: DbConnection) => {
+    try {
+      conn
+        .subscriptionBuilder()
+        .onApplied(() => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timer);
+            resolve();
+          }
+        })
+        .onError((ctx: unknown) => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timer);
+            const error =
+              ctx instanceof Error ? ctx : new Error("Subscription error");
+            reject(error);
+          }
+        })
+        .subscribe(queries);
+    } catch (error) {
       if (!resolved) {
         resolved = true;
         clearTimeout(timer);
-        resolve(connection);
+        reject(error || new Error("Failed to create subscription"));
       }
-    };
-    const handleConnectError = () => {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timer);
-        reject(new Error("SpacetimeDB connect error"));
-      }
-    };
+    }
+  });
+}
 
-    const builder =
-      createDbConnectionBuilder(config).onConnectError(handleConnectError);
-    const built = builder.onConnect(() => handleConnect(built)).build();
+export function connectServerDbConnection(
+  timeoutMs = 5000
+): Promise<DbConnection> {
+  const config = getSpacetimeDbConfig();
+  return new Promise<DbConnection>((resolve, reject) => {
+    let resolved = false;
+    const timer = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        reject(
+          new Error(
+            `SpacetimeDB connection timeout after ${timeoutMs}ms. Ensure SPACETIMEDB_HOST is configured correctly.`
+          )
+        );
+      }
+    }, timeoutMs);
+
+    try {
+      createConnectionBuilder(config)
+        .onConnect((connection) => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timer);
+            resolve(connection);
+          }
+        })
+        .onConnectError((_ctx: unknown, error: Error) => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timer);
+            reject(error || new Error("SpacetimeDB connection failed"));
+          }
+        })
+        .build();
+    } catch (error) {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timer);
+        reject(error || new Error("Failed to create SpacetimeDB connection"));
+      }
+    }
   });
 }
 
@@ -110,23 +131,32 @@ export async function getGmRows(
   chainId?: number
 ): Promise<GmStatsByAddress[]> {
   const conn = await connectServerDbConnection();
+
   try {
-    const filters: string[] = [
-      `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`,
-    ];
-    await subscribeOnce(conn, filters);
+    const query = `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`;
+    await subscribeOnce(conn, [query]);
 
     const all = Array.from(conn.db.gmStatsByAddress.iter());
-    const rows = all.filter(
+    const filtered = all.filter(
       (r) => r.address.toLowerCase() === address.toLowerCase()
     );
+
     if (typeof chainId === "number") {
-      return rows.filter((r) => r.chainId === chainId);
+      return filtered.filter((r) => r.chainId === chainId);
     }
-    return rows;
+    return filtered;
+  } catch (error) {
+    console.error(
+      `[SpacetimeDB] Failed to fetch GM rows for ${address}:`,
+      error
+    );
+    return [];
   } finally {
-    // Always disconnect since API routes are ephemeral
-    conn.disconnect();
+    try {
+      conn.disconnect();
+    } catch (error) {
+      console.error("[SpacetimeDB] Failed to disconnect:", error);
+    }
   }
 }
 
@@ -143,43 +173,74 @@ export async function callReportGm(
   timeoutMs = 4000
 ): Promise<GmStatsByAddress | null> {
   const conn = await connectServerDbConnection();
+
   try {
     const { address, chainId } = params;
-    // Subscribe first so cache is primed, then call reducer
-    await subscribeOnce(conn, [
-      `SELECT * FROM gm_stats_by_address WHERE address = '${address}' AND chain_id = ${chainId}`,
-    ]);
 
-    // Wait for insert/update event after reducer call
-    const updated = new Promise<GmStatsByAddress | null>((resolve) => {
-      let resolved = false;
-      const finish = () => {
-        if (resolved) {
-          return;
-        }
-        resolved = true;
-        const rows = Array.from(conn.db.gmStatsByAddress.iter()).filter(
-          (r) =>
-            r.address.toLowerCase() === address.toLowerCase() &&
-            r.chainId === chainId
-        );
-        resolve(rows[0] ?? null);
-      };
-      const onInsertCb = () => finish();
-      const onUpdateCb = () => finish();
-      conn.db.gmStatsByAddress.onInsert(onInsertCb);
-      conn.db.gmStatsByAddress.onUpdate(onUpdateCb);
-      setTimeout(() => {
-        conn.db.gmStatsByAddress.removeOnInsert(onInsertCb);
-        conn.db.gmStatsByAddress.removeOnUpdate(onUpdateCb);
-        finish(); // fallback if no event observed
-      }, timeoutMs);
-    });
+    const query = `SELECT * FROM gm_stats_by_address WHERE address = '${address}' AND chain_id = ${chainId}`;
+    await subscribeOnce(conn, [query]);
 
     conn.reducers.reportGm(params);
 
-    return await updated;
+    return await waitForGmUpdate(conn, address, chainId, timeoutMs);
+  } catch (error) {
+    console.error(
+      `[SpacetimeDB] Failed to report GM for ${params.address}:`,
+      error
+    );
+    return null;
   } finally {
-    conn.disconnect();
+    try {
+      conn.disconnect();
+    } catch (error) {
+      console.error("[SpacetimeDB] Failed to disconnect:", error);
+    }
   }
+}
+
+function waitForGmUpdate(
+  conn: DbConnection,
+  address: string,
+  chainId: number,
+  timeoutMs: number
+): Promise<GmStatsByAddress | null> {
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    const cleanup = () => {
+      conn.db.gmStatsByAddress.removeOnInsert(handleInsert);
+      conn.db.gmStatsByAddress.removeOnUpdate(handleUpdate);
+    };
+
+    const finish = () => {
+      if (resolved) {
+        return;
+      }
+      resolved = true;
+      cleanup();
+      clearTimeout(timer);
+
+      const rows = Array.from(conn.db.gmStatsByAddress.iter()).filter(
+        (r) =>
+          r.address.toLowerCase() === address.toLowerCase() &&
+          r.chainId === chainId
+      );
+      resolve(rows[0] ?? null);
+    };
+
+    const handleInsert = () => {
+      finish();
+    };
+
+    const handleUpdate = () => {
+      finish();
+    };
+
+    conn.db.gmStatsByAddress.onInsert(handleInsert);
+    conn.db.gmStatsByAddress.onUpdate(handleUpdate);
+
+    const timer = setTimeout(() => {
+      finish();
+    }, timeoutMs);
+  });
 }
