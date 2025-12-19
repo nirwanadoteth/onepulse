@@ -85,8 +85,8 @@ export function useClaimContracts({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         claimer: address,
-        fid: fidToUse.toString(),
-        deadline: deadline.toString(),
+        fid: Number(fidToUse),
+        deadline: Number(deadline),
         chainId,
       }),
     });
