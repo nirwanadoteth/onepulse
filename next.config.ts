@@ -27,7 +27,6 @@ const nextConfig: NextConfig = {
     inlineCss: true,
   },
   transpilePackages: ["spacetimedb"],
-  serverExternalPackages: ["pino-pretty"],
   async headers() {
     return [
       {
