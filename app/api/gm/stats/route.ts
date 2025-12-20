@@ -18,63 +18,29 @@ const gmStatsQuerySchema = z.object({
     .refine((addr) => !addr || isAddress(addr), {
       message: "Invalid Ethereum address",
     }),
-  chainId: z
-    .string()
-    .nullish()
-    .transform((val) => (val ? Number(val) : undefined))
-    .refine((val) => val === undefined || (Number.isInteger(val) && val > 0), {
-      message: "chainId must be a positive integer",
-    }),
 });
 
 function getChainName(chainId: number): string {
   return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
 }
 
-function formatChainStatsResponse(
-  address: string,
-  stats: GmStatsByAddress | undefined
-) {
-  const count = stats?.allTimeGmCount ?? 0;
-  const chainId = stats?.chainId ?? 0;
-  return {
-    address,
-    currentStreak: stats?.currentStreak ?? 0,
-    highestStreak: stats?.highestStreak ?? 0,
-    allTimeGmCount: count,
-    lastGmDay: stats?.lastGmDay ?? 0,
-    chains: chainId ? [{ name: getChainName(chainId), count }] : [],
-  };
-}
-
-function formatAggregateStatsResponse(
+function formatCombinedStatsResponse(
   address: string,
   rows: GmStatsByAddress[]
 ) {
-  const allTimeGmCount = rows.reduce(
-    (acc, r) => acc + (r.allTimeGmCount ?? 0),
-    0
-  );
-  const highestStreak = rows.reduce(
-    (acc, r) => Math.max(acc, r.highestStreak ?? 0),
-    0
-  );
-  const lastGmDay = rows.reduce((acc, r) => Math.max(acc, r.lastGmDay ?? 0), 0);
-
-  const chains = rows
-    .map((r) => ({
+  const stats: Record<string, Record<string, unknown>> = {};
+  for (const r of rows) {
+    stats[String(r.chainId)] = {
       name: getChainName(r.chainId),
-      count: r.allTimeGmCount ?? 0,
-    }))
-    .filter((c) => c.count > 0);
-
+      currentStreak: r.currentStreak ?? 0,
+      highestStreak: r.highestStreak ?? 0,
+      allTimeGmCount: r.allTimeGmCount ?? 0,
+      lastGmDay: r.lastGmDay ?? 0,
+    };
+  }
   return {
     address,
-    currentStreak: 0,
-    highestStreak,
-    allTimeGmCount,
-    lastGmDay,
-    chains,
+    stats,
   };
 }
 
@@ -82,7 +48,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const parseResult = gmStatsQuerySchema.safeParse({
     address: searchParams.get("address"),
-    chainId: searchParams.get("chainId"),
   });
 
   if (!parseResult.success) {
@@ -92,7 +57,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const { address, chainId } = parseResult.data;
+  const { address } = parseResult.data;
 
   if (!address) {
     return NextResponse.json(
@@ -101,9 +66,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const rows = await getGmRows(address, chainId);
-  if (typeof chainId === "number" && !Number.isNaN(chainId)) {
-    return NextResponse.json(formatChainStatsResponse(address, rows[0]));
-  }
-  return NextResponse.json(formatAggregateStatsResponse(address, rows));
+  const rows = await getGmRows(address);
+  return NextResponse.json(formatCombinedStatsResponse(address, rows));
 }

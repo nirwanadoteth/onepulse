@@ -31,33 +31,47 @@ function formatAddress(address: string): string {
 }
 
 export type GmStatsResult = {
-  chains: { name: string; count: number }[];
-  allTimeGmCount: number;
+  stats: Record<
+    string,
+    {
+      name: string;
+      currentStreak: number;
+      highestStreak: number;
+      allTimeGmCount: number;
+    }
+  >;
   fid?: number;
 };
 
 async function fetchGmStats(address: string): Promise<GmStatsResult> {
   try {
     const rows = await getGmRows(address);
-    const allTimeGmCount = rows.reduce(
-      (acc, r) => acc + (r.allTimeGmCount ?? 0),
-      0
-    );
-    const chains = rows
-      .map((r) => ({
+    const stats: Record<
+      string,
+      {
+        name: string;
+        currentStreak: number;
+        highestStreak: number;
+        allTimeGmCount: number;
+      }
+    > = {};
+
+    for (const r of rows) {
+      stats[String(r.chainId)] = {
         name: getChainName(r.chainId),
-        count: r.allTimeGmCount ?? 0,
-      }))
-      .filter((c) => c.count > 0)
-      .sort((a, b) => a.name.localeCompare(b.name));
+        currentStreak: r.currentStreak ?? 0,
+        highestStreak: r.highestStreak ?? 0,
+        allTimeGmCount: r.allTimeGmCount ?? 0,
+      };
+    }
 
     // Find FID from rows
     const rowWithFid = rows.find((r) => r.fid);
     const fid = rowWithFid?.fid ? Number(rowWithFid.fid) : undefined;
 
-    return { chains, allTimeGmCount, fid };
+    return { stats, fid };
   } catch {
-    return { chains: [], allTimeGmCount: 0, fid: undefined };
+    return { stats: {}, fid: undefined };
   }
 }
 
@@ -131,6 +145,7 @@ export async function generateMetadata({
       images: [ogImageUrl],
     },
     other: {
+      "base:app_id": "69023f41aa8286a3a56039a9",
       "fc:frame": JSON.stringify(frame),
       "fc:miniapp": JSON.stringify(frame),
     },

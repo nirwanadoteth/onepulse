@@ -8,7 +8,7 @@ export function useHomeStats(
   chains: Chain[],
   onGmStatsChange?: (stats: ReturnType<typeof useGmStats>) => void
 ) {
-  // Overall GM stats for sharing (aggregate across chains)
+  // Overall GM stats for sharing (keyed by chainId)
   const rawGmStatsResult = useGmStats(address);
 
   const gmStatsResult = useMemo(() => {
@@ -17,17 +17,19 @@ export function useHomeStats(
       return rawGmStatsResult;
     }
 
-    // Filter chains based on what's currently displayed/allowed
-    const allowedNames = chains.map((c) => c.name);
+    // Filter stats to only include chains that are currently displayed/allowed
+    const allowedChainIds = new Set(chains.map((c) => String(c.id)));
+    const filteredStats: typeof rawGmStatsResult.stats = {};
+
+    for (const [chainId, stat] of Object.entries(rawGmStatsResult.stats)) {
+      if (allowedChainIds.has(chainId)) {
+        filteredStats[chainId] = stat;
+      }
+    }
 
     return {
       ...rawGmStatsResult,
-      stats: {
-        ...rawGmStatsResult.stats,
-        chains: rawGmStatsResult.stats.chains.filter((c) =>
-          allowedNames.includes(c.name)
-        ),
-      },
+      stats: filteredStats,
     };
   }, [rawGmStatsResult, chains]);
 

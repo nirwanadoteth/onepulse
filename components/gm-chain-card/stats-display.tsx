@@ -17,34 +17,43 @@ const StatColumn = memo(({ value, label }: StatColumnProps) => (
 ));
 
 type StatsDisplayProps = {
-  stats: GmStats;
+  stats: GmStats | undefined;
+  chainId: number;
   isConnected: boolean;
   isStatsReady: boolean;
 };
 
 export const StatsDisplay = memo(
-  ({ stats, isConnected, isStatsReady }: StatsDisplayProps) => {
-    if (!(isConnected && stats)) {
-      return (
-        <div className="text-muted-foreground text-xs">
-          Connect wallet to see stats
-        </div>
-      );
-    }
+  ({ stats, chainId, isConnected, isStatsReady }: StatsDisplayProps) => {
+    const chainStats =
+      isConnected && stats ? stats[String(chainId)] : undefined;
+
+    const getValue = (statValue: number | undefined) => {
+      if (!isConnected) {
+        return 0;
+      }
+      if (!isStatsReady) {
+        return;
+      }
+      if (!chainStats) {
+        return 0;
+      }
+      return statValue;
+    };
 
     return (
       <div className="grid grid-cols-3 gap-2 text-center">
         <StatColumn
           label="Current"
-          value={isStatsReady ? stats.currentStreak : undefined}
+          value={getValue(chainStats?.currentStreak)}
         />
         <StatColumn
           label="Highest"
-          value={isStatsReady ? stats.highestStreak : undefined}
+          value={getValue(chainStats?.highestStreak)}
         />
         <StatColumn
           label="All-Time"
-          value={isStatsReady ? stats.allTimeGmCount : undefined}
+          value={getValue(chainStats?.allTimeGmCount)}
         />
       </div>
     );

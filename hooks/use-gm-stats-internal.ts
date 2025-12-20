@@ -30,34 +30,37 @@ export function useGmStatsSubscription(address?: string | null) {
 }
 
 type GmStatsApiResponse = {
-  currentStreak?: number;
-  highestStreak?: number;
-  allTimeGmCount?: number;
-  lastGmDay?: number;
-  baseGm?: number;
-  celoGm?: number;
-  optimismGm?: number;
-  chains?: { name: string; count: number }[];
+  address: string;
+  stats?: Record<
+    string,
+    {
+      name: string;
+      currentStreak?: number;
+      highestStreak?: number;
+      allTimeGmCount?: number;
+      lastGmDay?: number;
+    }
+  >;
 };
 
 function parseStatsFromResponse(json: GmStatsApiResponse): GmStats {
-  return {
-    currentStreak: json.currentStreak ?? 0,
-    highestStreak: json.highestStreak ?? 0,
-    allTimeGmCount: json.allTimeGmCount ?? 0,
-    lastGmDay: json.lastGmDay ?? 0,
-    chains: json.chains || [
-      { name: "Base", count: json.baseGm ?? 0 },
-      { name: "Celo", count: json.celoGm ?? 0 },
-      { name: "Optimism", count: json.optimismGm ?? 0 },
-    ],
-  };
+  const statsObj = json.stats ?? {};
+  const result: GmStats = {};
+  for (const [chainId, stats] of Object.entries(statsObj)) {
+    result[chainId] = {
+      name: stats.name,
+      currentStreak: stats.currentStreak ?? 0,
+      highestStreak: stats.highestStreak ?? 0,
+      allTimeGmCount: stats.allTimeGmCount ?? 0,
+      lastGmDay: stats.lastGmDay ?? 0,
+    };
+  }
+  return result;
 }
 
 export function useGmStatsFallback(
   rowsForAddress: GmStatsByAddress[],
-  address?: string | null,
-  chainId?: number
+  address?: string | null
 ) {
   const [_fallbackStats, setFallbackStats] = useState<
     | {
@@ -87,10 +90,7 @@ export function useGmStatsFallback(
   }, [address, normalizedAddress]);
 
   const checkHasSubscriptionData = useCallback(
-    (rows: typeof rowsForAddress, chainIdParam?: number) =>
-      typeof chainIdParam === "number"
-        ? rows.some((r) => r.chainId === chainIdParam)
-        : rows.length > 0,
+    (rows: typeof rowsForAddress) => rows.length > 0,
     []
   );
 
@@ -107,7 +107,7 @@ export function useGmStatsFallback(
         return true;
       }
       const latestReady = gmStatsByAddressStore.isSubscribedForAddress(address);
-      const latestHasData = checkHasSubscriptionData(latestRows, chainId);
+      const latestHasData = checkHasSubscriptionData(latestRows);
 
       if (latestReady && latestHasData) {
         return true;
@@ -116,7 +116,7 @@ export function useGmStatsFallback(
       const now = Date.now();
       return now - lastFetchTime < 2000;
     },
-    [address, chainId, checkHasSubscriptionData, lastFetchTime]
+    [address, checkHasSubscriptionData, lastFetchTime]
   );
 
   const buildStatsUrl = useCallback(() => {
@@ -125,11 +125,8 @@ export function useGmStatsFallback(
     }
     const url = new URL("/api/gm/stats", window.location.origin);
     url.searchParams.set("address", address);
-    if (typeof chainId === "number") {
-      url.searchParams.set("chainId", String(chainId));
-    }
     return url.toString();
-  }, [address, chainId]);
+  }, [address]);
 
   const fetchFallbackStats = useCallback(
     async (key: string) => {
@@ -168,9 +165,9 @@ export function useGmStatsFallback(
     if (!(address && normalizedAddress)) {
       return;
     }
-    const key = `${address}:${chainId ?? "all"}`;
+    const key = `${address}:all`;
     const subReady = gmStatsByAddressStore.isSubscribedForAddress(address);
-    const hasSubData = checkHasSubscriptionData(rowsForAddress, chainId);
+    const hasSubData = checkHasSubscriptionData(rowsForAddress);
 
     if (subReady && hasSubData) {
       cleanupTimeoutAndAbort();
@@ -185,7 +182,6 @@ export function useGmStatsFallback(
     return () => cleanupTimeoutAndAbort();
   }, [
     address,
-    chainId,
     normalizedAddress,
     rowsForAddress,
     checkHasSubscriptionData,

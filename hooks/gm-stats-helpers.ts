@@ -24,59 +24,30 @@ export function groupRowsByAddress(
 
 export function deriveStatsForAddress(
   rows: GmStatsByAddress[],
-  address: string | null,
-  zero: GmStats,
-  chainId?: number
+  address: string | null
 ): GmStats | undefined {
   if (!address || rows.length === 0) {
     return;
   }
-  if (typeof chainId === "number") {
-    return getStatsForSingleChain(rows, chainId);
-  }
-  return getAggregateStats(rows, zero);
+  return getKeyedStats(rows);
 }
 
 function getChainName(chainId: number): string {
   return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
 }
 
-function getStatsForSingleChain(
-  rows: GmStatsByAddress[],
-  chainId: number
-): GmStats | undefined {
-  const row = rows.find((r) => r.chainId === chainId);
-  if (!row) {
-    return;
+function getKeyedStats(rows: GmStatsByAddress[]): GmStats {
+  const result: GmStats = {};
+  for (const row of rows) {
+    if ((row.allTimeGmCount ?? 0) > 0) {
+      result[String(row.chainId)] = {
+        name: getChainName(row.chainId),
+        currentStreak: row.currentStreak ?? 0,
+        highestStreak: row.highestStreak ?? 0,
+        allTimeGmCount: row.allTimeGmCount ?? 0,
+        lastGmDay: row.lastGmDay ?? 0,
+      };
+    }
   }
-
-  const count = row.allTimeGmCount ?? 0;
-  return {
-    currentStreak: row.currentStreak ?? 0,
-    highestStreak: row.highestStreak ?? 0,
-    allTimeGmCount: count,
-    lastGmDay: row.lastGmDay ?? 0,
-    chains: [{ name: getChainName(row.chainId), count }],
-  };
-}
-
-function getAggregateStats(rows: GmStatsByAddress[], zero: GmStats): GmStats {
-  const stats = rows.reduce<GmStats>((acc, r) => {
-    const count = r.allTimeGmCount ?? 0;
-    return {
-      currentStreak: Math.max(acc.currentStreak, r.currentStreak ?? 0),
-      highestStreak: Math.max(acc.highestStreak, r.highestStreak ?? 0),
-      allTimeGmCount: acc.allTimeGmCount + count,
-      lastGmDay: Math.max(acc.lastGmDay, r.lastGmDay ?? 0),
-      chains: [], // We'll populate this after
-    };
-  }, zero);
-
-  // Populate chains array dynamically
-  stats.chains = SUPPORTED_CHAINS.map((chain) => ({
-    name: chain.name,
-    count: rows.find((r) => r.chainId === chain.id)?.allTimeGmCount ?? 0,
-  }));
-
-  return stats;
+  return result;
 }

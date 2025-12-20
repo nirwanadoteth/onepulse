@@ -13,21 +13,18 @@ import {
 
 type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
-export type GmStats = {
-  currentStreak: number;
-  highestStreak: number;
-  allTimeGmCount: number;
-  lastGmDay: number;
-  chains: { name: string; count: number }[];
-};
+export type GmStats = Record<
+  string,
+  {
+    name: string;
+    currentStreak: number;
+    highestStreak: number;
+    allTimeGmCount: number;
+    lastGmDay: number;
+  }
+>;
 
-export const ZERO: GmStats = {
-  currentStreak: 0,
-  highestStreak: 0,
-  allTimeGmCount: 0,
-  lastGmDay: 0,
-  chains: [],
-};
+export const ZERO: GmStats = {};
 
 export const EMPTY_ROWS: GmStatsByAddress[] = [];
 
@@ -36,10 +33,7 @@ export type GmStatsResult = {
   isReady: boolean;
 };
 
-export function useGmStats(
-  address?: string | null,
-  chainId?: number
-): GmStatsResult {
+export function useGmStats(address?: string | null): GmStatsResult {
   const normalizedAddress = normalizeAddress(address);
   const snapshot = useGmStatsSubscription(address);
   const rowsByAddress = useMemo(() => groupRowsByAddress(snapshot), [snapshot]);
@@ -49,13 +43,12 @@ export function useGmStats(
     }
     return rowsByAddress.get(normalizedAddress) ?? EMPTY_ROWS;
   }, [normalizedAddress, rowsByAddress]);
-  const fallbackStats = useGmStatsFallback(rowsForAddress, address, chainId);
+  const fallbackStats = useGmStatsFallback(rowsForAddress, address);
   const subDerived = useMemo(
-    () =>
-      deriveStatsForAddress(rowsForAddress, normalizedAddress, ZERO, chainId),
-    [rowsForAddress, normalizedAddress, chainId]
+    () => deriveStatsForAddress(rowsForAddress, normalizedAddress),
+    [rowsForAddress, normalizedAddress]
   );
-  const currentKey = `${address ?? ""}:${chainId ?? "all"}`;
+  const currentKey = `${address ?? ""}:all`;
   const fallbackForKey =
     fallbackStats && fallbackStats.key === currentKey
       ? fallbackStats.stats

@@ -16,10 +16,6 @@ const ogQuerySchema = z.object({
     .string()
     .refine((addr) => isAddress(addr), { message: "Invalid Ethereum address" })
     .nullish(),
-  chains: z.string().nullish(),
-  displayName: z.string().nullish(),
-  username: z.string().nullish(),
-  pfp: z.url().nullish(),
 });
 
 // Formats supported by Satori/next/og, in order of preference
@@ -176,19 +172,37 @@ async function getDataFromAddress(address: string): Promise<GMStatusParams> {
   let displayName = formatAddress(address);
   let username = formatAddress(address);
   let pfp: string | null = null;
-  let chains: { name: string; count: number }[] = [];
+  let stats: {
+    name: string;
+    currentStreak: number;
+    highestStreak: number;
+    allTimeGmCount: number;
+  }[] = [];
 
   try {
     const rows = await getGmRows(address);
 
-    // Process chains
-    chains = rows
-      .map((r) => ({
+    // Process chains using keyed structure
+    const gmStats: Record<
+      string,
+      {
+        name: string;
+        currentStreak: number;
+        highestStreak: number;
+        allTimeGmCount: number;
+      }
+    > = {};
+    for (const r of rows) {
+      gmStats[String(r.chainId)] = {
         name: getChainName(r.chainId),
-        count: r.allTimeGmCount ?? 0,
-      }))
-      .filter((c) => c.count > 0)
-      .sort((a, b) => a.name.localeCompare(b.name));
+        currentStreak: r.currentStreak ?? 0,
+        highestStreak: r.highestStreak ?? 0,
+        allTimeGmCount: r.allTimeGmCount ?? 0,
+      };
+    }
+
+    // Convert to sorted chains array for OG image
+    stats = Object.values(gmStats).sort((a, b) => a.name.localeCompare(b.name));
 
     // Find FID and fetch Farcaster profile
     const fid = rows.find((r) => r.fid)?.fid;
@@ -215,7 +229,7 @@ async function getDataFromAddress(address: string): Promise<GMStatusParams> {
     displayName,
     username,
     pfp,
-    chains,
+    stats,
   };
 }
 
@@ -223,36 +237,32 @@ type GMStatusParams = {
   displayName: string;
   username: string;
   pfp: string | null;
-  chains: { name: string; count: number }[];
+  stats: {
+    name: string;
+    currentStreak: number;
+    highestStreak: number;
+    allTimeGmCount: number;
+  }[];
 };
 
 async function fetchGMStatusParams(
   searchParams: URLSearchParams
 ): Promise<GMStatusParams> {
   const address = searchParams.get("address");
-  const chainsParam = searchParams.get("chains");
 
   // If address is provided, fetch data from SpacetimeDB and Farcaster
   if (address && isAddress(address)) {
     return await getDataFromAddress(address);
   }
 
-  // Fallback to legacy parameter format
-  const chains = chainsParam
-    ? chainsParam.split(",").map((c) => {
-        const [name, count] = c.split(":");
-        return {
-          name: name ? decodeURIComponent(name) : "Unknown",
-          count: Number.parseInt(count || "0", 10),
-        };
-      })
-    : [];
+  // Fallback to empty stats
+  const stats: GMStatusParams["stats"] = [];
 
   return {
     displayName: searchParams.get("displayName") || "name",
     username: searchParams.get("username") || "username",
     pfp: searchParams.get("pfp") || null,
-    chains,
+    stats,
   };
 }
 
@@ -267,34 +277,36 @@ function generateProfileSection(
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 32,
+        justifyContent: "center",
+        gap: 24,
+        padding: "0 60px",
       }}
     >
       {pfp ? (
         // biome-ignore lint: OG image generation requires img for next/og
         <img
           alt="Profile"
-          height={200}
+          height={180}
           src={pfp}
           style={{
             borderRadius: "50%",
             objectFit: "cover",
-            boxShadow: "0 0 0 8px rgba(255,255,255,0.1)",
+            boxShadow: "0 0 0 6px rgba(255,255,255,0.1)",
           }}
-          width={200}
+          width={180}
         />
       ) : (
         <div
           style={{
-            width: 200,
-            height: 200,
+            width: 180,
+            height: 180,
             borderRadius: "50%",
             background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 80,
-            boxShadow: "0 0 0 8px rgba(255,255,255,0.1)",
+            fontSize: 72,
+            boxShadow: "0 0 0 6px rgba(255,255,255,0.1)",
             color: "white",
           }}
         >
@@ -307,15 +319,15 @@ function generateProfileSection(
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 8,
+          gap: 6,
         }}
       >
         <div
           style={{
             display: "flex",
-            fontSize: 72,
+            fontSize: 48,
             fontWeight: 800,
-            letterSpacing: -2,
+            letterSpacing: -1,
             color: "#ffffff",
             textAlign: "center",
             lineHeight: 1,
@@ -326,7 +338,7 @@ function generateProfileSection(
         <div
           style={{
             display: "flex",
-            fontSize: 32,
+            fontSize: 24,
             fontWeight: 500,
             color: "#94a3b8",
             textAlign: "center",
@@ -360,70 +372,180 @@ const CHAIN_COLORS: Record<
   },
 };
 
-function generateGmStats(chains: { name: string; count: number }[]) {
-  const stats = chains.map((chain) => {
-    const colors = CHAIN_COLORS[chain.name.toLowerCase()] || {
-      bg: "rgba(255, 255, 255, 0.05)",
-      border: "rgba(255, 255, 255, 0.1)",
-      text: "#0a0a0a",
-    };
-    return {
-      ...chain,
-      ...colors,
-    };
-  });
-
+function generateGmStatsTable(
+  stats: {
+    name: string;
+    currentStreak: number;
+    highestStreak: number;
+    allTimeGmCount: number;
+  }[]
+) {
   return (
     <div
       style={{
         display: "flex",
-        gap: 32,
-        marginTop: 64,
-        width: "100%",
-        justifyContent: "center",
+        flexDirection: "column",
+        padding: "32px",
+        borderRadius: 24,
+        background: "rgba(255, 255, 255, 0.03)",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
       }}
     >
-      {stats.map((chain) => (
+      {/* Table Header */}
+      <div
+        style={{
+          display: "flex",
+          paddingBottom: 16,
+          borderBottom: "2px solid rgba(255, 255, 255, 0.1)",
+        }}
+      >
         <div
-          key={chain.name}
           style={{
             display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "32px 48px",
-            borderRadius: 32,
-            background: chain.bg,
-            border: `1px solid ${chain.border}`,
-            minWidth: 240,
+            width: 140,
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#94a3b8",
+            textTransform: "uppercase",
+            letterSpacing: 1,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              fontSize: 64,
-              fontWeight: 800,
-              lineHeight: 1,
-              marginBottom: 12,
-              color: "#0a0a0a",
-            }}
-          >
-            {chain.count}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: 24,
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: 2,
-              color: chain.text,
-            }}
-          >
-            {chain.name}
-          </div>
+          Chain
         </div>
-      ))}
+        <div
+          style={{
+            display: "flex",
+            width: 120,
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#94a3b8",
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            justifyContent: "center",
+          }}
+        >
+          Current
+        </div>
+        <div
+          style={{
+            display: "flex",
+            width: 120,
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#94a3b8",
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            justifyContent: "center",
+          }}
+        >
+          Highest
+        </div>
+        <div
+          style={{
+            display: "flex",
+            width: 120,
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#94a3b8",
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            justifyContent: "center",
+          }}
+        >
+          All-Time
+        </div>
+      </div>
+
+      {/* Table Rows */}
+      {stats.map((chain, index) => {
+        const colors = CHAIN_COLORS[chain.name.toLowerCase()] || {
+          bg: "rgba(255, 255, 255, 0.05)",
+          border: "rgba(255, 255, 255, 0.1)",
+          text: "#ffffff",
+        };
+
+        return (
+          <div
+            key={chain.name}
+            style={{
+              display: "flex",
+              paddingTop: 20,
+              paddingBottom: 20,
+              borderBottom:
+                index < stats.length - 1
+                  ? "1px solid rgba(255, 255, 255, 0.05)"
+                  : "none",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                width: 140,
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  background: colors.bg,
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                }}
+              >
+                {chain.name}
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                width: 120,
+                fontSize: 32,
+                fontWeight: 800,
+                color: "#ffffff",
+                justifyContent: "center",
+              }}
+            >
+              {chain.currentStreak}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                width: 120,
+                fontSize: 32,
+                fontWeight: 800,
+                color: "#ffffff",
+                justifyContent: "center",
+              }}
+            >
+              {chain.highestStreak}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                width: 120,
+                fontSize: 32,
+                fontWeight: 800,
+                color: "#ffffff",
+                justifyContent: "center",
+              }}
+            >
+              {chain.allTimeGmCount}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -431,7 +553,7 @@ function generateGmStats(chains: { name: string; count: number }[]) {
 function generateMainOGImage(
   params: Awaited<ReturnType<typeof fetchGMStatusParams>>
 ) {
-  const { displayName, username, pfp, chains } = params;
+  const { displayName, username, pfp, stats } = params;
 
   return (
     <div
@@ -439,9 +561,9 @@ function generateMainOGImage(
         width: "100%",
         height: "100%",
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "space-between",
+        padding: "80px",
         background: "#0a0a0a",
         backgroundImage:
           "radial-gradient(circle at 50% 0%, #171717 0%, #0a0a0a 100%)",
@@ -454,6 +576,7 @@ function generateMainOGImage(
         style={{
           position: "absolute",
           bottom: 40,
+          left: 80,
           fontSize: 24,
           fontWeight: 600,
           color: "#a1a1a1",
@@ -464,8 +587,27 @@ function generateMainOGImage(
         OnePulse
       </div>
 
-      {generateProfileSection(displayName, username, pfp)}
-      {generateGmStats(chains)}
+      {/* Left: Profile */}
+      <div
+        style={{
+          display: "flex",
+          flex: "0 0 auto",
+        }}
+      >
+        {generateProfileSection(displayName, username, pfp)}
+      </div>
+
+      {/* Right: Stats Table */}
+      <div
+        style={{
+          display: "flex",
+          flex: "1 1 auto",
+          justifyContent: "flex-end",
+          paddingLeft: 60,
+        }}
+      >
+        {generateGmStatsTable(stats)}
+      </div>
     </div>
   );
 }
@@ -521,18 +663,6 @@ export async function GET(request: NextRequest) {
     const ogSearchParams = new URLSearchParams();
     if (validParams.address) {
       ogSearchParams.set("address", validParams.address);
-    }
-    if (validParams.chains) {
-      ogSearchParams.set("chains", validParams.chains);
-    }
-    if (validParams.displayName) {
-      ogSearchParams.set("displayName", validParams.displayName);
-    }
-    if (validParams.username) {
-      ogSearchParams.set("username", validParams.username);
-    }
-    if (validParams.pfp) {
-      ogSearchParams.set("pfp", validParams.pfp);
     }
 
     // Load fonts and fetch params in parallel to reduce I/O wait time

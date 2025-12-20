@@ -69,6 +69,7 @@ export const GMChainCard = memo(
         </ItemContent>
         <ItemActions>
           <StatsDisplay
+            chainId={chainId}
             isConnected={isConnected}
             isStatsReady={isStatsReady}
             stats={stats}
