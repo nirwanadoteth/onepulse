@@ -39,7 +39,7 @@ export function buildServerDbConnection(): DbConnection {
 export function subscribeOnce(
   conn: DbConnection,
   queries: string[],
-  timeoutMs = 3000
+  timeoutMs = 10_000
 ): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let resolved = false;
@@ -83,7 +83,7 @@ export function subscribeOnce(
 }
 
 export function connectServerDbConnection(
-  timeoutMs = 5000
+  timeoutMs = 30_000
 ): Promise<DbConnection> {
   const config = getSpacetimeDbConfig();
   return new Promise<DbConnection>((resolve, reject) => {
@@ -170,7 +170,7 @@ export async function callReportGm(
     displayName: string | undefined;
     username: string | undefined;
   },
-  timeoutMs = 4000
+  timeoutMs = 10_000
 ): Promise<GmStatsByAddress | null> {
   const conn = await connectServerDbConnection();
 
