@@ -27,7 +27,6 @@ export const ChainSlide = memo(
   }: ChainSlideProps) => {
     const { stats, isReady, handleOpenModal } = useChainSlideLogic({
       address,
-      chainId,
       onOpenModal,
     });
 
