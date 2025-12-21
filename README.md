@@ -4,19 +4,19 @@
 
 ## Daily GM Tracking on Multiple Blockchains
 
-A Farcaster Mini App for saying "GM" daily across Base, Celo, and Optimism networks
+A Base app/Farcaster Mini App for saying "GM" daily across Base, Celo, and Optimism networks
 
 ---
 
 ## ✨ Overview
 
-OnePulse is a Base app/Farcaster Mini App that lets users say "GM" (Good Morning) daily across multiple blockchain networks, track their streaks, and earn DEGEN token rewards. Built with modern Web3 technologies, it demonstrates seamless integration between Farcaster, smart contracts, and real-time databases.
+OnePulse is a Base app/Farcaster Mini App that lets users say "GM" (Good Morning) daily across multiple blockchain networks, track their streaks, and earn rewards in USDC (configurable). Built with modern Web3 technologies, it demonstrates seamless integration between Farcaster, smart contracts, and real-time databases.
 
 ### 🚀 Key Features
 
 - **Multi-Chain GM Tracking** - Say GM on Base, Celo, and Optimism
 - **Real-Time Streaks** - Track current and highest streaks
-- **DEGEN Rewards** - Automatic token rewards for daily participation
+- **ERC-20 Rewards** - Automatic token rewards for daily participation
 - **Farcaster Integration** - Native Mini App experience
 - **Live Statistics** - Real-time updates via SpacetimeDB
 
@@ -25,7 +25,7 @@ OnePulse is a Base app/Farcaster Mini App that lets users say "GM" (Good Morning
 ## 🛠 Tech Stack
 
 | Category | Technology | Version |
-|----------|------------|---------|
+| ---------- | ------------ | --------- |
 | **Frontend** | Next.js, React, TypeScript | 16.0, 19.0, 5.0 |
 | **Styling** | Tailwind CSS | 4.1 |
 | **Web3** | OnchainKit, Wagmi, Viem, AppKit (Reown) | latest, 2.19, 2.38, 1.8.14 |
@@ -99,7 +99,12 @@ NEXT_PUBLIC_URL=http://localhost:3000
 NEXT_PUBLIC_DAILY_GM_ADDRESS_BASE=0x...
 NEXT_PUBLIC_DAILY_GM_ADDRESS_CELO=0x...
 NEXT_PUBLIC_DAILY_GM_ADDRESS_OPTIMISM=0x...
-NEXT_PUBLIC_DAILY_REWARDS_ADDRESS_BASE=0x..
+NEXT_PUBLIC_DAILY_REWARDS_V2_ADDRESS_BASE=0x...
+NEXT_PUBLIC_DAILY_REWARDS_V2_ADDRESS_CELO=0x...
+NEXT_PUBLIC_DAILY_REWARDS_V2_ADDRESS_OPTIMISM=0x...
+
+# Neynar
+NEYNAR_API_KEY=
 
 # Database
 SPACETIMEDB_HOST_URL=
@@ -110,7 +115,10 @@ KV_REST_API_URL=
 KV_REST_API_TOKEN=
 
 # Signer PK
-BACKEND_SIGNER_PRIVATE_KEY=0x
+BACKEND_SIGNER_PRIVATE_KEY=0x...
+
+# Paymaster endpoint from Coinbase (optional)
+PAYMASTER_ENDPOINT=
 ```
 
 ---
@@ -154,7 +162,7 @@ graph TD
 
 ### Reward System
 
-- DEGEN token rewards
+- ERC-20 token rewards (currently use USDC)
 - Automatic claiming
 - Reward history tracking
 
