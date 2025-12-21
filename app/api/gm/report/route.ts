@@ -10,8 +10,6 @@ import { getDailyGmAddress } from "@/lib/utils";
 
 type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
-export const runtime = "nodejs";
-
 const reportGmRequestSchema = z.object({
   address: z
     .string()

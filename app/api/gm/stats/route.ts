@@ -9,8 +9,6 @@ import { getGmRows } from "@/lib/spacetimedb/server-connection";
 
 type GmStatsByAddress = Infer<typeof GmStatsByAddressSchema>;
 
-export const runtime = "nodejs";
-
 const gmStatsQuerySchema = z.object({
   address: z
     .string()
