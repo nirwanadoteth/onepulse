@@ -211,9 +211,17 @@ class GmStatsByAddressStore {
 
   private updateSnapshot() {
     if (this.connection) {
-      this.cachedSnapshot = Array.from(
-        this.connection.db.gmStatsByAddressV2.iter()
-      );
+      const allRows = Array.from(this.connection.db.gmStatsByAddressV2.iter());
+
+      if (this.subscribedAddress) {
+        const normalizedSubscribed = this.subscribedAddress.toLowerCase();
+        this.cachedSnapshot = allRows.filter(
+          (row) => row.address.toLowerCase() === normalizedSubscribed
+        );
+      } else {
+        this.cachedSnapshot = allRows;
+      }
+
       this.emitChange();
     }
   }
