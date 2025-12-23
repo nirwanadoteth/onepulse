@@ -135,18 +135,47 @@ export async function getGmRows(
   const conn = await connectServerDbConnection();
 
   try {
-    const query = `SELECT * FROM gm_stats_by_address_v2 WHERE address = '${address}'`;
-    await subscribeOnce(conn, [query]);
+    const lowerAddress = address.toLowerCase();
 
-    const all = Array.from(conn.db.gmStatsByAddressV2.iter());
-    const filtered = all.filter(
-      (r) => r.address.toLowerCase() === address.toLowerCase()
+    await subscribeOnce(conn, [
+      `SELECT * FROM gm_stats_by_address_v2 WHERE address = '${address}'`,
+      `SELECT * FROM gm_stats_by_address WHERE address = '${address}'`,
+    ]);
+
+    const v2Rows = Array.from(conn.db.gmStatsByAddressV2.iter()).filter(
+      (r) => r.address.toLowerCase() === lowerAddress
     );
 
+    const v2ChainIds = new Set(v2Rows.map((r) => r.chainId));
+
+    const v1Rows = Array.from(conn.db.gmStatsByAddress.iter())
+      .filter((r) => r.address.toLowerCase() === lowerAddress)
+      .filter((r) => !v2ChainIds.has(r.chainId))
+      .map(
+        (v1) =>
+          ({
+            address: v1.address,
+            chainId: v1.chainId,
+            currentStreak: v1.currentStreak,
+            highestStreak: v1.highestStreak,
+            allTimeGmCount: v1.allTimeGmCount,
+            lastGmDay: v1.lastGmDay,
+            lastTxHash: v1.lastTxHash,
+            fid: v1.fid,
+            displayName: v1.displayName,
+            username: v1.username,
+            pfpUrl: undefined,
+            primaryWallet: undefined,
+            updatedAt: v1.updatedAt,
+          }) as GmStatsByAddress
+      );
+
+    const all = [...v2Rows, ...v1Rows];
+
     if (typeof chainId === "number") {
-      return filtered.filter((r) => r.chainId === chainId);
+      return all.filter((r) => r.chainId === chainId);
     }
-    return filtered;
+    return all;
   } catch (error) {
     console.error(
       `[SpacetimeDB] Failed to fetch GM rows for ${address}:`,
