@@ -1,10 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useSyncExternalStore } from "react";
 import type { Infer } from "spacetimedb";
 import type { GmStatsByAddressV2Row } from "@/lib/module_bindings";
 import { normalizeAddress } from "@/lib/utils";
@@ -62,18 +57,34 @@ export function useGmStatsFallback(
   rowsForAddress: GmStatsByAddress[],
   address?: string | null
 ) {
-  const [_fallbackStats, setFallbackStats] = useState<
-    | {
-        key: string;
-        stats: GmStats;
-      }
-    | undefined
-  >();
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
   const normalizedAddress = normalizeAddress(address);
 
+  // Only fetch if subscription data is not ready
+  const shouldFetch =
+    Boolean(address && normalizedAddress) &&
+    !gmStatsByAddressStore.isSubscribedForAddress(address) &&
+    rowsForAddress.length === 0;
+
+  const { data: apiResponse } = useQuery({
+    queryKey: ["gmStats:fallback", address],
+    queryFn: async () => {
+      if (!address) {
+        throw new Error("Address required");
+      }
+      const url = new URL("/api/gm/stats", window.location.origin);
+      url.searchParams.set("address", address);
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        throw new Error("Failed to fetch stats");
+      }
+      return (await res.json()) as GmStatsApiResponse;
+    },
+    enabled: shouldFetch,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+  });
+
+  // Listen for refresh events to invalidate the query
   useEffect(() => {
     if (!(address && normalizedAddress)) {
       return;
@@ -81,111 +92,19 @@ export function useGmStatsFallback(
 
     const unsubscribe = gmStatsByAddressStore.onRefresh((refreshedAddress) => {
       if (refreshedAddress.toLowerCase() === normalizedAddress) {
-        setFallbackStats(undefined);
-        setLastFetchTime(0);
+        // Refresh is handled by the store, query will stop fetching
       }
     });
 
     return unsubscribe;
   }, [address, normalizedAddress]);
 
-  const checkHasSubscriptionData = useCallback(
-    (rows: typeof rowsForAddress) => rows.length > 0,
-    []
-  );
+  if (!apiResponse) {
+    return null;
+  }
 
-  const cleanupTimeoutAndAbort = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    abortControllerRef.current?.abort();
-  }, []);
-
-  const shouldSkipFetch = useCallback(
-    (latestRows: typeof rowsForAddress) => {
-      if (!address) {
-        return true;
-      }
-      const latestReady = gmStatsByAddressStore.isSubscribedForAddress(address);
-      const latestHasData = checkHasSubscriptionData(latestRows);
-
-      if (latestReady && latestHasData) {
-        return true;
-      }
-
-      const now = Date.now();
-      return now - lastFetchTime < 2000;
-    },
-    [address, checkHasSubscriptionData, lastFetchTime]
-  );
-
-  const fetchFallbackStats = useCallback(
-    async (key: string) => {
-      try {
-        if (!address) {
-          throw new Error("Address is required for stats fetch");
-        }
-
-        const latestRows = gmStatsByAddressStore
-          .getSnapshot()
-          .filter((r) => r.address.toLowerCase() === normalizedAddress);
-
-        if (shouldSkipFetch(latestRows)) {
-          return;
-        }
-
-        const url = new URL("/api/gm/stats", window.location.origin);
-        url.searchParams.set("address", address);
-
-        const res = await fetch(url.toString(), {
-          signal: abortControllerRef.current?.signal,
-        });
-
-        if (res.ok) {
-          const json = (await res.json()) as GmStatsApiResponse;
-          setLastFetchTime(Date.now());
-          setFallbackStats({
-            key,
-            stats: parseStatsFromResponse(json),
-          });
-        }
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          return;
-        }
-        // Ignore other errors for fallback
-      }
-    },
-    [address, normalizedAddress, shouldSkipFetch]
-  );
-
-  useEffect(() => {
-    if (!(address && normalizedAddress)) {
-      return;
-    }
-    const key = `${address}:all`;
-    const subReady = gmStatsByAddressStore.isSubscribedForAddress(address);
-    const hasSubData = checkHasSubscriptionData(rowsForAddress);
-
-    if (subReady && hasSubData) {
-      cleanupTimeoutAndAbort();
-      return;
-    }
-
-    cleanupTimeoutAndAbort();
-    abortControllerRef.current = new AbortController();
-
-    timeoutRef.current = setTimeout(() => fetchFallbackStats(key), 500);
-
-    return () => cleanupTimeoutAndAbort();
-  }, [
-    address,
-    normalizedAddress,
-    rowsForAddress,
-    checkHasSubscriptionData,
-    cleanupTimeoutAndAbort,
-    fetchFallbackStats,
-  ]);
-
-  return _fallbackStats;
+  return {
+    key: `${address}:all`,
+    stats: parseStatsFromResponse(apiResponse),
+  };
 }

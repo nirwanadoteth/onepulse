@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import type { Infer } from "spacetimedb";
 import type {
   DbConnection,
@@ -180,7 +180,7 @@ function getUserRank(
   return userRank ?? null;
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const limitStr = url.searchParams.get("limit");

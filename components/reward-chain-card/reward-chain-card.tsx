@@ -1,11 +1,12 @@
 "use client";
 
-import { Copy } from "lucide-react";
-import { memo } from "react";
+import { useOpenUrl } from "@coinbase/onchainkit/minikit";
+import { memo, useCallback } from "react";
 import { toast } from "sonner";
 import { RewardClaimTransaction } from "@/components/gm-chain-card/reward-claim-transaction";
 import { Icons } from "@/components/icons";
 import { useRewardChainCardLogic } from "@/components/reward-chain-card/use-reward-chain-card-logic";
+import { createSuccessAction } from "@/components/transaction-toast/utils";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -23,20 +24,11 @@ export type RewardChainCardProps = {
   isConnected: boolean;
   address?: string;
   sponsored: boolean;
-  onClaimSuccess?: () => void;
 };
 
 export const RewardChainCard = memo((props: RewardChainCardProps) => {
-  const {
-    chainId,
-    name,
-    fid,
-    isConnected,
-    address,
-    sponsored,
-    onClaimSuccess,
-  } = props;
-  const { isCopied, copyToClipboard } = useCopyToClipboard({
+  const { chainId, name, fid, isConnected, address, sponsored } = props;
+  const { copyToClipboard } = useCopyToClipboard({
     onCopyAction: () => toast.success("Copied to clipboard"),
   });
   const {
@@ -46,7 +38,6 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
     dailyClaimCount,
     chainBtnClasses,
     handleSwitchChain,
-    isSwitching,
     buttonState,
     hasAlreadyClaimed,
     chainIconName,
@@ -61,8 +52,27 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
     address,
   });
 
+  const openUrl = useOpenUrl();
   const isEligible = claimState?.isEligible ?? false;
   const BASE_CHAIN_ID = 8453;
+
+  const handleClaimSuccess = useCallback(
+    (txHash: string) => {
+      toast.success(`Reward claimed on ${name}!`, {
+        action: createSuccessAction(txHash, chainId, openUrl),
+      });
+    },
+    [name, chainId, openUrl]
+  );
+
+  const handleClaimError = useCallback(
+    (error: Error) => {
+      toast.error(`Failed to claim reward on ${name}`, {
+        description: error.message || "Please try again later",
+      });
+    },
+    [name]
+  );
 
   return (
     <Item variant="outline">
@@ -79,16 +89,16 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
       <ItemActions>
         <div className="flex items-center gap-2">
           <span className="font-medium text-lg tracking-tight">
-            {displayRewardAmount} {tokenSymbol}
+            {displayRewardAmount}
           </span>
           {tokenAddress && (
             <Button
               aria-label="Copy CA"
-              className="h-5 w-5 p-0 text-muted-foreground transition-colors hover:text-foreground"
+              className="mr-2 ml-1 h-4 w-4 text-accent-foreground text-lg underline underline-offset-2 hover:text-primary"
               onClick={() => copyToClipboard(tokenAddress)}
-              variant="ghost"
+              variant="link"
             >
-              <Copy className={`h-3 w-3 ${isCopied ? "text-green-600" : ""}`} />
+              {tokenSymbol}
             </Button>
           )}
         </div>
@@ -114,19 +124,7 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
           </div>
         </div>
 
-        {!isCorrectChain && isConnected && !hasAlreadyClaimed && (
-          <Button
-            aria-busy={isSwitching}
-            className={`w-full ${chainBtnClasses}`}
-            disabled={isSwitching}
-            onClick={handleSwitchChain}
-            size="lg"
-          >
-            {isSwitching ? "Switching..." : `Switch to ${name}`}
-          </Button>
-        )}
-
-        {!isCorrectChain && isConnected && hasAlreadyClaimed && (
+        {isConnected && hasAlreadyClaimed ? (
           <Button
             className={`w-full ${chainBtnClasses}`}
             disabled={true}
@@ -134,23 +132,17 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
           >
             {buttonState?.label || "Already claimed"}
           </Button>
-        )}
-
-        {isCorrectChain && (
+        ) : (
           <RewardClaimTransaction
             className={chainBtnClasses}
-            disabled={!isEligible}
+            disabled={!(isEligible && isCheckingEligibility)}
             fid={fid}
-            onSuccess={onClaimSuccess}
+            handleSwitchChain={handleSwitchChain}
+            isCorrectChain={isCorrectChain}
+            onError={handleClaimError}
+            onSuccess={handleClaimSuccess}
             sponsored={sponsored && chainId === BASE_CHAIN_ID}
           />
-        )}
-
-        {isCheckingEligibility && (
-          <div className="flex items-center justify-center gap-2 py-2 text-muted-foreground text-xs">
-            <div className="h-3 w-3 animate-spin rounded-full border border-primary border-t-transparent" />
-            Checking eligibility
-          </div>
         )}
       </ItemFooter>
     </Item>

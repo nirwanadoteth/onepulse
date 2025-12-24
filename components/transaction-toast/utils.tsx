@@ -56,7 +56,7 @@ export function createSuccessAction(
       onClick={() => openUrl(`${chainExplorer}/tx/${txHash}`)}
       type="button"
     >
-      <ExternalLinkIcon className="size-4 bg-background stroke-3 text-green-600" />
+      <ExternalLinkIcon className="size-4 stroke-3 text-green-600" />
     </button>
   );
 }
@@ -69,7 +69,7 @@ export function createErrorAction(
   }
   return (
     <button className="ml-auto align-middle" onClick={onSubmit} type="button">
-      <RotateCcwIcon className="size-4 bg-background stroke-3 text-red-600" />
+      <RotateCcwIcon className="size-4 stroke-3 text-red-600" />
     </button>
   );
 }

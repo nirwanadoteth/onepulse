@@ -7,14 +7,24 @@ const authResponseSchema = z.object({
   user: z
     .object({
       fid: z.number().optional(),
+      issuedAt: z.number().optional(),
+      expiresAt: z.number().optional(),
     })
     .optional(),
 });
 
+export type AuthResult = {
+  fid: number;
+  expiresAt?: number;
+};
+
 async function verifyFidWithQuickAuth(
   token: string | null
-): Promise<number | undefined> {
+): Promise<AuthResult | undefined> {
   try {
+    if (!sdk?.quickAuth) {
+      return;
+    }
     if (!token) {
       return;
     }
@@ -39,7 +49,10 @@ async function verifyFidWithQuickAuth(
 
     const data = validationResult.data;
     if (data.success && data.user?.fid) {
-      return data.user.fid;
+      return {
+        fid: data.user.fid,
+        expiresAt: data.user.expiresAt,
+      };
     }
   } catch {
     toast.error("Failed to verify FID");
@@ -55,11 +68,11 @@ async function getToken(): Promise<string | null> {
   }
 }
 
-export async function signIn(): Promise<number | undefined> {
+export async function signIn(): Promise<AuthResult | undefined> {
   try {
     const authJWT = await getToken();
-    const verifiedFid = await verifyFidWithQuickAuth(authJWT);
-    return verifiedFid;
+    const authResult = await verifyFidWithQuickAuth(authJWT);
+    return authResult;
   } catch {
     return;
   }

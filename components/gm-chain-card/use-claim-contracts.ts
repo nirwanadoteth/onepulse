@@ -23,8 +23,8 @@ async function resolveFidToUse(params: {
 
   try {
     const verifiedFid = await signIn();
-    if (verifiedFid) {
-      return BigInt(verifiedFid);
+    if (verifiedFid?.fid) {
+      return BigInt(verifiedFid.fid);
     }
   } catch (error) {
     handleError(

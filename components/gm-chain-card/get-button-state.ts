@@ -12,6 +12,7 @@ type GetButtonStateParams = {
   isDailyLimitReached: boolean;
   isVaultDepleted?: boolean;
   hasAlreadyClaimed?: boolean;
+  isInMiniApp?: boolean;
 };
 
 /**
@@ -27,10 +28,18 @@ export function getButtonState({
   isDailyLimitReached,
   isVaultDepleted,
   hasAlreadyClaimed,
+  isInMiniApp,
 }: GetButtonStateParams): ButtonState {
   if (!isConnected) {
     return {
       label: "Connect wallet",
+      disabled: true,
+    };
+  }
+
+  if (!isInMiniApp) {
+    return {
+      label: "Only available in Mini App",
       disabled: true,
     };
   }

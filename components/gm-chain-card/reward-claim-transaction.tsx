@@ -3,14 +3,17 @@ import {
   TransactionButton,
   TransactionSponsor,
 } from "@coinbase/onchainkit/transaction";
-import { Button } from "../ui/button";
-import { Spinner } from "../ui/spinner";
+import { useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { ClaimFallbackUI } from "./claim-fallback-ui";
 import { useRewardClaimTransactionLogic } from "./use-reward-claim-transaction-logic";
 
 type RewardClaimTransactionProps = {
   className?: string | undefined;
   fid: bigint | undefined;
+  handleSwitchChain: () => Promise<void>;
+  isCorrectChain: boolean;
   sponsored: boolean;
   onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
@@ -20,6 +23,8 @@ type RewardClaimTransactionProps = {
 export function RewardClaimTransaction({
   className,
   fid,
+  isCorrectChain,
+  handleSwitchChain,
   sponsored,
   onSuccess,
   onError,
@@ -39,6 +44,17 @@ export function RewardClaimTransaction({
     disabled,
   });
 
+  const handleOnSubmit = useCallback(
+    async (onSubmit: () => void) => {
+      if (!isCorrectChain) {
+        // Wait for chain switch to complete, then proceed with transaction
+        await handleSwitchChain();
+      }
+      onSubmit();
+    },
+    [isCorrectChain, handleSwitchChain]
+  );
+
   if (!numericChainId) {
     return <ClaimFallbackUI type="wallet" />;
   }
@@ -57,7 +73,7 @@ export function RewardClaimTransaction({
             aria-busy={isDisabled || status === "pending"}
             className={`w-full ${className}`}
             disabled={isDisabled || status === "pending"}
-            onClick={onSubmit}
+            onClick={handleOnSubmit.bind(null, onSubmit)}
             size="lg"
           >
             {status === "pending" ? (

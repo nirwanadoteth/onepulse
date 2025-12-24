@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { handleError } from "@/lib/error-handling";
 import { checkRateLimit, setUserShareData } from "@/lib/kv";
-import { verifyQuickAuth } from "@/lib/quick-auth";
 
 // Constraints to prevent abuse and injection
 const MAX_USERNAME_LENGTH = 100;
@@ -17,25 +16,6 @@ const shareUserRequestSchema = z.object({
     pfp: z.string().url().max(MAX_PFP_URL_LENGTH).optional(),
   }),
 });
-
-/**
- * Verifies that the authenticated user has permission to update share data for the given address.
- * Currently uses Farcaster authentication as a trust signal.
- * Future: Could require a signature proof that the user controls the address.
- */
-function authorizeAddressUpdate(authenticatedFid: number): boolean {
-  // If no authenticated user, deny access
-  if (!authenticatedFid) {
-    return false;
-  }
-
-  // Currently, we trust any authenticated Farcaster user to set their own share data.
-  // TODO: Implement signature verification to prove address ownership:
-  // - Require a signed message from the address
-  // - Verify the signature matches the address
-  // - Bind the update to the specific FID+address combination
-  return true;
-}
 
 /**
  * Checks rate limit for a given identifier and returns a NextResponse if rate limited or on error.
@@ -97,16 +77,7 @@ export async function POST(req: NextRequest) {
     ip = "unknown";
   }
 
-  // Step 1: Authenticate via Quick Auth
-  const authResult = await verifyQuickAuth(req);
-  if (!authResult.success) {
-    return NextResponse.json(
-      { error: "Unauthorized: Invalid or missing authentication" },
-      { status: 401 }
-    );
-  }
-
-  // Step 2: Rate limit by IP (global limit)
+  // Step 1: Rate limit by IP (global limit)
   const ipRateLimitResponse = await checkAndHandleRateLimit({
     identifier: `ip:${ip}`,
     limit: 100,
@@ -119,7 +90,7 @@ export async function POST(req: NextRequest) {
     return ipRateLimitResponse;
   }
 
-  // Step 3: Parse and validate request body
+  // Step 2: Parse and validate request body
   let body: unknown;
   try {
     body = await req.json();
@@ -137,7 +108,7 @@ export async function POST(req: NextRequest) {
 
   const normalizedAddress = parsed.data.address.toLowerCase();
 
-  // Step 4: Rate limit by address (per-address limit)
+  // Step 3: Rate limit by address (per-address limit)
   const addressRateLimitResponse = await checkAndHandleRateLimit({
     identifier: `address:${normalizedAddress}`,
     limit: 10,
@@ -150,15 +121,7 @@ export async function POST(req: NextRequest) {
     return addressRateLimitResponse;
   }
 
-  // Step 5: Authorize address update (verify user has permission)
-  if (!authorizeAddressUpdate(authResult.fid)) {
-    return NextResponse.json(
-      { error: "Forbidden: No permission to update this address" },
-      { status: 403 }
-    );
-  }
-
-  // Step 6: Store the data
+  // Step 4: Store the data
   try {
     await setUserShareData(normalizedAddress, parsed.data.data);
     return NextResponse.json({ success: true });
@@ -169,7 +132,6 @@ export async function POST(req: NextRequest) {
       {
         operation: "share/user",
         address: normalizedAddress,
-        fid: authResult.fid,
       },
       { silent: true }
     );

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { sendMiniAppNotification } from "@/lib/notifications";
@@ -13,7 +13,7 @@ const notifyRequestSchema = z.object({
   notificationId: z.string().min(1),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const parseResult = notifyRequestSchema.safeParse(body);

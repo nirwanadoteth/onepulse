@@ -35,7 +35,7 @@ function updateToastState(
     chainId?: number;
     errorMessage?: string;
     onSubmit?: () => void;
-    openUrl?: ((url: string) => void) | null;
+    openUrl: (url: string) => void;
   }
 ) {
   const {
@@ -69,7 +69,7 @@ function updateToastState(
     toastId.current = toast.success(SUCCESS_MESSAGES.TRANSACTION_SUCCESS, {
       className,
       description: label,
-      action: createSuccessAction(transactionHash, chainId, openUrl || null),
+      action: createSuccessAction(transactionHash, chainId, openUrl),
       position,
       duration: TRANSACTION_TOAST_DURATION_MS,
     });

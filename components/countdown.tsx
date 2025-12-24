@@ -2,7 +2,7 @@
 
 import { ClockIcon } from "lucide-react";
 import { memo } from "react";
-import { useCountdown } from "../hooks/use-countdown";
+import { useCountdown } from "@/hooks/use-countdown";
 
 export const Countdown = memo(() => {
   const text = useCountdown();

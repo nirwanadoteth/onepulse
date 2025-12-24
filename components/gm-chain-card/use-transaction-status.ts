@@ -1,5 +1,6 @@
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { useCallback, useRef } from "react";
+import { toast } from "sonner";
 import { ERROR_MESSAGES, handleError } from "@/lib/error-handling";
 
 type UseTransactionStatusProps = {
@@ -57,8 +58,16 @@ export function useTransactionStatus({
     (status: LifecycleStatus) => {
       const isSuccess = status.statusName === "success";
       const isError = status.statusName === "error";
+      const isPending = status.statusName === "transactionPending";
+
+      if (isPending) {
+        toast.loading("Processing...", {
+          id: "reward-claim-pending",
+        });
+      }
 
       if (isSuccess) {
+        toast.dismiss("reward-claim-pending");
         const txHash =
           status.statusData.transactionReceipts?.[0]?.transactionHash;
         if (txHash && !processedTxHashes.current.has(txHash)) {
@@ -68,15 +77,18 @@ export function useTransactionStatus({
         }
       }
 
-      if (isError && onError) {
-        const error = new Error(
-          status.statusData.message || ERROR_MESSAGES.CLAIM_FAILED
-        );
-        handleError(error, ERROR_MESSAGES.CLAIM_FAILED, {
-          operation: "reward-claim",
-          statusData: status.statusData,
-        });
-        onError(error);
+      if (isError) {
+        toast.dismiss("reward-claim-pending");
+        if (onError) {
+          const error = new Error(
+            status.statusData.message || ERROR_MESSAGES.CLAIM_FAILED
+          );
+          handleError(error, ERROR_MESSAGES.CLAIM_FAILED, {
+            operation: "reward-claim",
+            statusData: status.statusData,
+          });
+          onError(error);
+        }
       }
     },
     [handleRefreshAfterSuccess, onError]

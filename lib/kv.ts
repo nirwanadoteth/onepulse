@@ -233,3 +233,54 @@ export async function checkRateLimit(
     throw error;
   }
 }
+
+// Hidden Chains Management
+const HIDDEN_CHAINS_KEY = "onepulse:config:hidden_chains";
+
+export async function getHiddenChains(): Promise<number[]> {
+  try {
+    const hidden = await redis.get<number[]>(HIDDEN_CHAINS_KEY);
+    return hidden || [];
+  } catch (error) {
+    reportKvError(error, "getHiddenChains", {});
+    return [];
+  }
+}
+
+export async function setHiddenChains(chainIds: number[]): Promise<void> {
+  try {
+    await redis.set(HIDDEN_CHAINS_KEY, chainIds);
+  } catch (error) {
+    reportKvError(error, "setHiddenChains", { chainIds });
+    throw error;
+  }
+}
+
+export async function toggleChainVisibility(chainId: number): Promise<{
+  hidden: boolean;
+  allHiddenChains: number[];
+}> {
+  try {
+    const currentHidden = await getHiddenChains();
+    const isCurrentlyHidden = currentHidden.includes(chainId);
+
+    let newHidden: number[];
+    if (isCurrentlyHidden) {
+      // Unhide the chain
+      newHidden = currentHidden.filter((id) => id !== chainId);
+    } else {
+      // Hide the chain
+      newHidden = [...currentHidden, chainId];
+    }
+
+    await setHiddenChains(newHidden);
+
+    return {
+      hidden: !isCurrentlyHidden,
+      allHiddenChains: newHidden,
+    };
+  } catch (error) {
+    reportKvError(error, "toggleChainVisibility", { chainId });
+    throw error;
+  }
+}

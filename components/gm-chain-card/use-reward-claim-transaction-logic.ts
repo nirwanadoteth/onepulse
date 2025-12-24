@@ -1,5 +1,6 @@
 import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
+import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { useClaimEligibility } from "@/hooks/use-reward-claim";
 import { signIn } from "@/lib/client-auth";
 import { handleError } from "@/lib/error-handling";
@@ -45,15 +46,23 @@ export function useRewardClaimTransactionLogic({
   const isDailyLimitReached = claimStatus?.globalLimitReached ?? false;
 
   const [cachedFid, setCachedFid] = useState<number | undefined>(undefined);
+  const miniAppContext = useMiniAppContext();
+  const isInMiniApp = miniAppContext?.isInMiniApp ?? false;
 
   useEffect(() => {
+    // Only attempt sign in if we're in a mini app context
+    // (Quick Auth is only available in mini apps)
+    if (!isInMiniApp) {
+      return;
+    }
+
     const controller = new AbortController();
 
     const performSignIn = async () => {
       try {
         const signedInFid = await signIn();
-        if (!controller.signal.aborted && signedInFid) {
-          setCachedFid(signedInFid);
+        if (!controller.signal.aborted && signedInFid?.fid) {
+          setCachedFid(signedInFid.fid);
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -69,7 +78,7 @@ export function useRewardClaimTransactionLogic({
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [isInMiniApp]);
 
   const getClaimContracts = useClaimContracts({
     address,

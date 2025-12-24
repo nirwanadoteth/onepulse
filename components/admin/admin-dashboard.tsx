@@ -9,6 +9,7 @@ import { useDailyRewardsV2Config } from "@/hooks/use-daily-rewards-v2-config";
 import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
 import { useErc20Metadata } from "@/hooks/use-erc20-metadata";
 import { BlacklistManagementCard } from "./blacklist-management-card";
+import { ChainVisibilityControls } from "./chain-visibility-controls";
 import { ContractSettingsCard } from "./contract-settings-card";
 import { OwnershipCard } from "./ownership-card";
 import { VaultStatusCard } from "./vault-status-card";
@@ -191,6 +192,8 @@ export function AdminDashboard() {
                   tokenSymbol={tokenSymbol}
                   vaultStatus={vaultStatus}
                 />
+
+                <ChainVisibilityControls />
 
                 <ContractSettingsCard
                   backendSigner={backendSigner}

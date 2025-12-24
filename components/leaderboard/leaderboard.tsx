@@ -1,7 +1,7 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import useSWR from "swr";
 import { useAccount } from "wagmi";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -101,15 +101,13 @@ export function Leaderboard({ userAddress }: { userAddress?: string }) {
     ? `/api/leaderboard?limit=10&user=${encodeURIComponent(currentUserAddress)}`
     : "/api/leaderboard?limit=10";
 
-  const { data, error, isLoading } = useSWR<LeaderboardResponse>(
-    apiUrl,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60_000,
-    }
-  );
+  const { data, error, isLoading } = useQuery<LeaderboardResponse>({
+    queryKey: ["leaderboard", currentUserAddress],
+    queryFn: () => fetcher(apiUrl),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   const { topEntries, userEntry } = useMemo(() => {
     if (!data?.leaderboard) {
@@ -174,6 +172,7 @@ export function Leaderboard({ userAddress }: { userAddress?: string }) {
               {userEntry.pfpUrl && (
                 <AvatarImage
                   alt={getDisplayName(userEntry)}
+                  loading="lazy"
                   src={userEntry.pfpUrl}
                 />
               )}
@@ -222,7 +221,11 @@ export function Leaderboard({ userAddress }: { userAddress?: string }) {
             </div>
             <Avatar className="ml-1 h-8 w-8">
               {entry.pfpUrl && (
-                <AvatarImage alt={getDisplayName(entry)} src={entry.pfpUrl} />
+                <AvatarImage
+                  alt={getDisplayName(entry)}
+                  loading="lazy"
+                  src={entry.pfpUrl}
+                />
               )}
               <AvatarFallback>
                 {getDisplayName(entry).charAt(0).toUpperCase()}

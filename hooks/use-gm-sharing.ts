@@ -27,9 +27,14 @@ export function useGMSharing(
       })
     : null;
 
+  // Extract user properties with stable defaults to prevent dependency array size changes
+  const username = user?.username ?? "";
+  const displayName = user?.displayName ?? "";
+  const pfpUrl = user?.pfpUrl ?? "";
+
   // Store user data in KV cache for display on share page
   useEffect(() => {
-    if (address && user?.username) {
+    if (address && username) {
       fetch("/api/share/user", {
         method: "POST",
         headers: {
@@ -38,16 +43,16 @@ export function useGMSharing(
         body: JSON.stringify({
           address,
           data: {
-            username: user.username,
-            displayName: user.displayName || user.username,
-            pfp: user.pfpUrl,
+            username,
+            displayName: displayName || username,
+            pfp: pfpUrl,
           },
         }),
       }).catch(() => {
         // Silently fail if KV store is unavailable
       });
     }
-  }, [address, user?.username, user?.displayName, user?.pfpUrl]);
+  }, [address, username, displayName, pfpUrl]);
 
   return {
     shareText,
