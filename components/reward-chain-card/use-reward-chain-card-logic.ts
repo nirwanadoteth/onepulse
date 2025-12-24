@@ -103,16 +103,6 @@ export function useRewardChainCardLogic({
   const claimState = extractClaimState(claimStatus);
   const hasAlreadyClaimed = claimStatus?.fidClaimedToday ?? false;
 
-  // Debug logging
-  console.log(`🎯 useRewardChainCardLogic Debug [Chain: ${chainId}]:`, {
-    fid: fid?.toString(),
-    hasFid: Boolean(fid),
-    isConnected,
-    address,
-    hasAlreadyClaimed,
-    claimState,
-  });
-
   const buttonState = getButtonState({
     isConnected,
     isEligibilityPending: isCheckingEligibility,
@@ -125,8 +115,6 @@ export function useRewardChainCardLogic({
     hasAlreadyClaimed,
     hasFid: Boolean(fid),
   });
-
-  console.log(`🔘 Button State [Chain: ${chainId}]:`, buttonState);
 
   const contractAddress = getDailyRewardsV2Address(chainId);
   const rewardsRead = useDailyRewardsV2Read(contractAddress, chainId);
