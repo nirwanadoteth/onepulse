@@ -107,6 +107,20 @@ export function useRewardClaimTransactionLogic({
     hasFid: Boolean(fid),
   });
 
+  // Debug: Log all values affecting isDisabled
+  console.log("🔍 Transaction Button Disable Check:", {
+    disabled,
+    address: address ? "exists" : "missing",
+    fid: fid?.toString() || "missing",
+    contractAddress: contractAddress ? "exists" : "missing",
+    canClaim,
+    hasSentGMToday,
+    isEligibilityPending,
+    isDailyLimitReached,
+    buttonStateDisabled: buttonState.disabled,
+    buttonStateLabel: buttonState.label,
+  });
+
   // If already claimed, disable regardless of network
   if (hasAlreadyClaimed) {
     return {
@@ -128,6 +142,8 @@ export function useRewardClaimTransactionLogic({
     isEligibilityPending ||
     isDailyLimitReached ||
     buttonState.disabled;
+
+  console.log("✅ Final isDisabled:", isDisabled);
 
   return {
     numericChainId,
