@@ -12,7 +12,7 @@ type GetButtonStateParams = {
   isDailyLimitReached: boolean;
   isVaultDepleted?: boolean;
   hasAlreadyClaimed?: boolean;
-  isInMiniApp?: boolean;
+  hasFid?: boolean;
 };
 
 /**
@@ -28,7 +28,7 @@ export function getButtonState({
   isDailyLimitReached,
   isVaultDepleted,
   hasAlreadyClaimed,
-  isInMiniApp,
+  hasFid,
 }: GetButtonStateParams): ButtonState {
   if (!isConnected) {
     return {
@@ -37,7 +37,7 @@ export function getButtonState({
     };
   }
 
-  if (!isInMiniApp) {
+  if (!hasFid) {
     return {
       label: "Only available in Mini App",
       disabled: true,

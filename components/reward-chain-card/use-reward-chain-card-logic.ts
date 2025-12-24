@@ -3,7 +3,6 @@ import { useAppKitNetwork } from "@reown/appkit/react";
 import { useMemo, useState } from "react";
 import type { Address } from "viem";
 import { getButtonState } from "@/components/gm-chain-card/get-button-state";
-import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { extractClaimState } from "@/components/reward-card/utils";
 import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
 import { useErc20Metadata } from "@/hooks/use-erc20-metadata";
@@ -85,8 +84,6 @@ export function useRewardChainCardLogic({
   address,
 }: UseRewardChainCardLogicProps) {
   const { chainId: connectedChainId, switchNetwork } = useAppKitNetwork();
-  const miniAppContext = useMiniAppContext();
-  const isInMiniApp = miniAppContext?.isInMiniApp ?? false;
   const normalizedConnectedChainId = normalizeChainId(connectedChainId);
   const isCorrectChain = normalizedConnectedChainId === chainId;
   const [isSwitching, setIsSwitching] = useState(false);
@@ -116,7 +113,7 @@ export function useRewardChainCardLogic({
     isVaultDepleted:
       claimStatus && claimStatus.vaultBalance <= claimStatus.minReserve,
     hasAlreadyClaimed,
-    isInMiniApp,
+    hasFid: Boolean(fid),
   });
 
   const contractAddress = getDailyRewardsV2Address(chainId);

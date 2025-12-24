@@ -19,7 +19,7 @@ export function useMiniAppProviderLogic() {
         const inMiniApp = await sdk.isInMiniApp();
 
         setMiniAppContext({
-          context: context as unknown as MiniAppContext,
+          context,
           isInMiniApp: inMiniApp,
         });
       } catch {
