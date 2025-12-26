@@ -1,15 +1,16 @@
-import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { useClaimEligibility } from "@/hooks/use-reward-claim";
 import { signIn } from "@/lib/client-auth";
 import { handleError } from "@/lib/error-handling";
-import { getDailyRewardsV2Address, normalizeChainId } from "@/lib/utils";
+import { getDailyRewardsV2Address } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
 import { useTransactionStatus } from "./use-transaction-status";
 
 type UseRewardClaimTransactionLogicProps = {
+  chainId: number;
   fid: bigint | undefined;
   sponsored: boolean;
   onSuccess?: (txHash: string) => void;
@@ -18,17 +19,16 @@ type UseRewardClaimTransactionLogicProps = {
 };
 
 export function useRewardClaimTransactionLogic({
+  chainId: targetChainId,
   fid,
   onSuccess,
   onError,
   disabled = false,
 }: UseRewardClaimTransactionLogicProps) {
   const { address } = useAppKitAccount({ namespace: "eip155" });
-  const { chainId } = useAppKitNetwork();
 
-  const numericChainId = normalizeChainId(chainId);
-  const contractAddress = numericChainId
-    ? getDailyRewardsV2Address(numericChainId)
+  const contractAddress = targetChainId
+    ? getDailyRewardsV2Address(targetChainId)
     : undefined;
   const {
     canClaim,
@@ -36,7 +36,7 @@ export function useRewardClaimTransactionLogic({
     hasSentGMToday,
     isPending: isEligibilityPending,
     refetch: refetchEligibility,
-  } = useClaimEligibility({ fid });
+  } = useClaimEligibility({ fid, chainId: targetChainId });
 
   // Determine specific reason why claim is not possible
   const isVaultDepleted =
@@ -85,7 +85,7 @@ export function useRewardClaimTransactionLogic({
     fid,
     contractAddress,
     cachedFid,
-    chainId: numericChainId,
+    chainId: targetChainId,
   });
 
   const { onStatus } = useTransactionStatus({
@@ -110,7 +110,7 @@ export function useRewardClaimTransactionLogic({
   // If already claimed, disable regardless of network
   if (hasAlreadyClaimed) {
     return {
-      numericChainId,
+      numericChainId: targetChainId,
       getClaimContracts,
       onStatus,
       isDisabled: true,
@@ -130,7 +130,7 @@ export function useRewardClaimTransactionLogic({
     buttonState.disabled;
 
   return {
-    numericChainId,
+    numericChainId: targetChainId,
     getClaimContracts,
     onStatus,
     isDisabled,

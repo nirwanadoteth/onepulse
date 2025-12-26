@@ -133,6 +133,7 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
           </Button>
         ) : (
           <RewardClaimTransaction
+            chainId={chainId}
             className={chainBtnClasses}
             disabled={!isEligible}
             fid={fid}

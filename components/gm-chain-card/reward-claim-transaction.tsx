@@ -10,6 +10,7 @@ import { ClaimFallbackUI } from "./claim-fallback-ui";
 import { useRewardClaimTransactionLogic } from "./use-reward-claim-transaction-logic";
 
 type RewardClaimTransactionProps = {
+  chainId: number;
   className?: string | undefined;
   fid: bigint | undefined;
   handleSwitchChain: () => Promise<void>;
@@ -21,6 +22,7 @@ type RewardClaimTransactionProps = {
 };
 
 export function RewardClaimTransaction({
+  chainId,
   className,
   fid,
   isCorrectChain,
@@ -37,6 +39,7 @@ export function RewardClaimTransaction({
     isDisabled,
     buttonState,
   } = useRewardClaimTransactionLogic({
+    chainId,
     fid,
     sponsored,
     onSuccess,
