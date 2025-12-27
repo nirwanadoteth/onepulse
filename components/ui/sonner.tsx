@@ -2,10 +2,8 @@
 
 import {
   CheckIcon,
-  CircleCheckIcon,
   InfoIcon,
   Loader2Icon,
-  OctagonXIcon,
   TriangleAlertIcon,
   XIcon,
 } from "lucide-react";
