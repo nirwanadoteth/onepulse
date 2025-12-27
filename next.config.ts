@@ -21,11 +21,19 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   compress: true,
-  poweredByHeader: false,
-  reactStrictMode: true,
   experimental: {
     inlineCss: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
+  },
+  poweredByHeader: false,
+  reactStrictMode: true,
   async headers() {
     return [
       {
