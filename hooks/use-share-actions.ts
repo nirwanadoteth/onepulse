@@ -6,7 +6,7 @@ import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { handleError } from "@/lib/error-handling";
 
 type ShareActions = {
-  shareToCast: (shareText: string, shareUrl: string) => Promise<void>;
+  shareToCast: (shareText: string, shareUrl: string) => Promise<boolean>;
   shareToClipboard: (shareText: string, shareUrl: string) => void;
 };
 
@@ -15,12 +15,17 @@ export function useShareActions(): ShareActions {
     onCopyAction: () => toast.success("Copied to clipboard"),
   });
 
-  const shareToCast = async (shareText: string, shareUrl: string) => {
+  const shareToCast = async (
+    shareText: string,
+    shareUrl: string
+  ): Promise<boolean> => {
     try {
-      await sdk.actions.composeCast({
+      const result = await sdk.actions.composeCast({
         text: shareText,
         embeds: [shareUrl],
       });
+      // If result is undefined, user didn't cast (saved to draft or closed)
+      return result !== undefined;
     } catch (error) {
       // Cast composition failure handled by copying to clipboard
       handleError(
@@ -33,6 +38,7 @@ export function useShareActions(): ShareActions {
       );
       try {
         copyToClipboard(`${shareText}\n${shareUrl}`);
+        return false; // Failed to cast, fell back to clipboard
       } catch (clipboardError) {
         handleError(
           clipboardError,
@@ -41,6 +47,7 @@ export function useShareActions(): ShareActions {
           { silent: true }
         );
         toast.error("Copy failed");
+        return false;
       }
     }
   };

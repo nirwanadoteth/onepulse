@@ -108,6 +108,7 @@ export function useRewardChainCardLogic({
     isEligibilityPending: isCheckingEligibility,
     fidBlacklisted: claimStatus?.fidIsBlacklisted ?? false,
     hasSentGMToday: claimStatus?.hasSentGMToday ?? false,
+    hasSharedMiniAppToday: claimStatus?.hasSharedMiniAppToday ?? false,
     canClaim: claimState?.isEligible ?? false,
     isDailyLimitReached: claimStatus?.globalLimitReached ?? false,
     isVaultDepleted:

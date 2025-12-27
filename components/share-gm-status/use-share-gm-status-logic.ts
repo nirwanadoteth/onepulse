@@ -11,14 +11,15 @@ export function useShareGMStatusLogic(
   );
   const { shareToCast } = useShareActions();
 
-  const handleShare = async (platform: "cast" | "copy") => {
+  const handleShare = async (platform: "cast" | "copy"): Promise<boolean> => {
     if (!shareUrl) {
-      return;
+      return false;
     }
 
     if (platform === "cast") {
-      await shareToCast(shareText, shareUrl);
+      return await shareToCast(shareText, shareUrl);
     }
+    return false;
   };
 
   return {

@@ -8,6 +8,7 @@ type GetButtonStateParams = {
   isEligibilityPending: boolean;
   fidBlacklisted: boolean;
   hasSentGMToday: boolean;
+  hasSharedMiniAppToday: boolean;
   canClaim: boolean;
   isDailyLimitReached: boolean;
   isVaultDepleted?: boolean;
@@ -24,6 +25,7 @@ export function getButtonState({
   isEligibilityPending,
   fidBlacklisted,
   hasSentGMToday,
+  hasSharedMiniAppToday,
   canClaim,
   isDailyLimitReached,
   isVaultDepleted,
@@ -82,6 +84,13 @@ export function getButtonState({
   if (!hasSentGMToday) {
     return {
       label: "Send GM first",
+      disabled: true,
+    };
+  }
+
+  if (!hasSharedMiniAppToday) {
+    return {
+      label: "Share mini app first",
       disabled: true,
     };
   }

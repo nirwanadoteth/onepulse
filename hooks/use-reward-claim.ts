@@ -4,6 +4,7 @@ import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
 import { useMemo } from "react";
 import type { Address } from "viem";
 import { useReadContract } from "wagmi";
+import { useMiniAppSharing } from "@/hooks/use-mini-app-sharing";
 import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
 import {
   BASE_CHAIN_ID,
@@ -18,7 +19,7 @@ type UseClaimEligibilityProps = {
   chainId?: number;
 };
 
-type ClaimEligibility = {
+type ContractClaimEligibility = {
   ok: boolean;
   fidIsBlacklisted: boolean;
   fidClaimedToday: boolean;
@@ -27,6 +28,12 @@ type ClaimEligibility = {
   reward: bigint;
   vaultBalance: bigint;
   minReserve: bigint;
+  globalClaimsToday: bigint;
+  globalClaimLimit: bigint;
+};
+
+type ClaimEligibility = ContractClaimEligibility & {
+  hasSharedMiniAppToday: boolean;
 };
 
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
@@ -41,11 +48,18 @@ type FormattedClaimEligibility = {
 };
 
 function formatClaimEligibility(
-  claimStatus: ClaimEligibility | undefined
+  claimStatus: ContractClaimEligibility | undefined,
+  hasSharedToday: boolean
 ): FormattedClaimEligibility {
+  const baseCanClaim = claimStatus?.ok ?? false;
+  // User must have sent GM, shared the mini app, and meet other criteria
+  const canClaim = baseCanClaim && hasSharedToday;
+
   return {
-    claimStatus,
-    canClaim: claimStatus?.ok ?? false,
+    claimStatus: claimStatus
+      ? { ...claimStatus, hasSharedMiniAppToday: hasSharedToday }
+      : undefined,
+    canClaim,
     reward: claimStatus?.reward ?? 0n,
     vaultBalance: claimStatus?.vaultBalance ?? 0n,
   };
@@ -86,6 +100,7 @@ export function useClaimEligibility({
   const { address } = useAppKitAccount({ namespace: "eip155" });
   const { chainId: connectedChainId } = useAppKitNetwork();
   const normalizedConnectedChainId = normalizeChainId(connectedChainId);
+  const { hasSharedToday } = useMiniAppSharing();
 
   // Use target chain if provided, otherwise use connected chain
   const activeChainId =
@@ -128,7 +143,7 @@ export function useClaimEligibility({
   const refetch = refetchContract;
 
   return {
-    ...formatClaimEligibility(claimStatus),
+    ...formatClaimEligibility(claimStatus, hasSharedToday),
     hasSentGMToday: claimStatus?.hasSentGMToday ?? false,
     isPending,
     isError,

@@ -100,6 +100,7 @@ export function useRewardClaimTransactionLogic({
     isEligibilityPending,
     fidBlacklisted,
     hasSentGMToday,
+    hasSharedMiniAppToday: claimStatus?.hasSharedMiniAppToday ?? false,
     canClaim,
     isDailyLimitReached,
     isVaultDepleted,

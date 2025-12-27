@@ -16,6 +16,7 @@ import {
   ItemMedia,
 } from "@/components/ui/item";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { useMiniAppSharing } from "@/hooks/use-mini-app-sharing";
 
 export type RewardChainCardProps = {
   chainId: number;
@@ -31,6 +32,7 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
   const { copyToClipboard } = useCopyToClipboard({
     onCopyAction: () => toast.success("Copied to clipboard"),
   });
+  const { hasSharedToday, shareMiniApp } = useMiniAppSharing();
   const {
     isCorrectChain,
     claimState,
@@ -72,6 +74,15 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
     },
     [name]
   );
+
+  const handleShareMiniApp = useCallback(async () => {
+    const success = await shareMiniApp();
+    if (success) {
+      toast.success("Mini app shared successfully!");
+    } else {
+      toast.error("Failed to share mini app. Please try again.");
+    }
+  }, [shareMiniApp]);
 
   return (
     <Item variant="outline">
@@ -123,27 +134,45 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
           </div>
         </div>
 
-        {isConnected && hasAlreadyClaimed ? (
-          <Button
-            className={`w-full ${chainBtnClasses}`}
-            disabled={true}
-            size="lg"
-          >
-            {buttonState?.label || "Already claimed"}
-          </Button>
-        ) : (
-          <RewardClaimTransaction
-            chainId={chainId}
-            className={chainBtnClasses}
-            disabled={!isEligible}
-            fid={fid}
-            handleSwitchChain={handleSwitchChain}
-            isCorrectChain={isCorrectChain}
-            onError={handleClaimError}
-            onSuccess={handleClaimSuccess}
-            sponsored={sponsored && chainId === BASE_CHAIN_ID}
-          />
-        )}
+        {(() => {
+          if (isConnected && hasAlreadyClaimed) {
+            return (
+              <Button
+                className={`w-full ${chainBtnClasses}`}
+                disabled={true}
+                size="lg"
+              >
+                {buttonState?.label || "Already claimed"}
+              </Button>
+            );
+          }
+
+          if (!hasSharedToday) {
+            return (
+              <Button
+                className={`w-full ${chainBtnClasses}`}
+                onClick={handleShareMiniApp}
+                size="lg"
+              >
+                Share Mini App
+              </Button>
+            );
+          }
+
+          return (
+            <RewardClaimTransaction
+              chainId={chainId}
+              className={chainBtnClasses}
+              disabled={!isEligible}
+              fid={fid}
+              handleSwitchChain={handleSwitchChain}
+              isCorrectChain={isCorrectChain}
+              onError={handleClaimError}
+              onSuccess={handleClaimSuccess}
+              sponsored={sponsored && chainId === BASE_CHAIN_ID}
+            />
+          );
+        })()}
       </ItemFooter>
     </Item>
   );
