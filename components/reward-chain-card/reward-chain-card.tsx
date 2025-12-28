@@ -16,7 +16,10 @@ import {
   ItemMedia,
 } from "@/components/ui/item";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
+import { useGMSharing } from "@/hooks/use-gm-sharing";
+import { useGmStats } from "@/hooks/use-gm-stats";
 import { useMiniAppSharing } from "@/hooks/use-mini-app-sharing";
+import { useShareActions } from "@/hooks/use-share-actions";
 
 export type RewardChainCardProps = {
   chainId: number;
@@ -32,9 +35,8 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
   const { copyToClipboard } = useCopyToClipboard({
     onCopyAction: () => toast.success("Copied to clipboard"),
   });
-  const { hasSharedToday, shareMiniApp } = useMiniAppSharing();
+
   const {
-    isCorrectChain,
     claimState,
     dailyClaimCount,
     chainBtnClasses,
@@ -46,12 +48,27 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
     tokenAddress,
     displayRewardAmount,
     claimLimitDisplay,
+    isCorrectChain,
   } = useRewardChainCardLogic({
     chainId,
     fid,
     isConnected,
     address,
   });
+
+  const { hasSharedToday } = useMiniAppSharing();
+
+  // Now that claimState is available, get stats and sharing logic
+  const { stats } = useGmStats(address);
+  const claimedToday = Boolean(claimState?.hasClaimedToday);
+  const completedAllChains = address
+    ? Object.values(stats).every((s) => s.currentStreak > 0)
+    : false;
+  const { shareText, shareUrl } = useGMSharing(
+    claimedToday,
+    completedAllChains
+  );
+  const { shareToCast } = useShareActions();
 
   const openUrl = useOpenUrl();
   const isEligible = claimState?.isEligible ?? false;
@@ -76,13 +93,17 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
   );
 
   const handleShareMiniApp = useCallback(async () => {
-    const success = await shareMiniApp();
+    if (!shareUrl) {
+      toast.error("Unable to generate share link. Please try again.");
+      return;
+    }
+    const success = await shareToCast(shareText, shareUrl);
     if (success) {
       toast.success("Mini app shared successfully!");
     } else {
       toast.error("Failed to share mini app. Please try again.");
     }
-  }, [shareMiniApp]);
+  }, [shareText, shareUrl, shareToCast]);
 
   return (
     <Item variant="outline">
