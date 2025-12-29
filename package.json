@@ -67,6 +67,7 @@
     "@types/node": "^24.10.4",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "babel-plugin-react-compiler": "^1.0.0",
     "baseline-browser-mapping": "^2.9.10",
     "tailwindcss": "^4.1.18",
     "ts-node": "^10.9.2",
