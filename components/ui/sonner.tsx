@@ -17,10 +17,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       icons={{
-        success: <CheckIcon className="size-4 bg-green-600 rounded-full p-1 stroke-4 text-background" />,
-        info: <InfoIcon className="size-4 bg-blue-600 rounded-full p-1 stroke-4 text-background" />,
-        warning: <TriangleAlertIcon className="size-4 bg-yellow-600 rounded-full p-1 stroke-4 text-background" />,
-        error: <XIcon className="size-4 bg-red-600 rounded-full p-1 stroke-4 text-background" />,
+        success: (
+          <CheckIcon className="size-4 rounded-full bg-green-600 stroke-4 p-1 text-background" />
+        ),
+        info: (
+          <InfoIcon className="size-4 rounded-full bg-blue-600 stroke-4 p-1 text-background" />
+        ),
+        warning: (
+          <TriangleAlertIcon className="size-4 rounded-full bg-yellow-600 stroke-4 p-1 text-background" />
+        ),
+        error: (
+          <XIcon className="size-4 rounded-full bg-red-600 stroke-4 p-1 text-background" />
+        ),
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
       style={
