@@ -9,7 +9,6 @@ import {
   Settings,
   Share2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { memo, useCallback, useRef, useState } from "react";
 import {
   BASE_APP_PROFILE_URL,
@@ -18,6 +17,7 @@ import {
   TWITTER_URL,
   useAboutLogic,
 } from "@/components/about/use-about-logic";
+import { AdminModal } from "@/components/admin/admin-modal";
 import { AboutDialog } from "@/components/header/about-dialog";
 import { HowItWorksDialog } from "@/components/header/how-it-works-dialog";
 import { Icons } from "@/components/icons";
@@ -52,9 +52,9 @@ export const HeaderRight = memo(
     onSaveClick,
     onShareClick,
   }: HeaderRightProps) => {
-    const router = useRouter();
     const [aboutOpen, setAboutOpen] = useState(false);
     const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+    const [adminModalOpen, setAdminModalOpen] = useState(false);
     const [isMenuBusy, setIsMenuBusy] = useState(false);
     const isMenuBusyRef = useRef(false);
     const { handleOpenUrl, handleViewProfile } = useAboutLogic();
@@ -62,10 +62,6 @@ export const HeaderRight = memo(
     const handleReload = useCallback(() => {
       window.location.reload();
     }, []);
-
-    const handleAdminClick = useCallback(() => {
-      router.push("/admin");
-    }, [router]);
 
     const runMenuAction = useCallback(
       async (action: () => Promise<void> | void) => {
@@ -144,7 +140,7 @@ export const HeaderRight = memo(
           <DropdownMenuContent align="end" className="w-56">
             {showAdminButton && (
               <>
-                <DropdownMenuItem onClick={handleAdminClick}>
+                <DropdownMenuItem onClick={() => setAdminModalOpen(true)}>
                   <Settings className="size-4" />
                   Admin
                 </DropdownMenuItem>
@@ -211,6 +207,10 @@ export const HeaderRight = memo(
         <HowItWorksDialog
           onOpenChangeAction={setHowItWorksOpen}
           open={howItWorksOpen}
+        />
+        <AdminModal
+          onOpenChangeAction={setAdminModalOpen}
+          open={adminModalOpen}
         />
       </div>
     );

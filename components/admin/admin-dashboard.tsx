@@ -1,9 +1,7 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { type Address, formatUnits } from "viem";
-import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDailyRewardsV2Config } from "@/hooks/use-daily-rewards-v2-config";
 import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
@@ -98,7 +96,6 @@ function ContractOverview({
 }
 
 export function AdminDashboard() {
-  const router = useRouter();
   const {
     selectedChainId,
     setSelectedChainId,
@@ -144,29 +141,22 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <Button onClick={() => router.back()} size="sm" variant="outline">
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-      </div>
+    <Tabs
+      onValueChange={(value) => setSelectedChainId(Number(value))}
+      value={String(selectedChainId)}
+    >
+      <TabsList className="grid w-full grid-cols-3">
+        {supportedChains.map((chainId) => (
+          <TabsTrigger key={chainId} value={String(chainId)}>
+            {getChainName(chainId)}
+          </TabsTrigger>
+        ))}
+      </TabsList>
 
-      <Tabs
-        onValueChange={(value) => setSelectedChainId(Number(value))}
-        value={String(selectedChainId)}
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          {supportedChains.map((chainId) => (
-            <TabsTrigger key={chainId} value={String(chainId)}>
-              {getChainName(chainId)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
+      <ScrollArea className="h-120 w-full">
         {supportedChains.map((chainId) => (
           <TabsContent
-            className="space-y-6"
+            className="space-y-2"
             key={chainId}
             value={String(chainId)}
           >
@@ -232,7 +222,7 @@ export function AdminDashboard() {
             )}
           </TabsContent>
         ))}
-      </Tabs>
-    </div>
+      </ScrollArea>
+    </Tabs>
   );
 }

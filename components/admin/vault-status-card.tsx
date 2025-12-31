@@ -253,7 +253,7 @@ export function VaultStatusCard({
                 onClick={handleDeposit}
               >
                 <ArrowUpCircle className="size-4" />
-                {getDepositButtonText()}
+                <span className="sr-only">{getDepositButtonText()}</span>
               </Button>
             </div>
           </div>
@@ -274,7 +274,9 @@ export function VaultStatusCard({
                 variant="destructive"
               >
                 <ArrowDownCircle className="size-4" />
-                {isWithdrawing ? "..." : "Withdraw"}
+                <span className="sr-only">
+                  {isWithdrawing ? "..." : "Withdraw"}
+                </span>
               </Button>
             </div>
           </div>
