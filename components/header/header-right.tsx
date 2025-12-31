@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   Bookmark,
   BookOpenText,
   EllipsisVertical,
@@ -36,12 +35,10 @@ import { Toggle } from "@/components/ui/toggle";
 type HeaderRightProps = {
   canConfigureMiniApp: boolean;
   isMiniAppSaved: boolean;
-  notificationsEnabled: boolean;
   showAdminButton: boolean;
   showShareButton: boolean;
   inMiniApp: boolean;
   onSaveClick: () => Promise<void> | void;
-  onNotificationToggle: () => Promise<void> | void;
   onShareClick: () => void;
 };
 
@@ -49,12 +46,10 @@ export const HeaderRight = memo(
   ({
     canConfigureMiniApp,
     isMiniAppSaved,
-    notificationsEnabled,
     showAdminButton,
     showShareButton,
     inMiniApp,
     onSaveClick,
-    onNotificationToggle,
     onShareClick,
   }: HeaderRightProps) => {
     const router = useRouter();
@@ -90,7 +85,6 @@ export const HeaderRight = memo(
     );
 
     const saveDisabled = !canConfigureMiniApp || isMiniAppSaved;
-    const notificationDisabled = !canConfigureMiniApp || notificationsEnabled;
 
     const handleFarcasterClick = useCallback(() => {
       if (inMiniApp) {
@@ -149,72 +143,45 @@ export const HeaderRight = memo(
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             {showAdminButton && (
-              <DropdownMenuItem onClick={handleAdminClick}>
-                <Settings className="size-4" />
-                Admin
-              </DropdownMenuItem>
-            )}
-            {inMiniApp && (
               <>
-                {!isMiniAppSaved && (
-                  <DropdownMenuItem
-                    className="flex items-center justify-between"
+                <DropdownMenuItem onClick={handleAdminClick}>
+                  <Settings className="size-4" />
+                  Admin
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            {inMiniApp && !isMiniAppSaved && (
+              <>
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  disabled={saveDisabled || isMenuBusy}
+                  onSelect={(event) => event.preventDefault()}
+                >
+                  <span className="flex items-center gap-2">
+                    <Bookmark className="size-4" />
+                    Save Mini App
+                  </span>
+                  <Toggle
+                    aria-label="Toggle save mini app"
                     disabled={saveDisabled || isMenuBusy}
-                    onSelect={(event) => event.preventDefault()}
+                    onPressedChange={(nextPressed) => {
+                      if (!nextPressed) {
+                        return;
+                      }
+                      runMenuAction(onSaveClick);
+                    }}
+                    pressed={isMiniAppSaved}
+                    size="sm"
+                    variant="outline"
                   >
-                    <span className="flex items-center gap-2">
-                      <Bookmark className="size-4" />
-                      Save Mini App
-                    </span>
-                    <Toggle
-                      aria-label="Toggle save mini app"
-                      disabled={saveDisabled || isMenuBusy}
-                      onPressedChange={(nextPressed) => {
-                        if (!nextPressed) {
-                          return;
-                        }
-                        runMenuAction(onSaveClick);
-                      }}
-                      pressed={isMiniAppSaved}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {isMiniAppSaved ? "On" : "Off"}
-                    </Toggle>
-                  </DropdownMenuItem>
-                )}
-                {/* biome-ignore lint: hide */}
-                {isMiniAppSaved && false && (
-                  <DropdownMenuItem
-                    className="flex items-center justify-between"
-                    disabled={notificationDisabled || isMenuBusy}
-                    onSelect={(event) => event.preventDefault()}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Bell className="size-4" />
-                      Notifications
-                    </span>
-                    <Toggle
-                      aria-label="Toggle notifications"
-                      disabled={notificationDisabled || isMenuBusy}
-                      onPressedChange={(nextPressed) => {
-                        if (!nextPressed) {
-                          return;
-                        }
-                        runMenuAction(onNotificationToggle);
-                      }}
-                      pressed={notificationsEnabled}
-                      size="sm"
-                      variant="outline"
-                    >
-                      {notificationsEnabled ? "On" : "Off"}
-                    </Toggle>
-                  </DropdownMenuItem>
-                )}
+                    {isMiniAppSaved ? "On" : "Off"}
+                  </Toggle>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
               </>
             )}
 
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setAboutOpen(true)}>
               <Info className="size-4" />
               About
