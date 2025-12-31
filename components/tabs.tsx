@@ -1,20 +1,17 @@
 "use client";
 
-import { DialogDescription } from "@radix-ui/react-dialog";
 import { Gift, House, MessageCircle, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useChainId, useSwitchChain } from "wagmi";
 import { Home } from "@/components/home";
 import { Leaderboard } from "@/components/leaderboard/leaderboard";
 import { OnChatWidget } from "@/components/onchat-widget";
 import { Rewards } from "@/components/rewards";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Tabs as TabsComponent,
   TabsContent,
@@ -22,6 +19,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import type { useGmStats } from "@/hooks/use-gm-stats";
+import { BASE_CHAIN_ID } from "@/lib/constants";
 import { useTabsLogic } from "./tabs/use-tabs-logic";
 
 type TabsProps = {
@@ -40,7 +38,9 @@ export function Tabs({
   onAllDoneChangeAction,
 }: TabsProps) {
   const { isBaseApp, allowedChainIds } = useTabsLogic();
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
+  const isOnBaseChain = chainId === BASE_CHAIN_ID;
 
   return (
     <div className="my-4">
@@ -86,25 +86,39 @@ export function Tabs({
               </TabsTrigger>
             </TabsList>
             {/* Floating Chat Button */}
-            <Dialog onOpenChange={setIsChatOpen} open={isChatOpen}>
-              <DialogTrigger asChild>
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button
                   className="-top-12 absolute right-4 h-8 w-8 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
-                  size="sm"
+                  onClick={() => {
+                    if (!isOnBaseChain) {
+                      switchChain?.({ chainId: BASE_CHAIN_ID });
+                    }
+                  }}
+                  size="icon-sm"
                 >
                   <MessageCircle className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="p-2 sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Chat</DialogTitle>
-                  <DialogDescription>Powered by OnChat</DialogDescription>
-                </DialogHeader>
-                <div className="mt-1">
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="max-h-150 w-80 p-0 md:w-100"
+                side="top"
+              >
+                {isOnBaseChain ? (
                   <OnChatWidget />
-                </div>
-              </DialogContent>
-            </Dialog>
+                ) : (
+                  <div className="flex h-32 items-center justify-center p-4">
+                    <div className="text-center">
+                      <MessageCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                      <p className="text-muted-foreground text-sm">
+                        Switching to Base network...
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </TabsComponent>
