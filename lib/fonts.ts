@@ -1,8 +1,4 @@
-import {
-  Geist_Mono as FontMono,
-  Geist as FontSans,
-  Inter,
-} from "next/font/google";
+import { Geist_Mono as FontMono, Geist as FontSans } from "next/font/google";
 
 import { cn } from "@/lib/utils";
 
@@ -18,14 +14,4 @@ const fontMono = FontMono({
   display: "swap",
 });
 
-const fontInter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-export const fontVariables = cn(
-  fontSans.variable,
-  fontMono.variable,
-  fontInter.variable
-);
+export const fontVariables = cn(fontSans.variable, fontMono.variable);
