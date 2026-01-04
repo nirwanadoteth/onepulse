@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const MINI_APP_SHARE_KEY = "mini-app-shared-today";
 
@@ -23,13 +23,13 @@ export function useMiniAppSharing() {
     setHasSharedToday(stored === "true");
   }, []);
 
-  const markAsShared = useCallback(() => {
+  const markAsShared = () => {
     const storageKey = getStorageKey();
     localStorage.setItem(storageKey, "true");
     setHasSharedToday(true);
-  }, []);
+  };
 
-  const shareMiniApp = useCallback(async (): Promise<boolean> => {
+  const shareMiniApp = async (): Promise<boolean> => {
     try {
       // Import here to avoid issues with SSR
       const { sdk } = await import("@farcaster/miniapp-sdk");
@@ -49,7 +49,7 @@ export function useMiniAppSharing() {
       console.error("Failed to share mini app:", error);
       return false;
     }
-  }, [markAsShared]);
+  };
 
   return {
     hasSharedToday,

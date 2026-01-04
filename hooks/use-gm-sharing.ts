@@ -1,5 +1,5 @@
-import { useAppKitAccount } from "@reown/appkit/react";
 import { useEffect } from "react";
+import { useConnection } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { getShareText } from "@/components/share-narratives";
 import { generateSimplifiedSharePageUrl } from "@/lib/og-utils";
@@ -16,7 +16,7 @@ export function useGMSharing(
   claimedToday: boolean,
   completedAllChains: boolean
 ) {
-  const { address } = useAppKitAccount({ namespace: "eip155" });
+  const { address } = useConnection();
   const miniAppContextData = useMiniAppContext();
   const user = miniAppContextData?.context?.user;
 
