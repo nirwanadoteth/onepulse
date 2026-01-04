@@ -1,4 +1,4 @@
-import type { MiniAppNotificationDetails } from "@farcaster/miniapp-sdk";
+import type { MiniAppNotificationDetails } from "@/types/miniapp";
 import "server-only";
 import { Redis } from "@upstash/redis";
 
@@ -28,16 +28,6 @@ function reportKvError(
 
 function getUserNotificationDetailsKey(fid: number, appFid: number): string {
   return `onepulse:user:${appFid}:${fid}`;
-}
-
-export type UserShareData = {
-  username: string;
-  displayName: string;
-  pfp?: string;
-};
-
-function getUserShareDataKey(address: string): string {
-  return `onepulse:share:${address.toLowerCase()}`;
 }
 
 export async function getUserNotificationDetails(
@@ -78,138 +68,6 @@ export async function deleteUserNotificationDetails(
     await redis.del(getUserNotificationDetailsKey(fid, appFid));
   } catch (error) {
     reportKvError(error, "deleteUserNotificationDetails", { fid, appFid });
-    throw error;
-  }
-}
-
-export async function setUserShareData(
-  address: string,
-  data: UserShareData
-): Promise<void> {
-  try {
-    await redis.set(getUserShareDataKey(address), data);
-  } catch (error) {
-    reportKvError(error, "setUserShareData", { address });
-    throw error;
-  }
-}
-
-export async function getUserShareData(
-  address: string
-): Promise<UserShareData | null> {
-  try {
-    return await redis.get<UserShareData>(getUserShareDataKey(address));
-  } catch (error) {
-    reportKvError(error, "getUserShareData", { address });
-    throw error;
-  }
-}
-
-// Cache TTLs in seconds
-const GOOGLE_FONT_CACHE_TTL = 86_400; // 24 hours
-
-function getGoogleFontCacheKey(font: string, weight: number): string {
-  return `onepulse:cache:font:${font}:${weight}`;
-}
-
-export async function getCachedGoogleFont(
-  font: string,
-  weight: number
-): Promise<string | null> {
-  try {
-    // Store as base64 string since Redis can't store ArrayBuffer
-    return await redis.get<string>(getGoogleFontCacheKey(font, weight));
-  } catch (error) {
-    reportKvError(error, "getCachedGoogleFont", { font, weight });
-    return null;
-  }
-}
-
-export async function setCachedGoogleFont(
-  font: string,
-  weight: number,
-  fontDataBase64: string
-): Promise<void> {
-  try {
-    await redis.set(getGoogleFontCacheKey(font, weight), fontDataBase64, {
-      ex: GOOGLE_FONT_CACHE_TTL,
-    });
-  } catch (error) {
-    reportKvError(error, "setCachedGoogleFont", { font, weight });
-  }
-}
-
-export async function checkRateLimit(
-  identifier: string,
-  limit = 10,
-  windowSeconds = 60
-): Promise<{ allowed: boolean; remaining: number }> {
-  try {
-    const key = `onepulse:ratelimit:${identifier}`;
-    const count = await redis.incr(key);
-
-    if (count === 1) {
-      await redis.expire(key, windowSeconds);
-    }
-
-    return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
-  } catch (error) {
-    reportKvError(error, "checkRateLimit", {
-      identifier,
-      limit,
-      windowSeconds,
-    });
-    throw error;
-  }
-}
-
-// Hidden Chains Management
-const HIDDEN_CHAINS_KEY = "onepulse:config:hidden_chains";
-
-export async function getHiddenChains(): Promise<number[]> {
-  try {
-    const hidden = await redis.get<number[]>(HIDDEN_CHAINS_KEY);
-    return hidden || [];
-  } catch (error) {
-    reportKvError(error, "getHiddenChains", {});
-    return [];
-  }
-}
-
-export async function setHiddenChains(chainIds: number[]): Promise<void> {
-  try {
-    await redis.set(HIDDEN_CHAINS_KEY, chainIds);
-  } catch (error) {
-    reportKvError(error, "setHiddenChains", { chainIds });
-    throw error;
-  }
-}
-
-export async function toggleChainVisibility(chainId: number): Promise<{
-  hidden: boolean;
-  allHiddenChains: number[];
-}> {
-  try {
-    const currentHidden = await getHiddenChains();
-    const isCurrentlyHidden = currentHidden.includes(chainId);
-
-    let newHidden: number[];
-    if (isCurrentlyHidden) {
-      // Unhide the chain
-      newHidden = currentHidden.filter((id) => id !== chainId);
-    } else {
-      // Hide the chain
-      newHidden = [...currentHidden, chainId];
-    }
-
-    await setHiddenChains(newHidden);
-
-    return {
-      hidden: !isCurrentlyHidden,
-      allHiddenChains: newHidden,
-    };
-  } catch (error) {
-    reportKvError(error, "toggleChainVisibility", { chainId });
     throw error;
   }
 }
