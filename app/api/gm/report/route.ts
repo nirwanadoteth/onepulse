@@ -1,13 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { Infer } from "spacetimedb";
-import { type Address, createPublicClient, http, isAddress } from "viem";
-import { base, celo, optimism } from "viem/chains";
+import { isAddress } from "viem/utils";
 import { z } from "zod";
-import { dailyGMAbi } from "@/lib/abi/daily-gm";
+import { dailyGmAddress } from "@/helpers/contracts";
+import { BASE_CHAIN_ID, type ChainId } from "@/lib/constants";
 import { fetchFarcasterUser, fetchPrimaryWallet } from "@/lib/farcaster";
 import type { GmStatsByAddressV2Row } from "@/lib/module_bindings";
 import { callReportGm, getGmRows } from "@/lib/spacetimedb/server-connection";
-import { getDailyGmAddress } from "@/lib/utils";
 
 type GmStatsByAddress = Infer<typeof GmStatsByAddressV2Row>;
 
@@ -15,71 +14,13 @@ const reportGmRequestSchema = z.object({
   address: z
     .string()
     .refine((addr) => isAddress(addr), { message: "Invalid Ethereum address" }),
-  chainId: z.number().int().positive(),
+  chainId: z.literal(BASE_CHAIN_ID),
+  lastGmDay: z.number().int().positive(),
   fid: z.number().int().positive().optional(),
   displayName: z.string().optional(),
   username: z.string().optional(),
   txHash: z.string().optional(),
 });
-
-function resolveChain(chainId: number) {
-  if (chainId === celo.id) {
-    return celo;
-  }
-  if (chainId === optimism.id) {
-    return optimism;
-  }
-  return base;
-}
-
-async function readOnchainLastGmDay(
-  address: string,
-  contractAddress: string,
-  chainId: number
-) {
-  const chain = resolveChain(chainId);
-
-  // Add a small delay for Celo to ensure block propagation
-  if (chainId === celo.id) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-
-  const client = createPublicClient({
-    chain,
-    transport: http(),
-  });
-
-  let onchainLastGmDay: bigint | undefined;
-  let attempt = 0;
-  const maxAttempts = 3;
-
-  // Retry logic for Celo to handle RPC inconsistency
-  while (attempt < maxAttempts) {
-    try {
-      onchainLastGmDay = await client.readContract({
-        address: contractAddress as Address,
-        abi: dailyGMAbi,
-        functionName: "lastGMDay",
-        args: [address as Address],
-      });
-
-      if (onchainLastGmDay !== undefined && onchainLastGmDay !== BigInt(0)) {
-        break;
-      }
-    } catch {
-      attempt += 1;
-      if (attempt >= maxAttempts) {
-        throw new Error(
-          `Failed to read lastGMDay after ${maxAttempts} attempts`
-        );
-      }
-      // Wait before retrying, with exponential backoff
-      await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
-    }
-  }
-
-  return Number(onchainLastGmDay ?? 0);
-}
 
 async function fetchFarcasterEnrichment(fid: number | undefined): Promise<{
   primaryWallet: string | undefined;
@@ -136,10 +77,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { address, chainId, fid, displayName, username, txHash } =
+    const { address, chainId, fid, displayName, lastGmDay, username, txHash } =
       parseResult.data;
 
-    const contractAddress = getDailyGmAddress(chainId);
+    const contractAddress = dailyGmAddress[chainId as ChainId];
     if (!contractAddress) {
       return NextResponse.json(
         { error: "DAILY_GM_ADDRESS not configured" },
@@ -147,18 +88,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const lastGmDayOnchain = await readOnchainLastGmDay(
-      address,
-      contractAddress,
-      chainId
-    );
-
     const { primaryWallet, pfpUrl } = await fetchFarcasterEnrichment(fid);
 
     const updated = await callReportGm({
       address,
       chainId,
-      lastGmDayOnchain,
+      lastGmDayOnchain: lastGmDay,
       txHash,
       fid: typeof fid === "number" ? BigInt(fid) : undefined,
       displayName,

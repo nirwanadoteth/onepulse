@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { Infer } from "spacetimedb";
-import { isAddress } from "viem";
+import { isAddress } from "viem/utils";
 import { z } from "zod";
-import { SUPPORTED_CHAINS } from "@/lib/constants";
+import { BASE_CHAIN_ID } from "@/lib/constants";
 import type { GmStatsByAddressV2Row } from "@/lib/module_bindings";
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
 
@@ -17,24 +17,23 @@ const gmStatsQuerySchema = z.object({
     }),
 });
 
-function getChainName(chainId: number): string {
-  return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
-}
-
 function formatCombinedStatsResponse(
   address: string,
   rows: GmStatsByAddress[]
 ) {
   const stats: Record<string, Record<string, unknown>> = {};
-  for (const r of rows) {
-    stats[String(r.chainId)] = {
-      name: getChainName(r.chainId),
-      currentStreak: r.currentStreak ?? 0,
-      highestStreak: r.highestStreak ?? 0,
-      allTimeGmCount: r.allTimeGmCount ?? 0,
-      lastGmDay: r.lastGmDay ?? 0,
+  const baseRow = rows.find((r) => r.chainId === BASE_CHAIN_ID);
+
+  if (baseRow) {
+    stats[String(BASE_CHAIN_ID)] = {
+      name: "Base",
+      currentStreak: baseRow.currentStreak ?? 0,
+      highestStreak: baseRow.highestStreak ?? 0,
+      allTimeGmCount: baseRow.allTimeGmCount ?? 0,
+      lastGmDay: baseRow.lastGmDay ?? 0,
     };
   }
+
   return {
     address,
     stats,
