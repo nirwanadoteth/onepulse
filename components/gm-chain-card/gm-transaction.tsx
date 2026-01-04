@@ -58,6 +58,7 @@ export function GMTransaction({
               className={`w-full ${chainBtnClasses}`}
               disabled={isDisabled}
               onClick={onSubmit}
+              size="lg"
             >
               {status === "pending" ? (
                 <>

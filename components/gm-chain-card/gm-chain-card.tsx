@@ -26,7 +26,7 @@ export type GMChainCardProps = {
   }) => void;
   stats: GmStats;
   isStatsReady: boolean;
-  onOpenModalAction?: (refetch: () => Promise<unknown>) => void;
+  isSponsored?: boolean;
 };
 
 export const GMChainCard = ({
@@ -38,7 +38,7 @@ export const GMChainCard = ({
   onStatusChangeAction,
   stats,
   isStatsReady,
-  onOpenModalAction,
+  isSponsored = false,
 }: GMChainCardProps) => {
   const {
     onCorrectChain,
@@ -46,14 +46,15 @@ export const GMChainCard = ({
     gmDisabled,
     chainBtnClasses,
     chainIconName,
-    handleOpenModal,
+    processing,
+    setProcessing,
+    refetchLastGmDay,
   } = useGMChainCardLogic({
     chainId,
     contractAddress,
     isConnected,
     address,
     onStatusChange: onStatusChangeAction,
-    onOpenModal: onOpenModalAction,
   });
 
   return (
@@ -78,14 +79,19 @@ export const GMChainCard = ({
       </ItemActions>
       <ItemFooter className="flex-col">
         <ActionButton
+          address={address}
           chainBtnClasses={chainBtnClasses}
           chainId={chainId}
+          contractAddress={contractAddress}
           gmDisabled={gmDisabled}
           hasGmToday={hasGmToday}
           isConnected={isConnected}
+          isSponsored={isSponsored}
           name={name}
           onCorrectChain={onCorrectChain}
-          onOpenModalAction={() => handleOpenModal()}
+          processing={processing}
+          refetchLastGmDayAction={refetchLastGmDay}
+          setProcessingAction={setProcessing}
         />
       </ItemFooter>
     </Item>

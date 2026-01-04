@@ -1,9 +1,11 @@
 "use client";
 
+import type { Address } from "viem/accounts";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ConnectWallet } from "@/components/wallet";
 import type { ChainId } from "@/lib/constants";
+import { GMTransaction } from "./gm-transaction";
 import { useActionButtonLogic } from "./use-action-button-logic";
 
 type ActionButtonProps = {
@@ -14,7 +16,12 @@ type ActionButtonProps = {
   hasGmToday: boolean;
   gmDisabled: boolean;
   chainBtnClasses: string;
-  onOpenModalAction: () => void;
+  contractAddress: Address;
+  isSponsored: boolean;
+  processing: boolean;
+  address?: `0x${string}`;
+  refetchLastGmDayAction?: () => Promise<unknown>;
+  setProcessingAction: (value: boolean) => void;
 };
 
 export function ActionButton({
@@ -25,12 +32,16 @@ export function ActionButton({
   hasGmToday,
   gmDisabled,
   chainBtnClasses,
-  onOpenModalAction,
+  contractAddress,
+  isSponsored,
+  processing,
+  address,
+  refetchLastGmDayAction,
+  setProcessingAction,
 }: ActionButtonProps) {
-  const { doSwitch, isLoading, handleOpenModal } = useActionButtonLogic({
+  const { doSwitch, isLoading } = useActionButtonLogic({
     chainId,
     gmDisabled,
-    onOpenModal: onOpenModalAction,
   });
 
   if (!isConnected) {
@@ -65,14 +76,23 @@ export function ActionButton({
     );
   }
 
+  if (!address) {
+    return null;
+  }
+
   return (
-    <Button
-      className={`w-full ${chainBtnClasses}`}
-      disabled={gmDisabled}
-      onClick={handleOpenModal}
-      size="lg"
-    >
-      GM on {name}
-    </Button>
+    <GMTransaction
+      address={address}
+      buttonLabel={`GM on ${name}`}
+      chainBtnClasses={chainBtnClasses}
+      chainId={chainId}
+      contractAddress={contractAddress}
+      isContractReady={!gmDisabled}
+      isSponsored={isSponsored}
+      onCloseAction={() => undefined}
+      processing={processing}
+      refetchLastGmDayAction={refetchLastGmDayAction}
+      setProcessingAction={setProcessingAction}
+    />
   );
 }
