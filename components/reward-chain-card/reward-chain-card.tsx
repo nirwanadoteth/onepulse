@@ -2,8 +2,8 @@
 
 import { useOpenUrl } from "@coinbase/onchainkit/minikit";
 import { toast } from "sonner";
-import { RewardClaimTransaction } from "@/components/gm-chain-card/reward-claim-transaction";
 import { Icons } from "@/components/icons";
+import { RewardClaimTransaction } from "@/components/reward-chain-card/reward-claim-transaction";
 import { useRewardChainCardLogic } from "@/components/reward-chain-card/use-reward-chain-card-logic";
 import { createSuccessAction } from "@/components/transaction-toast/utils";
 import { Button } from "@/components/ui/button";

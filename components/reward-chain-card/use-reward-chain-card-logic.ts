@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useChainId, useSwitchChain } from "wagmi";
-import { getButtonState } from "@/components/gm-chain-card/get-button-state";
+import { getButtonState } from "@/components/reward-chain-card/get-button-state";
 import { extractClaimState } from "@/components/reward-chain-card/utils";
 import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
 import { useErc20Metadata } from "@/hooks/use-erc20-metadata";

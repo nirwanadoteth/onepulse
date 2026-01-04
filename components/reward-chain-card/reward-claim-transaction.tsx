@@ -47,12 +47,12 @@ export function RewardClaimTransaction({
   });
 
   const handleOnSubmit = async (onSubmit: () => void) => {
-      if (!isCorrectChain) {
-        // Wait for chain switch to complete, then proceed with transaction
-        await handleSwitchChain();
-      }
-      onSubmit();
-    };
+    if (!isCorrectChain) {
+      // Wait for chain switch to complete, then proceed with transaction
+      await handleSwitchChain();
+    }
+    onSubmit();
+  };
 
   if (!numericChainId) {
     return <ClaimFallbackUI type="wallet" />;
