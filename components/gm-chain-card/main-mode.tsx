@@ -1,39 +1,39 @@
 "use client";
 
-import { memo } from "react";
-import type { Address } from "viem";
+import type { Address } from "viem/accounts";
 import { Button } from "@/components/ui/button";
 import { CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ChainId } from "@/lib/constants";
 import { GMTransaction } from "./gm-transaction";
 
 type MainModeProps = {
-  chainId: number;
+  chainId: ChainId;
   contractAddress: Address;
   isSponsored: boolean;
   isContractReady: boolean;
   processing: boolean;
   chainBtnClasses: string;
-  address?: string;
-  refetchLastGmDay?: () => Promise<unknown>;
-  onClose: () => void;
-  setProcessing: (value: boolean) => void;
-  onSwitchToGmTo: () => void;
+  address: `0x${string}`;
+  refetchLastGmDayAction?: () => Promise<unknown>;
+  onCloseAction: () => void;
+  setProcessingAction: (value: boolean) => void;
+  onSwitchToGmToAction: () => void;
 };
 
-export const MainMode = memo(
-  ({
-    chainId,
-    contractAddress,
-    isSponsored,
-    isContractReady,
-    processing,
-    chainBtnClasses,
-    address,
-    refetchLastGmDay,
-    onClose,
-    setProcessing,
-    onSwitchToGmTo,
-  }: MainModeProps) => (
+export function MainMode({
+  chainId,
+  contractAddress,
+  isSponsored,
+  isContractReady,
+  processing,
+  chainBtnClasses,
+  address,
+  refetchLastGmDayAction,
+  onCloseAction,
+  setProcessingAction,
+  onSwitchToGmToAction,
+}: MainModeProps) {
+  return (
     <>
       <CardHeader>
         <CardTitle
@@ -52,17 +52,17 @@ export const MainMode = memo(
           contractAddress={contractAddress}
           isContractReady={isContractReady}
           isSponsored={isSponsored}
-          onClose={onClose}
+          onCloseAction={onCloseAction}
           processing={processing}
-          refetchLastGmDay={refetchLastGmDay}
-          setProcessing={setProcessing}
+          refetchLastGmDayAction={refetchLastGmDayAction}
+          setProcessingAction={setProcessingAction}
           transactionType="gm"
         />{" "}
         <Button
           aria-disabled={!isContractReady || processing}
           className={`w-full ${chainBtnClasses}`}
           disabled={!isContractReady || processing}
-          onClick={onSwitchToGmTo}
+          onClick={onSwitchToGmToAction}
         >
           GM to a Fren
         </Button>
@@ -70,12 +70,12 @@ export const MainMode = memo(
           aria-disabled={processing}
           className="w-full"
           disabled={processing}
-          onClick={onClose}
+          onClick={onCloseAction}
           variant="outline"
         >
           Cancel
         </Button>
       </CardFooter>
     </>
-  )
-);
+  );
+}

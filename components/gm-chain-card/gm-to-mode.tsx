@@ -1,19 +1,17 @@
-"use client";
-
-import { memo } from "react";
-import type { Address } from "viem";
+import type { Address } from "viem/accounts";
 import {
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { ChainId } from "@/lib/constants";
 import { ActionButtons } from "./action-buttons";
 import { InputFeedback } from "./input-feedback";
 import { useGmToModeLogic } from "./use-gm-to-mode-logic";
 
 type GmToModeProps = {
-  chainId: number;
+  chainId: ChainId;
   contractAddress: Address;
   isSponsored: boolean;
   isContractReady: boolean;
@@ -21,32 +19,31 @@ type GmToModeProps = {
   chainBtnClasses: string;
   recipient: string;
   setRecipient: (value: string) => void;
-  address?: string;
+  address: `0x${string}`;
   refetchLastGmDay?: () => Promise<unknown>;
   onClose: () => void;
   setProcessing: (value: boolean) => void;
   onBack: () => void;
 };
 
-export const GmToMode = memo(
-  ({
-    chainId,
-    contractAddress,
-    isSponsored,
-    isContractReady,
-    processing,
-    chainBtnClasses,
-    recipient,
-    setRecipient,
-    address,
-    refetchLastGmDay,
-    onClose,
-    setProcessing,
-    onBack,
-  }: GmToModeProps) => {
-    const {
-      sanitizedRecipient,
-      isRecipientValid,
+export function GmToMode({
+  chainId,
+  contractAddress,
+  isSponsored,
+  isContractReady,
+  processing,
+  chainBtnClasses,
+  recipient,
+  setRecipient,
+  address,
+  refetchLastGmDay,
+  onClose,
+  setProcessing,
+  onBack,
+}: GmToModeProps) {
+  const {
+    sanitizedRecipient,
+    isRecipientValid,
       resolvedAddress,
       isResolving,
     } = useGmToModeLogic({ recipient });
@@ -111,6 +108,3 @@ export const GmToMode = memo(
       </>
     );
   }
-);
-
-GmToMode.displayName = "GmToMode";
