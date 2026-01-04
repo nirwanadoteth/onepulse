@@ -1,10 +1,10 @@
-import type { Address } from "viem";
-import { DAILY_GM_ADDRESSES } from "@/lib/constants";
+import type { Address } from "viem/accounts";
+import { BASE_CHAIN_ID, type ChainId, DAILY_GM_ADDRESS } from "@/lib/constants";
 import { getChainBtnClasses, isSponsoredOnChain } from "@/lib/utils";
 
 type UseModalRendererLogicProps = {
-  activeModalChainId: number | null;
-  chains: Array<{ id: number; name: string }>;
+  activeModalChainId: ChainId | null;
+  chains: Array<{ id: ChainId; name: string }>;
   sponsored: boolean;
 };
 
@@ -18,7 +18,7 @@ type ModalRendererResult =
     }
   | {
       shouldRender: true;
-      activeChain: { id: number; name: string };
+      activeChain: { id: ChainId; name: string };
       activeContractAddress: Address;
       chainBtnClasses: string;
       isSponsored: boolean;
@@ -50,7 +50,10 @@ export function useModalRendererLogic({
     };
   }
 
-  const activeContractAddress = DAILY_GM_ADDRESSES[activeChain.id];
+  const activeContractAddress =
+    activeChain.id === BASE_CHAIN_ID
+      ? (DAILY_GM_ADDRESS as Address)
+      : undefined;
   if (!activeContractAddress) {
     return {
       shouldRender: false,
@@ -65,7 +68,7 @@ export function useModalRendererLogic({
     shouldRender: true,
     activeChain,
     activeContractAddress,
-    chainBtnClasses: getChainBtnClasses(activeModalChainId),
-    isSponsored: isSponsoredOnChain(sponsored, activeModalChainId),
+    chainBtnClasses: getChainBtnClasses(),
+    isSponsored: isSponsoredOnChain(sponsored),
   };
 }
