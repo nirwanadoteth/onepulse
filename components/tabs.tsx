@@ -1,6 +1,6 @@
 "use client";
 
-import { House, MessageCircle, TrendingUp } from "lucide-react";
+import { House, MessageCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Home } from "@/components/home";
 import { Button } from "@/components/ui/button";
@@ -18,16 +18,6 @@ import {
 } from "@/components/ui/tabs";
 import type { useGmStats } from "@/hooks/use-gm-stats";
 import { useTabsLogic } from "./tabs/use-tabs-logic";
-
-const Leaderboard = dynamic(
-  () =>
-    import("@/components/leaderboard/leaderboard").then(
-      (mod) => mod.Leaderboard
-    ),
-  {
-    loading: () => <Skeleton className="h-125 w-full rounded-xl" />,
-  }
-);
 
 const OnChatWidget = dynamic(
   () => import("@/components/onchat-widget").then((mod) => mod.OnChatWidget),
@@ -59,9 +49,6 @@ export function Tabs({
             sponsored={isBaseApp}
           />
         </TabsContent>
-        <TabsContent value="leaderboard">
-          <Leaderboard />
-        </TabsContent>
         <div className="fixed right-0 bottom-0 left-0 mx-auto h-16 w-full max-w-lg bg-transparent">
           <div className="h-16 rounded-t-lg border border-border bg-transparent shadow-lg">
             <TabsList className="mx-auto flex h-full w-full max-w-lg gap-2 rounded-t-lg bg-background p-0 py-0">
@@ -71,13 +58,6 @@ export function Tabs({
               >
                 <House className="h-5 w-5" />
                 <span className="text-xs">Home</span>
-              </TabsTrigger>
-              <TabsTrigger
-                className="flex h-full flex-col items-center justify-center gap-1 border-0 data-[state=active]:bg-foreground/10"
-                value="leaderboard"
-              >
-                <TrendingUp className="h-5 w-5" />
-                <span className="text-xs">Top</span>
               </TabsTrigger>
             </TabsList>
             {/* Floating Chat Button */}
