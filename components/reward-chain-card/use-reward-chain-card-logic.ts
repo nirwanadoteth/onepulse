@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useChainId, useSwitchChain } from "wagmi";
 import { getButtonState } from "@/components/reward-chain-card/get-button-state";
 import { extractClaimState } from "@/components/reward-chain-card/utils";
-import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
-import { useErc20Metadata } from "@/hooks/use-erc20-metadata";
 import {
   useClaimEligibility,
   useDailyClaimCount,
@@ -16,8 +14,6 @@ import {
 } from "@/lib/constants";
 import { getChainBtnClasses } from "@/lib/utils";
 
-const TRAILING_ZEROS_REGEX = /\.?0+$/;
-
 type UseRewardChainCardLogicProps = {
   chainId: ChainId;
   fid: bigint | undefined;
@@ -29,30 +25,12 @@ function getChainIconName(): string {
   return "base";
 }
 
-function getTokenAddress(
-  rewardToken: string | undefined,
-  _chainId: number
-): `0x${string}` | undefined {
-  if (rewardToken?.startsWith("0x")) {
-    return rewardToken as `0x${string}`;
-  }
+function getTokenAddress(): `0x${string}` {
   return REWARD_TOKEN as `0x${string}`;
 }
 
 function getTokenSymbol(): string {
   return REWARD_TOKEN_SYMBOL;
-}
-
-function calculateDisplayAmount(
-  amount: bigint | undefined,
-  decimals: number,
-  trailingZerosRegex: RegExp
-): string {
-  return amount && amount > 0n
-    ? (Number(amount) / 10 ** decimals)
-        .toFixed(3)
-        .replace(trailingZerosRegex, "")
-    : "0.01";
 }
 
 export function useRewardChainCardLogic({
@@ -95,27 +73,13 @@ export function useRewardChainCardLogic({
     hasFid: Boolean(fid),
   });
 
-  const rewardsRead = useDailyRewardsV2Read(chainId);
-  const resolvedTokenAddress = getTokenAddress(
-    rewardsRead.rewardToken,
-    chainId
-  );
-  const metadata = useErc20Metadata(resolvedTokenAddress, chainId);
-
   const chainIconName = getChainIconName();
-  const tokenSymbol = metadata.symbol ?? getTokenSymbol();
-  const decimals = metadata.decimals ?? REWARD_TOKEN_DECIMALS ?? 6;
-  const tokenAddress = resolvedTokenAddress || "";
+  const tokenSymbol = getTokenSymbol();
+  const decimals = REWARD_TOKEN_DECIMALS;
+  const tokenAddress = getTokenAddress();
 
-  const trailingZerosRegex = TRAILING_ZEROS_REGEX;
-  const displayRewardAmount = calculateDisplayAmount(
-    rewardsRead.claimRewardAmount,
-    decimals,
-    trailingZerosRegex
-  );
-  const claimLimitDisplay = rewardsRead.dailyClaimLimit
-    ? Number(rewardsRead.dailyClaimLimit)
-    : 250;
+  const displayRewardAmount = "0.008";
+  const claimLimitDisplay = 750;
 
   const handleSwitchChain = async () => {
     try {
