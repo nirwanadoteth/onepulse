@@ -1,6 +1,7 @@
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useConnection } from "wagmi";
 import type { useGmStats } from "@/hooks/use-gm-stats";
+import type { ChainId } from "@/lib/constants";
 import { areAllChainsComplete, getChainList } from "./chain-config";
 import { useCongratsLogic } from "./use-congrats-logic";
 import { useHomeStats } from "./use-home-stats";
@@ -9,7 +10,7 @@ import { useModalManagement } from "./use-modal-management";
 import { usePerChainStatus } from "./use-per-chain-status";
 
 type UseHomeLogicProps = {
-  allowedChainIds?: number[];
+  allowedChainIds?: ChainId[];
   onGmStatsChange?: (stats: ReturnType<typeof useGmStats>) => void;
   onAllDoneChange?: (allDone: boolean) => void;
 };
@@ -19,7 +20,7 @@ export const useHomeLogic = ({
   onGmStatsChange,
   onAllDoneChange,
 }: UseHomeLogicProps) => {
-  const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
+  const { isConnected, address } = useConnection();
   const {
     activeModalChainId,
     processing,
@@ -31,20 +32,14 @@ export const useHomeLogic = ({
     (() => Promise<unknown>) | undefined
   >(undefined);
 
-  const chains = useMemo(
-    () => getChainList(allowedChainIds),
-    [allowedChainIds]
-  );
-  const chainIds = useMemo(() => chains.map((c) => c.id), [chains]);
+  const chains = getChainList(allowedChainIds);
+  const chainIds = chains.map((c) => c.id);
 
   const gmStatsResult = useHomeStats(address, chains, onGmStatsChange);
 
   const { statusMap, handleStatus } = usePerChainStatus();
 
-  const allDone = useMemo(
-    () => areAllChainsComplete(chainIds, statusMap),
-    [chainIds, statusMap]
-  );
+  const allDone = areAllChainsComplete(chainIds, statusMap);
 
   useEffect(() => {
     onAllDoneChange?.(allDone);

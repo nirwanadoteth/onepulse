@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useGmStats } from "@/hooks/use-gm-stats";
 import { hasChanged } from "@/lib/utils";
 import type { Chain } from "./chain-config";
@@ -11,7 +11,7 @@ export function useHomeStats(
   // Overall GM stats for sharing (keyed by chainId)
   const rawGmStatsResult = useGmStats(address);
 
-  const gmStatsResult = useMemo(() => {
+  const gmStatsResult = (() => {
     // If no stats, return raw result
     if (!rawGmStatsResult.stats) {
       return rawGmStatsResult;
@@ -31,7 +31,7 @@ export function useHomeStats(
       ...rawGmStatsResult,
       stats: filteredStats,
     };
-  }, [rawGmStatsResult, chains]);
+  })();
 
   // Notify parent only when stats actually change (prevents infinite re-render loop)
   const prevStatsRef = useRef<ReturnType<typeof useGmStats> | null>(null);
