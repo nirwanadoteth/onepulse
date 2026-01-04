@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useFocusTrap } from "./use-focus-trap";
 import { useModalScrollPrevention } from "./use-modal-scroll-prevention";
 
@@ -18,18 +18,18 @@ export function useGMModalLogic({
   const [mode, setMode] = useState<"main" | "gmTo">("main");
   const [recipient, setRecipient] = useState("");
 
-  const handleClose = useCallback(() => {
+  const handleClose = () => {
     setMode("main");
     setRecipient("");
     setProcessing(false);
     onClose();
-  }, [setProcessing, onClose]);
+  };
 
-  const handleBackdropClick = useCallback(() => {
+  const handleBackdropClick = () => {
     if (!processing) {
       handleClose();
     }
-  }, [processing, handleClose]);
+  };
 
   const dialogRef = useFocusTrap({
     isOpen,
