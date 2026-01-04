@@ -1,7 +1,6 @@
 "use client";
 
 import { useOpenUrl } from "@coinbase/onchainkit/minikit";
-import { memo, useCallback } from "react";
 import { toast } from "sonner";
 import { RewardClaimTransaction } from "@/components/gm-chain-card/reward-claim-transaction";
 import { Icons } from "@/components/icons";
@@ -20,9 +19,10 @@ import { useGMSharing } from "@/hooks/use-gm-sharing";
 import { useGmStats } from "@/hooks/use-gm-stats";
 import { useMiniAppSharing } from "@/hooks/use-mini-app-sharing";
 import { useShareActions } from "@/hooks/use-share-actions";
+import type { ChainId } from "@/lib/constants";
 
 export type RewardChainCardProps = {
-  chainId: number;
+  chainId: ChainId;
   name: string;
   fid: bigint | undefined;
   isConnected: boolean;
@@ -30,7 +30,7 @@ export type RewardChainCardProps = {
   sponsored: boolean;
 };
 
-export const RewardChainCard = memo((props: RewardChainCardProps) => {
+export function RewardChainCard(props: RewardChainCardProps) {
   const { chainId, name, fid, isConnected, address, sponsored } = props;
   const { copyToClipboard } = useCopyToClipboard({
     onCopyAction: () => toast.success("Copied to clipboard"),
@@ -74,25 +74,19 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
   const isEligible = claimState?.isEligible ?? false;
   const BASE_CHAIN_ID = 8453;
 
-  const handleClaimSuccess = useCallback(
-    (txHash: string) => {
-      toast.success(`Reward claimed on ${name}!`, {
-        action: createSuccessAction(txHash, chainId, openUrl),
-      });
-    },
-    [name, chainId, openUrl]
-  );
+  const handleClaimSuccess = (txHash: string) => {
+    toast.success(`Reward claimed on ${name}!`, {
+      action: createSuccessAction(txHash, chainId, openUrl),
+    });
+  };
 
-  const handleClaimError = useCallback(
-    (error: Error) => {
-      toast.error(`Failed to claim reward on ${name}`, {
-        description: error.message || "Please try again later",
-      });
-    },
-    [name]
-  );
+  const handleClaimError = (error: Error) => {
+    toast.error(`Failed to claim reward on ${name}`, {
+      description: error.message || "Please try again later",
+    });
+  };
 
-  const handleShareMiniApp = useCallback(async () => {
+  const handleShareMiniApp = async () => {
     if (!shareUrl) {
       toast.error("Unable to generate share link. Please try again.");
       return;
@@ -104,7 +98,7 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
     } else {
       toast.error("Failed to share mini app. Please try again.");
     }
-  }, [shareText, shareUrl, shareToCast, markAsShared]);
+  };
 
   return (
     <Item variant="outline">
@@ -198,6 +192,4 @@ export const RewardChainCard = memo((props: RewardChainCardProps) => {
       </ItemFooter>
     </Item>
   );
-});
-
-RewardChainCard.displayName = "RewardChainCard";
+}

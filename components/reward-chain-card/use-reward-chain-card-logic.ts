@@ -1,7 +1,6 @@
-import { base, celo, optimism } from "@reown/appkit/networks";
-import { useAppKitNetwork } from "@reown/appkit/react";
-import { useMemo, useState } from "react";
-import type { Address } from "viem";
+import { useState } from "react";
+import type { Address } from "viem/accounts";
+import { useChainId, useSwitchChain } from "wagmi";
 import { getButtonState } from "@/components/gm-chain-card/get-button-state";
 import { extractClaimState } from "@/components/reward-chain-card/utils";
 import { useDailyRewardsV2Read } from "@/hooks/use-daily-rewards-v2-read";
@@ -11,56 +10,38 @@ import {
   useDailyClaimCount,
 } from "@/hooks/use-reward-claim";
 import {
-  BASE_CHAIN_ID,
-  CELO_CHAIN_ID,
-  OPTIMISM_CHAIN_ID,
+  type ChainId,
+  REWARD_TOKEN,
   REWARD_TOKEN_DECIMALS,
-  REWARD_TOKEN_SYMBOLS,
-  REWARD_TOKENS,
+  REWARD_TOKEN_SYMBOL,
 } from "@/lib/constants";
-import {
-  getChainBtnClasses,
-  getDailyRewardsV2Address,
-  normalizeChainId,
-} from "@/lib/utils";
+import { getChainBtnClasses } from "@/lib/utils";
 
 const TRAILING_ZEROS_REGEX = /\.?0+$/;
 
 type UseRewardChainCardLogicProps = {
-  chainId: number;
+  chainId: ChainId;
   fid: bigint | undefined;
   isConnected: boolean;
   address?: string;
 };
 
-function getChainIconName(chainId: number): string {
-  switch (chainId) {
-    case BASE_CHAIN_ID:
-      return "base";
-    case CELO_CHAIN_ID:
-      return "celo";
-    case OPTIMISM_CHAIN_ID:
-      return "optimism";
-    default:
-      return "base";
-  }
+function getChainIconName(): string {
+  return "base";
 }
 
 function getTokenAddress(
   rewardToken: string | undefined,
-  chainId: number
+  _chainId: number
 ): Address | undefined {
   if (rewardToken?.startsWith("0x")) {
     return rewardToken as Address;
   }
-  const fallback = REWARD_TOKENS[chainId];
-  if (fallback?.startsWith("0x")) {
-    return fallback as Address;
-  }
+  return REWARD_TOKEN as Address;
 }
 
-function getTokenSymbol(chainId: number): string {
-  return REWARD_TOKEN_SYMBOLS[chainId] || "USDC";
+function getTokenSymbol(): string {
+  return REWARD_TOKEN_SYMBOL;
 }
 
 function calculateDisplayAmount(
@@ -81,9 +62,9 @@ export function useRewardChainCardLogic({
   isConnected,
   address,
 }: UseRewardChainCardLogicProps) {
-  const { chainId: connectedChainId, switchNetwork } = useAppKitNetwork();
-  const normalizedConnectedChainId = normalizeChainId(connectedChainId);
-  const isCorrectChain = normalizedConnectedChainId === chainId;
+  const currentChainId = useChainId();
+  const switchChain = useSwitchChain();
+  const isCorrectChain = currentChainId === chainId;
   const [isSwitching, setIsSwitching] = useState(false);
 
   const shouldCheckEligibility = isConnected && !!address && Boolean(fid);
@@ -115,17 +96,16 @@ export function useRewardChainCardLogic({
     hasFid: Boolean(fid),
   });
 
-  const contractAddress = getDailyRewardsV2Address(chainId);
-  const rewardsRead = useDailyRewardsV2Read(contractAddress, chainId);
+  const rewardsRead = useDailyRewardsV2Read(chainId);
   const resolvedTokenAddress = getTokenAddress(
     rewardsRead.rewardToken,
     chainId
   );
   const metadata = useErc20Metadata(resolvedTokenAddress, chainId);
 
-  const chainIconName = getChainIconName(chainId);
-  const tokenSymbol = metadata.symbol ?? getTokenSymbol(chainId);
-  const decimals = metadata.decimals ?? REWARD_TOKEN_DECIMALS[chainId] ?? 6;
+  const chainIconName = getChainIconName();
+  const tokenSymbol = metadata.symbol ?? getTokenSymbol();
+  const decimals = metadata.decimals ?? REWARD_TOKEN_DECIMALS ?? 6;
   const tokenAddress = resolvedTokenAddress || "";
 
   const trailingZerosRegex = TRAILING_ZEROS_REGEX;
@@ -138,30 +118,16 @@ export function useRewardChainCardLogic({
     ? Number(rewardsRead.dailyClaimLimit)
     : 250;
 
-  const getNetworkObject = (targetChainId: number) => {
-    switch (targetChainId) {
-      case BASE_CHAIN_ID:
-        return base;
-      case CELO_CHAIN_ID:
-        return celo;
-      case OPTIMISM_CHAIN_ID:
-        return optimism;
-      default:
-        return base;
-    }
-  };
-
   const handleSwitchChain = async () => {
     try {
       setIsSwitching(true);
-      const network = getNetworkObject(chainId);
-      await switchNetwork(network);
+      await switchChain.mutateAsync({ chainId });
     } finally {
       setIsSwitching(false);
     }
   };
 
-  const chainBtnClasses = useMemo(() => getChainBtnClasses(chainId), [chainId]);
+  const chainBtnClasses = getChainBtnClasses();
 
   return {
     isCorrectChain,
