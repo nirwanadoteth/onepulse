@@ -2,8 +2,6 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { MILLISECONDS_PER_DAY, SECONDS_PER_DAY } from "./constants";
 
-const DOMAIN_LABEL_PATTERN = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -35,46 +33,6 @@ export function timestampToDayNumber(timestampSeconds: number): number {
 }
 
 /**
- * Check if a string is a valid ENS or Base domain
- * Validates domain structure: labels separated by dots, each label following DNS rules
- */
-export function isDomainFormat(input: string): boolean {
-  const trimmed = input.trim();
-  if (!trimmed) {
-    return false;
-  }
-
-  // Reject leading/trailing dots or consecutive dots
-  if (
-    trimmed.startsWith(".") ||
-    trimmed.endsWith(".") ||
-    trimmed.includes("..")
-  ) {
-    return false;
-  }
-
-  // Check for valid suffix
-  // Accepts both ENS (.eth) and Base domain (.base.eth) formats
-  if (!trimmed.endsWith(".eth")) {
-    return false;
-  }
-
-  // Split into labels and validate each
-  const labels = trimmed.split(".");
-  if (labels.length < 2) {
-    return false;
-  }
-
-  // Each label must:
-  // - Be 1-63 characters
-  // - Contain only ASCII letters, numbers, and hyphens
-  // - Not start or end with a hyphen
-  return labels.every(
-    (label) => label.length > 0 && DOMAIN_LABEL_PATTERN.test(label)
-  );
-}
-
-/**
  * Performs shallow comparison of two objects by checking if any key's value differs or if the set of keys differs.
  * Returns true if prev is null/undefined or if any property value has changed or if keys were added/removed.
  */
@@ -91,14 +49,6 @@ export function hasChanged<T extends Record<string, unknown>>(
     return true;
   }
   return currentKeys.some((key) => prev[key] !== current[key]);
-}
-
-export function normalizeAddress(address?: string | null): string | null {
-  return address?.toLowerCase() ?? null;
-}
-
-export function isBaseChain(): boolean {
-  return true;
 }
 
 /**
