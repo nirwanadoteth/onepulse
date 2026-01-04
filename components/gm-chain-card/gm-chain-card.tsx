@@ -1,7 +1,6 @@
 "use client";
 
-import { memo } from "react";
-import type { Address } from "viem";
+import type { Address } from "viem/accounts";
 import { Icons } from "@/components/icons";
 import {
   Item,
@@ -11,85 +10,85 @@ import {
   ItemMedia,
 } from "@/components/ui/item";
 import type { GmStats } from "@/hooks/use-gm-stats";
+import type { ChainId } from "@/lib/constants";
 import { ActionButton } from "./action-button";
 import { StatsDisplay } from "./stats-display";
 import { useGMChainCardLogic } from "./use-gm-chain-card-logic";
 
 export type GMChainCardProps = {
-  chainId: number;
+  chainId: ChainId;
   name: string;
   contractAddress: Address;
   isConnected: boolean;
-  address?: string;
-  onStatusChange?: (status: { chainId: number; hasGmToday: boolean }) => void;
+  address?: `0x${string}`;
+  onStatusChangeAction?: (status: {
+    chainId: ChainId;
+    hasGmToday: boolean;
+  }) => void;
   stats: GmStats;
   isStatsReady: boolean;
-  onOpenModal?: (refetch: () => Promise<unknown>) => void;
+  onOpenModalAction?: (refetch: () => Promise<unknown>) => void;
 };
 
-export const GMChainCard = memo(
-  ({
+export const GMChainCard = ({
+  chainId,
+  name,
+  contractAddress,
+  isConnected,
+  address,
+  onStatusChangeAction,
+  stats,
+  isStatsReady,
+  onOpenModalAction,
+}: GMChainCardProps) => {
+  const {
+    onCorrectChain,
+    hasGmToday,
+    gmDisabled,
+    chainBtnClasses,
+    chainIconName,
+    handleOpenModal,
+  } = useGMChainCardLogic({
     chainId,
-    name,
     contractAddress,
     isConnected,
     address,
-    onStatusChange,
-    stats,
-    isStatsReady,
-    onOpenModal,
-  }: GMChainCardProps) => {
-    const {
-      onCorrectChain,
-      hasGmToday,
-      gmDisabled,
-      chainBtnClasses,
-      chainIconName,
-      handleOpenModal,
-    } = useGMChainCardLogic({
-      chainId,
-      contractAddress,
-      isConnected,
-      address,
-      onStatusChange,
-      onOpenModal,
-    });
+    onStatusChange: onStatusChangeAction,
+    onOpenModal: onOpenModalAction,
+  });
 
-    return (
-      <Item variant="outline">
-        <ItemContent className="items-start">
-          <ItemMedia>
-            {Icons[chainIconName as keyof typeof Icons]?.({
-              className: "h-8 w-24 text-current",
-              role: "img",
-              "aria-label": `${name} wordmark`,
-              focusable: false,
-            })}
-          </ItemMedia>
-        </ItemContent>
-        <ItemActions>
-          <StatsDisplay
-            chainId={chainId}
-            isConnected={isConnected}
-            isStatsReady={isStatsReady}
-            stats={stats}
-          />
-        </ItemActions>
-        <ItemFooter className="flex-col">
-          <ActionButton
-            chainBtnClasses={chainBtnClasses}
-            chainId={chainId}
-            gmDisabled={gmDisabled}
-            hasGmToday={hasGmToday}
-            isConnected={isConnected}
-            name={name}
-            onCorrectChain={onCorrectChain}
-            onOpenModal={() => handleOpenModal()}
-          />
-        </ItemFooter>
-      </Item>
-    );
-  }
-);
-
-GMChainCard.displayName = "GMChainCard";
+  return (
+    <Item variant="outline">
+      <ItemContent className="items-start">
+        <ItemMedia>
+          {Icons[chainIconName as keyof typeof Icons]?.({
+            className: "h-8 w-24 text-current",
+            role: "img",
+            "aria-label": `${name} wordmark`,
+            focusable: false,
+          })}
+        </ItemMedia>
+      </ItemContent>
+      <ItemActions>
+        <StatsDisplay
+          chainId={chainId}
+          isConnected={isConnected}
+          isStatsReady={isStatsReady}
+          stats={stats}
+        />
+      </ItemActions>
+      <ItemFooter className="flex-col">
+        <ActionButton
+          chainBtnClasses={chainBtnClasses}
+          chainId={chainId}
+          gmDisabled={gmDisabled}
+          hasGmToday={hasGmToday}
+          isConnected={isConnected}
+          name={name}
+          onCorrectChain={onCorrectChain}
+          onOpenModalAction={() => handleOpenModal()}
+        />
+      </ItemFooter>
+    </Item>
+  );
+};
