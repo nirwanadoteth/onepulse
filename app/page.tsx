@@ -1,9 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Header } from "@/components/header";
-import { OnboardingModal } from "@/components/onboarding-modal";
 import { Tabs } from "@/components/tabs";
 import { useContentLogic, useHomePage } from "@/hooks/use-home-page";
+
+const OnboardingModal = dynamic(() =>
+  import("@/components/onboarding-modal").then((mod) => mod.OnboardingModal)
+);
 
 type ContentProps = {
   isMiniAppReady: boolean;
@@ -30,7 +34,7 @@ function Content({
         inMiniApp={inMiniApp}
         isMiniAppReady={isMiniAppReady}
         onMiniAppAddedAction={handleMiniAppAdded}
-        onShareClick={shareNow}
+        onShareClickAction={shareNow}
       />
       <Tabs
         onAllDoneChangeAction={setCompletedAllChains}
@@ -68,8 +72,8 @@ export default function Home() {
       />
       <OnboardingModal
         canSave={canSaveApp(inMiniApp)}
-        onClose={dismissOnboarding}
-        onSave={onboardingSaveHandler}
+        onCloseAction={dismissOnboarding}
+        onSaveAction={onboardingSaveHandler}
         open={shouldShowOnboarding()}
       />
     </div>
