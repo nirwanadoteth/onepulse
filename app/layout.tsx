@@ -4,13 +4,10 @@ import { RootProvider } from "./root-provider";
 
 import "@/styles/globals.css";
 
-import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { preconnect } from "react-dom";
-import { cookieToInitialState } from "wagmi";
 import { fontVariables } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
-import { config } from "@/lib/wagmi";
 
 const frame = {
   version: minikitConfig.miniapp.version,
@@ -74,11 +71,6 @@ export default async function RootLayout({
   preconnect("https://auth.farcaster.xyz");
   preconnect("wss://maincloud.spacetimedb.com");
 
-  const initialState = cookieToInitialState(
-    config,
-    (await headers()).get("cookie")
-  );
-
   return (
     <html className="no-scrollbar layout-fixed" lang="en">
       <body
@@ -88,7 +80,7 @@ export default async function RootLayout({
         )}
         cz-shortcut-listen="true"
       >
-        <RootProvider initialState={initialState}>{children}</RootProvider>
+        <RootProvider>{children}</RootProvider>
       </body>
     </html>
   );

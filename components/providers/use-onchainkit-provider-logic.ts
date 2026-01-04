@@ -27,6 +27,7 @@ export function useOnchainKitProviderLogic() {
   const miniKit = {
     enabled: true,
     autoConnect: true,
+    notificationProxyUrl: "/api/notify",
   };
 
   return {
