@@ -1,24 +1,10 @@
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useEffect, useState } from "react";
-import type { Address } from "viem";
+import { useConnection } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
-import { detectCoinbaseSmartWallet } from "@/lib/utils";
 
 export function usePageState() {
-  const { address, isConnected } = useAppKitAccount({ namespace: "eip155" });
-  const [isSmartWallet, setIsSmartWallet] = useState(false);
+  const { address, isConnected } = useConnection();
   const miniAppContextData = useMiniAppContext();
   const inMiniApp = miniAppContextData?.isInMiniApp ?? false;
 
-  useEffect(() => {
-    if (!(isConnected && address)) {
-      return;
-    }
-    (async () => {
-      const result = await detectCoinbaseSmartWallet(address as Address);
-      setIsSmartWallet(result);
-    })();
-  }, [isConnected, address]);
-
-  return { isSmartWallet, inMiniApp, isConnected, address };
+  return { inMiniApp, isConnected, address };
 }
