@@ -9,17 +9,19 @@ import { cn } from "@/lib/utils";
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 const fontMono = FontMono({
   subsets: ["latin"],
   variable: "--font-mono",
-  weight: ["400"],
+  display: "swap",
 });
 
 const fontInter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
 });
 
 export const fontVariables = cn(
