@@ -49,16 +49,12 @@ type TabsProps = {
   tab: string;
   onTabChangeAction: (tab: string) => void;
   onGmStatsChangeAction: (stats: ReturnType<typeof useGmStats>) => void;
-  onShareClickAction: () => void;
-  onAllDoneChangeAction?: (allDone: boolean) => void;
 };
 
 export function Tabs({
   tab,
   onTabChangeAction,
   onGmStatsChangeAction,
-  onShareClickAction,
-  onAllDoneChangeAction,
 }: TabsProps) {
   const { isBaseApp, allowedChainIds } = useTabsLogic();
   const chainId = useChainId();
@@ -71,9 +67,7 @@ export function Tabs({
         <TabsContent value="home">
           <Home
             allowedChainIds={allowedChainIds}
-            onAllDoneChangeAction={onAllDoneChangeAction}
             onGmStatsChangeAction={onGmStatsChangeAction}
-            onShareClickAction={onShareClickAction}
             sponsored={isBaseApp}
           />
         </TabsContent>
