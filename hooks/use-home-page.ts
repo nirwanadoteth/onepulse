@@ -1,17 +1,13 @@
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useState } from "react";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
-import { useGMSharing } from "@/hooks/use-gm-sharing";
 import type { GmStatsResult } from "@/hooks/use-gm-stats";
 import { useMiniAppFlow } from "@/hooks/use-miniapp-flow";
 import { useMiniAppInitialization } from "@/hooks/use-miniapp-initialization";
 import { useOnboardingModal } from "@/hooks/use-onboarding-modal";
 import { usePageState } from "@/hooks/use-page-state";
 import { useSafeAreaStyle } from "@/hooks/use-safe-area-style";
-import { useShareActions } from "@/hooks/use-share-actions";
-import { BASE_CHAIN_ID } from "@/lib/constants";
 import { canSaveMiniApp } from "@/lib/utils";
-import { useClaimEligibility } from "./use-reward-claim";
 
 export const useHomePage = () => {
   const miniAppContextData = useMiniAppContext();
@@ -54,33 +50,6 @@ export const useHomePage = () => {
 export const useContentLogic = () => {
   const [gmStats, setGmStats] = useState<GmStatsResult | null>(null);
   const [completedAllChains, setCompletedAllChains] = useState(false);
-  const miniAppContextData = useMiniAppContext();
-  const fidRaw = miniAppContextData?.context?.user?.fid;
-  const fid = fidRaw !== undefined ? BigInt(fidRaw) : undefined;
-  const isInMiniApp = miniAppContextData?.isInMiniApp ?? false;
-
-  // Only check eligibility in mini app context
-  const shouldCheckEligibility = Boolean(fid) && isInMiniApp;
-
-  const baseEligibility = useClaimEligibility({
-    fid,
-    chainId: BASE_CHAIN_ID,
-    enabled: shouldCheckEligibility,
-  });
-
-  const claimedToday = Boolean(baseEligibility.claimStatus?.fidClaimedToday);
-
-  const { shareText, shareUrl } = useGMSharing(
-    claimedToday,
-    completedAllChains
-  );
-  const { shareToCast } = useShareActions();
-  const shareNow = async () => {
-    if (!shareUrl) {
-      return;
-    }
-    await shareToCast(shareText, shareUrl);
-  };
 
   // Memoize setGmStats to prevent infinite re-render loop
   const handleGmStatsChange = (stats: GmStatsResult) => {
@@ -107,6 +76,5 @@ export const useContentLogic = () => {
     setGmStats: handleGmStatsChange,
     completedAllChains,
     setCompletedAllChains: handleAllDoneChange,
-    shareNow,
   };
 };

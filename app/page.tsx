@@ -10,26 +10,18 @@ const OnboardingModal = dynamic(() =>
 );
 
 type ContentProps = {
-  inMiniApp: boolean;
   tab: string;
   setTab: (tab: string) => void;
 };
 
-function Content({ inMiniApp, tab, setTab }: ContentProps) {
-  const { gmStats, setGmStats, setCompletedAllChains, shareNow } =
-    useContentLogic();
+function Content({ tab, setTab }: ContentProps) {
+  const { setGmStats } = useContentLogic();
 
   return (
     <div className="mx-auto w-[95%] max-w-lg px-4 py-4">
-      <Header
-        gmStats={gmStats?.stats}
-        inMiniApp={inMiniApp}
-        onShareClickAction={shareNow}
-      />
+      <Header />
       <Tabs
-        onAllDoneChangeAction={setCompletedAllChains}
         onGmStatsChangeAction={setGmStats}
-        onShareClickAction={shareNow}
         onTabChangeAction={setTab}
         tab={tab}
       />
@@ -51,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="font-sans" style={safeAreaStyle}>
-      <Content inMiniApp={inMiniApp} setTab={setTab} tab={tab} />
+      <Content setTab={setTab} tab={tab} />
       <OnboardingModal
         canSave={canSaveApp(inMiniApp)}
         onCloseAction={dismissOnboarding}
