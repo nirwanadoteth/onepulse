@@ -22,7 +22,6 @@ type UseRewardClaimTransactionLogicProps = {
 export function useRewardClaimTransactionLogic({
   chainId: targetChainId,
   fid,
-  onSuccess,
   onError,
   disabled = false,
 }: UseRewardClaimTransactionLogicProps) {
@@ -88,7 +87,6 @@ export function useRewardClaimTransactionLogic({
   });
 
   const { onStatus } = useTransactionStatus({
-    onSuccess,
     onError,
     refetchEligibility,
     claimer: address,

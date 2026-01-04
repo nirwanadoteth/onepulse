@@ -1,11 +1,9 @@
 "use client";
 
-import { useOpenUrl } from "@coinbase/onchainkit/minikit";
 import { toast } from "sonner";
 import { Icons } from "@/components/icons";
 import { RewardClaimTransaction } from "@/components/reward-chain-card/reward-claim-transaction";
 import { useRewardChainCardLogic } from "@/components/reward-chain-card/use-reward-chain-card-logic";
-import { createSuccessAction } from "@/components/transaction-toast/utils";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -70,15 +68,8 @@ export function RewardChainCard(props: RewardChainCardProps) {
   );
   const { shareToCast } = useShareActions();
 
-  const openUrl = useOpenUrl();
   const isEligible = claimState?.isEligible ?? false;
   const BASE_CHAIN_ID = 8453;
-
-  const handleClaimSuccess = (txHash: string) => {
-    toast.success(`Reward claimed on ${name}!`, {
-      action: createSuccessAction(txHash, chainId, openUrl),
-    });
-  };
 
   const handleClaimError = (error: Error) => {
     toast.error(`Failed to claim reward on ${name}`, {
@@ -184,7 +175,6 @@ export function RewardChainCard(props: RewardChainCardProps) {
               handleSwitchChain={handleSwitchChain}
               isCorrectChain={isCorrectChain}
               onError={handleClaimError}
-              onSuccess={handleClaimSuccess}
               sponsored={sponsored && chainId === BASE_CHAIN_ID}
             />
           );

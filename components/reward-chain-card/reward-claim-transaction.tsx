@@ -15,7 +15,6 @@ type RewardClaimTransactionProps = {
   handleSwitchChain: () => Promise<void>;
   isCorrectChain: boolean;
   sponsored: boolean;
-  onSuccess?: (txHash: string) => void;
   onError?: (error: Error) => void;
   disabled?: boolean;
 };
@@ -27,7 +26,6 @@ export function RewardClaimTransaction({
   isCorrectChain,
   handleSwitchChain,
   sponsored,
-  onSuccess,
   onError,
   disabled = false,
 }: RewardClaimTransactionProps) {
@@ -41,7 +39,6 @@ export function RewardClaimTransaction({
     chainId,
     fid,
     sponsored,
-    onSuccess,
     onError,
     disabled,
   });
