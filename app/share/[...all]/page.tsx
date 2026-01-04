@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { isAddress } from "viem";
+import { isAddress } from "viem/utils";
 import { z } from "zod";
-import { SUPPORTED_CHAINS } from "@/lib/constants";
 import { fetchFarcasterUser } from "@/lib/farcaster";
 import { generateSimplifiedGMStatusOGUrl } from "@/lib/og-utils";
 import { getGmRows } from "@/lib/spacetimedb/server-connection";
@@ -22,56 +21,18 @@ const sharePageQuerySchema = z.object({
     .transform((addr) => addr || null),
 });
 
-function getChainName(chainId: number): string {
-  return SUPPORTED_CHAINS.find((c) => c.id === chainId)?.name || "Unknown";
-}
-
 function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export type GmStatsResult = {
-  stats: Record<
-    string,
-    {
-      name: string;
-      currentStreak: number;
-      highestStreak: number;
-      allTimeGmCount: number;
-    }
-  >;
-  fid?: number;
-};
-
-async function fetchGmStats(address: string): Promise<GmStatsResult> {
+async function fetchGmStats(address: string): Promise<{ fid?: number }> {
   try {
     const rows = await getGmRows(address);
-    const stats: Record<
-      string,
-      {
-        name: string;
-        currentStreak: number;
-        highestStreak: number;
-        allTimeGmCount: number;
-      }
-    > = {};
-
-    for (const r of rows) {
-      stats[String(r.chainId)] = {
-        name: getChainName(r.chainId),
-        currentStreak: r.currentStreak ?? 0,
-        highestStreak: r.highestStreak ?? 0,
-        allTimeGmCount: r.allTimeGmCount ?? 0,
-      };
-    }
-
-    // Find FID from rows
     const rowWithFid = rows.find((r) => r.fid);
     const fid = rowWithFid?.fid ? Number(rowWithFid.fid) : undefined;
-
-    return { stats, fid };
+    return { fid };
   } catch {
-    return { stats: {}, fid: undefined };
+    return { fid: undefined };
   }
 }
 
