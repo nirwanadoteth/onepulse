@@ -48,7 +48,7 @@ export function createSuccessAction(
   if (!isValidChain) {
     return null;
   }
-  const chainExplorer = getChainExplorer(txChainId);
+  const chainExplorer = getChainExplorer();
 
   return (
     <button

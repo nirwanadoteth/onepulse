@@ -1,4 +1,4 @@
-import { useTransactionContext } from "@coinbase/onchainkit/transaction";
+import { useTransactionContext } from "@/components/ui/custom-transaction";
 
 export function useSafeTransactionContext() {
   const context = useTransactionContext();
