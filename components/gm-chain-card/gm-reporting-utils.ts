@@ -7,6 +7,7 @@ export async function reportToApi({
   chainId,
   txHash,
   fid,
+  lastGmDay,
   displayName,
   username,
 }: {
@@ -14,10 +15,12 @@ export async function reportToApi({
   chainId: number;
   txHash?: string;
   fid?: number;
+  lastGmDay: bigint;
   displayName?: string;
   username?: string;
 }) {
   try {
+    const lastGmDayNumber = Number(lastGmDay);
     await fetch("/api/gm/report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -27,6 +30,7 @@ export async function reportToApi({
         txHash,
         fid,
         displayName,
+        lastGmDay: lastGmDayNumber,
         username,
       }),
     });
@@ -66,12 +70,14 @@ export async function performGmReporting({
   chainId,
   txHash,
   user,
+  lastGmDay,
   queryClient,
   refetchLastGmDay,
   onReported,
 }: {
   address: string;
   chainId: number;
+  lastGmDay: bigint;
   txHash?: string;
   user: MiniAppUser | undefined;
   queryClient: QueryClient;
@@ -86,6 +92,7 @@ export async function performGmReporting({
     chainId,
     txHash,
     fid,
+    lastGmDay,
     displayName: user?.displayName,
     username: user?.username,
   });
