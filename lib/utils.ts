@@ -1,136 +1,15 @@
-import { isWalletACoinbaseSmartWallet } from "@coinbase/onchainkit/wallet";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import {
-  type Address,
-  createPublicClient,
-  http,
-  type PublicClient,
-  type RpcUserOperation,
-} from "viem";
-import { base, celo, optimism } from "viem/chains";
-import {
-  BASE_CHAIN_ID,
-  CELO_CHAIN_ID,
-  DAILY_GM_ADDRESS,
-  DAILY_GM_ADDRESSES,
-  DAILY_REWARDS_V2_ADDRESSES,
-  MILLISECONDS_PER_DAY,
-  OPTIMISM_CHAIN_ID,
-  SECONDS_PER_DAY,
-} from "./constants";
+import { MILLISECONDS_PER_DAY, SECONDS_PER_DAY } from "./constants";
 
-const digitRegex = /^\d+$/;
-const EIP155_REGEX = /^eip155:(\d+)$/;
 const DOMAIN_LABEL_PATTERN = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Get the Daily GM contract address for a given chain ID
- */
-export function getDailyGmAddress(chainId?: number): Address | "" {
-  if (!chainId) {
-    return DAILY_GM_ADDRESS as Address | "";
-  }
-  return DAILY_GM_ADDRESSES[chainId] || ("" as const);
-}
-
-/**
- * Get the Daily Rewards contract address for a given chain ID
- */
-
-export function getDailyRewardsV2Address(chainId?: number): Address | "" {
-  if (!chainId) {
-    return DAILY_REWARDS_V2_ADDRESSES[BASE_CHAIN_ID] as Address | "";
-  }
-  return DAILY_REWARDS_V2_ADDRESSES[chainId] || ("" as const);
-}
-
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http(),
-});
-
-export async function detectCoinbaseSmartWallet(
-  address: Address
-): Promise<boolean> {
-  const userOperation: RpcUserOperation<"0.6"> = {
-    sender: address,
-    nonce: "0x0",
-    initCode: "0x",
-    callData: "0x",
-    callGasLimit: "0x0",
-    verificationGasLimit: "0x0",
-    preVerificationGas: "0x0",
-    maxFeePerGas: "0x0",
-    maxPriorityFeePerGas: "0x0",
-    paymasterAndData: "0x",
-    signature: "0x",
-  };
-  try {
-    const res = await isWalletACoinbaseSmartWallet({
-      client: publicClient as PublicClient,
-      userOp: userOperation,
-    });
-    return res.isCoinbaseSmartWallet === true;
-  } catch {
-    return false;
-  }
-}
-
-const chainExplorerMap: Record<number, string> = {
-  [base.id]: "https://basescan.org",
-  [celo.id]: "https://celoscan.io",
-  [optimism.id]: "https://optimistic.etherscan.io",
-};
-
-export function getChainExplorer(chainId?: number): string {
-  if (!chainId) {
-    return "https://basescan.org";
-  }
-
-  return chainExplorerMap[chainId] ?? "https://basescan.org";
-}
-
-export function normalizeChainId(input: unknown): number | undefined {
-  if (typeof input === "number") {
-    return Number.isSafeInteger(input) && input > 0 ? input : undefined;
-  }
-  if (typeof input === "string") {
-    // Reject empty, whitespace-only, or non-digit strings
-    const trimmed = input.trim();
-    if (!digitRegex.test(trimmed)) {
-      return;
-    }
-    const parsed = Number.parseInt(trimmed, 10);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
-  }
-  return;
-}
-
-export function parseEip155NetworkId(value: unknown): number | undefined {
-  if (typeof value === "number") {
-    if (Number.isSafeInteger(value) && value > 0) {
-      return value;
-    }
-    return; // invalid numeric id
-  }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    const match = EIP155_REGEX.exec(trimmed);
-    if (!match) {
-      return; // not an eip155 pattern
-    }
-    const parsed = Number(match[1]);
-    if (Number.isSafeInteger(parsed) && parsed > 0) {
-      return parsed;
-    }
-    return; // invalid parsed number
-  }
-  return; // unsupported type
+export function getChainExplorer(): string {
+  return "https://basescan.org";
 }
 
 /**
@@ -218,31 +97,14 @@ export function normalizeAddress(address?: string | null): string | null {
   return address?.toLowerCase() ?? null;
 }
 
-/**
- * Check if a chain ID is the Celo network
- */
-export function isCeloChain(chainId?: number): boolean {
-  return chainId === CELO_CHAIN_ID;
-}
-
-export function isBaseChain(chainId?: number): boolean {
-  return chainId === BASE_CHAIN_ID;
-}
-
-export function isOptimismChain(chainId?: number): boolean {
-  return chainId === OPTIMISM_CHAIN_ID;
+export function isBaseChain(): boolean {
+  return true;
 }
 
 /**
  * Get chain-specific button classes for styling
  */
-export function getChainBtnClasses(chainId: number): string {
-  if (isCeloChain(chainId)) {
-    return "bg-[#FCFF52] text-black hover:bg-[#FCFF52]/90 dark:bg-[#476520] dark:text-white dark:hover:bg-[#476520]/90";
-  }
-  if (isOptimismChain(chainId)) {
-    return "bg-[#ff0420] text-white hover:bg-[#ff0420]/90";
-  }
+export function getChainBtnClasses(): string {
   return "bg-[#0052ff] text-white hover:bg-[#0052ff]/90";
 }
 
@@ -250,14 +112,8 @@ export function getChainBtnClasses(chainId: number): string {
  * Determine if transactions should be sponsored on a given chain.
  * Currently, sponsorship is only supported on Base.
  */
-export function isSponsoredOnChain(
-  sponsored: boolean,
-  chainId?: number | null
-): boolean {
-  return (
-    Boolean(sponsored) &&
-    isBaseChain(typeof chainId === "number" ? chainId : undefined)
-  );
+export function isSponsoredOnChain(sponsored: boolean): boolean {
+  return Boolean(sponsored);
 }
 
 export function canSaveMiniApp(params: {
@@ -272,12 +128,6 @@ export function canSaveMiniApp(params: {
 /**
  * Get the icon name for a given chain ID
  */
-export function getChainIconName(chainId: number): string {
-  if (isOptimismChain(chainId)) {
-    return "optimism";
-  }
-  if (isCeloChain(chainId)) {
-    return "celo";
-  }
+export function getChainIconName(): string {
   return "base";
 }
