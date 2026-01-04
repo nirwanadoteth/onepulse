@@ -1,4 +1,4 @@
-import { isAddress } from "viem";
+import { isAddress } from "viem/utils";
 
 import { isDomainFormat } from "@/lib/utils";
 
