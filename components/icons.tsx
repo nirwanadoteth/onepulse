@@ -1,4 +1,6 @@
-export type IconProps = React.SVGProps<SVGSVGElement>;
+import type { SVGProps } from "react";
+
+export type IconProps = SVGProps<SVGSVGElement>;
 
 export const Icons = {
   base: (props: IconProps) => (
