@@ -1,8 +1,9 @@
 "use client";
 
 import { useAddress } from "@coinbase/onchainkit/identity";
-import { isAddress } from "viem";
-
+import { base } from "@wagmi/core/chains";
+import { normalize } from "viem/ens";
+import { isAddress } from "viem/utils";
 import { isDomainFormat } from "@/lib/utils";
 
 type ResolverResult = {
@@ -11,7 +12,7 @@ type ResolverResult = {
   isError: boolean;
 };
 
-export function useEnsBasenameResolver(input: string): ResolverResult {
+export function useBasenameResolver(input: string): ResolverResult {
   const trimmed = input.trim();
 
   const isValidAddress = isAddress(trimmed);
@@ -21,9 +22,13 @@ export function useEnsBasenameResolver(input: string): ResolverResult {
     data: resolvedAddress,
     isLoading,
     isError,
-  } = useAddress({
-    name: isDomain ? trimmed : "",
-  });
+  } = useAddress(
+    {
+      name: isDomain ? normalize(trimmed) : "",
+      chain: base,
+    },
+    { enabled: isDomain }
+  );
 
   if (isValidAddress) {
     return {
