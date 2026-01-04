@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
 import type { Infer } from "spacetimedb";
 import type { GmStatsByAddressV2Row } from "@/lib/module_bindings";
-import { normalizeAddress } from "@/lib/utils";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
 import type { GmStats } from "./use-gm-stats";
 
@@ -57,22 +56,22 @@ export function useGmStatsFallback(
   rowsForAddress: GmStatsByAddress[],
   address?: string | null
 ) {
-  const normalizedAddress = normalizeAddress(address);
+  const normalizedAddress = address?.toLocaleLowerCase() ?? null;
 
   // Only fetch if subscription data is not ready
   const shouldFetch =
     Boolean(address && normalizedAddress) &&
-    !gmStatsByAddressStore.isSubscribedForAddress(address) &&
+    !gmStatsByAddressStore.isSubscribedForAddress(normalizedAddress) &&
     rowsForAddress.length === 0;
 
   const { data: apiResponse } = useQuery({
-    queryKey: ["gmStats:fallback", address],
+    queryKey: ["gmStats:fallback", normalizedAddress],
     queryFn: async () => {
-      if (!address) {
+      if (!normalizedAddress) {
         throw new Error("Address required");
       }
       const url = new URL("/api/gm/stats", window.location.origin);
-      url.searchParams.set("address", address);
+      url.searchParams.set("address", normalizedAddress);
       const res = await fetch(url.toString());
       if (!res.ok) {
         throw new Error("Failed to fetch stats");

@@ -2,7 +2,6 @@
 
 import type { Infer } from "spacetimedb";
 import type { GmStatsByAddressV2Row } from "@/lib/module_bindings";
-import { normalizeAddress } from "@/lib/utils";
 import { gmStatsByAddressStore } from "@/stores/gm-store";
 import { deriveStatsForAddress, groupRowsByAddress } from "./gm-stats-helpers";
 import {
@@ -33,8 +32,8 @@ export type GmStatsResult = {
 };
 
 export function useGmStats(address?: string | null): GmStatsResult {
-  const normalizedAddress = normalizeAddress(address);
-  const snapshot = useGmStatsSubscription(address);
+  const normalizedAddress = address?.toLocaleLowerCase() ?? null;
+  const snapshot = useGmStatsSubscription(normalizedAddress);
   const rowsByAddress = groupRowsByAddress(snapshot);
   const rowsForAddress = (() => {
     if (!normalizedAddress) {
@@ -42,9 +41,9 @@ export function useGmStats(address?: string | null): GmStatsResult {
     }
     return rowsByAddress.get(normalizedAddress) ?? EMPTY_ROWS;
   })();
-  const fallbackStats = useGmStatsFallback(rowsForAddress, address);
+  const fallbackStats = useGmStatsFallback(rowsForAddress, normalizedAddress);
   const subDerived = deriveStatsForAddress(rowsForAddress, normalizedAddress);
-  const currentKey = `${address ?? ""}:all`;
+  const currentKey = `${normalizedAddress ?? ""}:all`;
   const fallbackForKey =
     fallbackStats && fallbackStats.key === currentKey
       ? fallbackStats.stats
