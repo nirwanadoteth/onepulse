@@ -1,4 +1,3 @@
-import type { Address } from "viem/accounts";
 import { isAddress } from "viem/utils";
 import { useReadErc20Decimals, useReadErc20Symbol } from "@/helpers/contracts";
 import type { ChainId } from "@/lib/constants";
@@ -10,11 +9,11 @@ type Erc20MetadataResult = {
 };
 
 export function useErc20Metadata(
-  tokenAddress: Address | undefined,
+  tokenAddress: `0x${string}` | undefined,
   chainId: ChainId
 ): Erc20MetadataResult {
   const enabled = isAddress(tokenAddress || "");
-  const validAddress = enabled ? (tokenAddress as Address) : undefined;
+  const validAddress = enabled ? (tokenAddress as `0x${string}`) : undefined;
 
   const { data: decimalsData, isLoading: loadingDecimals } =
     useReadErc20Decimals({

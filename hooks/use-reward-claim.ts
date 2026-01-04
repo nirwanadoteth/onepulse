@@ -1,6 +1,5 @@
 "use client";
 
-import type { Address } from "viem/accounts";
 import { useConnection } from "wagmi";
 import {
   dailyRewardsV2Address,
@@ -65,11 +64,11 @@ function buildClaimEligibilityArgs(
   address: string | undefined,
   fid: bigint | undefined,
   contractAddress: string
-): readonly [Address, bigint] | undefined {
+): readonly [`0x${string}`, bigint] | undefined {
   if (!address || fid === undefined || !contractAddress) {
     return;
   }
-  return [address as Address, fid as bigint];
+  return [address as `0x${string}`, fid as bigint];
 }
 
 function shouldQueryEligibility(params: {
