@@ -1,7 +1,5 @@
-import { useCallback } from "react";
 import type { Address, ContractFunctionParameters } from "viem";
-
-import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
+import { dailyRewardsV2Abi } from "@/helpers/contracts";
 import { signIn } from "@/lib/client-auth";
 import { handleError } from "@/lib/error-handling";
 
@@ -71,7 +69,7 @@ export function useClaimContracts({
   cachedFid,
   chainId,
 }: UseClaimContractsProps) {
-  return useCallback(async (): Promise<ContractFunctionParameters[]> => {
+  return async (): Promise<ContractFunctionParameters[]> => {
     if (!address || fid === undefined || !contractAddress || !chainId) {
       throw new Error("Missing required parameters");
     }
@@ -112,5 +110,5 @@ export function useClaimContracts({
         ],
       },
     ];
-  }, [address, fid, contractAddress, cachedFid, chainId]);
+  };
 }

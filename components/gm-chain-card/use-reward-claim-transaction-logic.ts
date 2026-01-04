@@ -1,16 +1,17 @@
-import { useAppKitAccount } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
+import { useConnection } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
+import { dailyRewardsV2Address } from "@/helpers/contracts";
 import { useClaimEligibility } from "@/hooks/use-reward-claim";
 import { signIn } from "@/lib/client-auth";
+import type { ChainId } from "@/lib/constants";
 import { handleError } from "@/lib/error-handling";
-import { getDailyRewardsV2Address } from "@/lib/utils";
 import { getButtonState } from "./get-button-state";
 import { useClaimContracts } from "./use-claim-contracts";
 import { useTransactionStatus } from "./use-transaction-status";
 
 type UseRewardClaimTransactionLogicProps = {
-  chainId: number;
+  chainId: ChainId;
   fid: bigint | undefined;
   sponsored: boolean;
   onSuccess?: (txHash: string) => void;
@@ -25,11 +26,9 @@ export function useRewardClaimTransactionLogic({
   onError,
   disabled = false,
 }: UseRewardClaimTransactionLogicProps) {
-  const { address } = useAppKitAccount({ namespace: "eip155" });
+  const { address } = useConnection();
 
-  const contractAddress = targetChainId
-    ? getDailyRewardsV2Address(targetChainId)
-    : undefined;
+  const contractAddress = dailyRewardsV2Address[targetChainId];
   const {
     canClaim,
     claimStatus,

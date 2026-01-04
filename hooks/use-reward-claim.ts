@@ -1,22 +1,19 @@
 "use client";
 
-import { useAppKitAccount, useAppKitNetwork } from "@reown/appkit/react";
-import { useMemo } from "react";
-import type { Address } from "viem";
-import { useReadContract } from "wagmi";
-import { useMiniAppSharing } from "@/hooks/use-mini-app-sharing";
-import { dailyRewardsV2Abi } from "@/lib/abi/daily-rewards-v2";
+import type { Address } from "viem/accounts";
+import { useConnection } from "wagmi";
 import {
-  BASE_CHAIN_ID,
-  CELO_CHAIN_ID,
-  OPTIMISM_CHAIN_ID,
-} from "@/lib/constants";
-import { getDailyRewardsV2Address, normalizeChainId } from "@/lib/utils";
+  dailyRewardsV2Address,
+  useReadDailyRewardsV2CanClaimToday,
+  useReadDailyRewardsV2DailyClaimCount,
+} from "@/helpers/contracts";
+import { useMiniAppSharing } from "@/hooks/use-mini-app-sharing";
+import type { ChainId } from "@/lib/constants";
 
 type UseClaimEligibilityProps = {
   fid: bigint | undefined;
   enabled?: boolean;
-  chainId?: number;
+  chainId: ChainId;
 };
 
 type ContractClaimEligibility = {
@@ -38,7 +35,6 @@ type ClaimEligibility = ContractClaimEligibility & {
 
 const SIGNATURE_DEADLINE_SECONDS = 300; // 5 minutes
 const REFETCH_ELIGIBILITY_MS = 1000; // 1 second (more responsive)
-const REFETCH_VAULT_MS = 1000; // 1 second (more responsive)
 
 type FormattedClaimEligibility = {
   claimStatus: ClaimEligibility | undefined;
@@ -81,38 +77,24 @@ function shouldQueryEligibility(params: {
   address: string | undefined;
   fid: bigint | undefined;
   contractAddress: string;
-  isBaseChain: boolean;
 }): boolean {
   return (
     params.enabled &&
     Boolean(params.address) &&
     params.fid !== undefined &&
-    Boolean(params.contractAddress) &&
-    params.isBaseChain
+    Boolean(params.contractAddress)
   );
 }
 
 export function useClaimEligibility({
   fid,
   enabled = true,
-  chainId: targetChainId,
+  chainId,
 }: UseClaimEligibilityProps) {
-  const { address } = useAppKitAccount({ namespace: "eip155" });
-  const { chainId: connectedChainId } = useAppKitNetwork();
-  const normalizedConnectedChainId = normalizeChainId(connectedChainId);
+  const { address } = useConnection();
   const { hasSharedToday } = useMiniAppSharing();
 
-  // Use target chain if provided, otherwise use connected chain
-  const activeChainId =
-    targetChainId ?? normalizedConnectedChainId ?? BASE_CHAIN_ID;
-  const contractAddress = getDailyRewardsV2Address(activeChainId);
-
-  // Check if user is on a supported chain
-  const isSupportedChain = [
-    BASE_CHAIN_ID,
-    CELO_CHAIN_ID,
-    OPTIMISM_CHAIN_ID,
-  ].includes(activeChainId);
+  const contractAddress = dailyRewardsV2Address[chainId];
 
   const args = buildClaimEligibilityArgs(address, fid, contractAddress);
   const shouldQuery = shouldQueryEligibility({
@@ -120,7 +102,6 @@ export function useClaimEligibility({
     address,
     fid,
     contractAddress,
-    isBaseChain: isSupportedChain,
   });
 
   const {
@@ -128,11 +109,8 @@ export function useClaimEligibility({
     isPending,
     isError,
     refetch: refetchContract,
-  } = useReadContract({
-    chainId: activeChainId,
-    address: (contractAddress as Address) || undefined,
-    abi: dailyRewardsV2Abi,
-    functionName: "canClaimToday",
+  } = useReadDailyRewardsV2CanClaimToday({
+    chainId,
     args,
     query: {
       enabled: shouldQuery,
@@ -156,95 +134,10 @@ export function useClaimEligibility({
  * Returns a timestamp 1 hour in the future.
  */
 export function useClaimDeadline(customDeadline?: bigint): bigint {
-  return useMemo(() => {
-    if (customDeadline) {
-      return customDeadline;
-    }
-    return BigInt(Math.floor(Date.now() / 1000) + SIGNATURE_DEADLINE_SECONDS);
-  }, [customDeadline]);
-}
-
-export function useRewardVaultStatus() {
-  const contractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
-
-  const { data: vaultStatus, isPending } = useReadContract({
-    address: (contractAddress as Address) || undefined,
-    abi: dailyRewardsV2Abi,
-    functionName: "getVaultStatus",
-    chainId: BASE_CHAIN_ID,
-    query: {
-      enabled: contractAddress !== "",
-      refetchInterval: REFETCH_VAULT_MS,
-    },
-  });
-
-  return {
-    balance: vaultStatus?.[0] ?? 0n,
-    minReserve: vaultStatus?.[1] ?? 0n,
-    available: vaultStatus?.[2] ?? 0n,
-    isPending,
-    hasRewards: (vaultStatus?.[2] ?? 0n) > 0n,
-  };
-}
-
-/**
- * Hook to check if any supported chain has available rewards.
- * Returns true if at least one chain has a non-zero vault balance.
- */
-export function useMultichainVaultStatus() {
-  const baseContractAddress = getDailyRewardsV2Address(BASE_CHAIN_ID);
-  const celoContractAddress = getDailyRewardsV2Address(CELO_CHAIN_ID);
-  const optimismContractAddress = getDailyRewardsV2Address(OPTIMISM_CHAIN_ID);
-
-  const { data: baseVault, isPending: baseLoading } = useReadContract({
-    address: (baseContractAddress as Address) || undefined,
-    abi: dailyRewardsV2Abi,
-    functionName: "getVaultStatus",
-    chainId: BASE_CHAIN_ID,
-    query: {
-      enabled: baseContractAddress !== "",
-      refetchInterval: REFETCH_VAULT_MS,
-    },
-  });
-
-  const { data: celoVault, isPending: celoLoading } = useReadContract({
-    address: (celoContractAddress as Address) || undefined,
-    abi: dailyRewardsV2Abi,
-    functionName: "getVaultStatus",
-    chainId: CELO_CHAIN_ID,
-    query: {
-      enabled: celoContractAddress !== "",
-      refetchInterval: REFETCH_VAULT_MS,
-    },
-  });
-
-  const { data: optimismVault, isPending: optimismLoading } = useReadContract({
-    address: (optimismContractAddress as Address) || undefined,
-    abi: dailyRewardsV2Abi,
-    functionName: "getVaultStatus",
-    chainId: OPTIMISM_CHAIN_ID,
-    query: {
-      enabled: optimismContractAddress !== "",
-      refetchInterval: REFETCH_VAULT_MS,
-    },
-  });
-
-  const baseAvailable = baseVault?.[2] ?? 0n;
-  const celoAvailable = celoVault?.[2] ?? 0n;
-  const optimismAvailable = optimismVault?.[2] ?? 0n;
-  const hasAnyRewards =
-    baseAvailable > 0n || celoAvailable > 0n || optimismAvailable > 0n;
-
-  return {
-    base: { available: baseAvailable, hasRewards: baseAvailable > 0n },
-    celo: { available: celoAvailable, hasRewards: celoAvailable > 0n },
-    optimism: {
-      available: optimismAvailable,
-      hasRewards: optimismAvailable > 0n,
-    },
-    hasAnyRewards,
-    isPending: baseLoading || celoLoading || optimismLoading,
-  };
+  if (customDeadline) {
+    return customDeadline;
+  }
+  return BigInt(Math.floor(Date.now() / 1000) + SIGNATURE_DEADLINE_SECONDS);
 }
 
 /**
@@ -252,43 +145,18 @@ export function useMultichainVaultStatus() {
  * This shows how many claims have been made today on that chain.
  * If no chainId is provided, defaults to the current connected chain.
  */
-export function useDailyClaimCount(chainId?: number) {
-  const { chainId: connectedChainId } = useAppKitNetwork();
-  const normalizedConnectedChainId = normalizeChainId(connectedChainId);
-  const activeChainId = chainId ?? normalizedConnectedChainId ?? BASE_CHAIN_ID;
-  const contractAddress = getDailyRewardsV2Address(activeChainId);
-
+export function useDailyClaimCount(chainId: ChainId) {
   const secondsPerDay = 86_400;
   const today = BigInt(Math.floor(Date.now() / 1000 / secondsPerDay));
 
-  const { data: dailyCount } = useReadContract({
-    address: (contractAddress as Address) || undefined,
-    abi: dailyRewardsV2Abi,
-    functionName: "dailyClaimCount",
+  const { data: dailyCount } = useReadDailyRewardsV2DailyClaimCount({
     args: [today],
-    chainId: activeChainId as number,
+    chainId,
     query: {
-      enabled: contractAddress !== "",
+      enabled: true,
       refetchInterval: 1000, // Refresh every 1 second
     },
   });
 
   return Number(dailyCount ?? 0n);
-}
-
-/**
- * Hook to get total daily claim counts across all supported chains.
- * Returns an object with counts per chain and total.
- */
-export function useMultichainDailyClaimCounts() {
-  const baseCount = useDailyClaimCount(BASE_CHAIN_ID);
-  const celoCount = useDailyClaimCount(CELO_CHAIN_ID);
-  const optimismCount = useDailyClaimCount(OPTIMISM_CHAIN_ID);
-
-  return {
-    base: baseCount,
-    celo: celoCount,
-    optimism: optimismCount,
-    total: baseCount + celoCount + optimismCount,
-  };
 }
