@@ -1,6 +1,5 @@
 import { sdk } from "@farcaster/miniapp-sdk";
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useCallback } from "react";
+import { useConnection } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 import { useContractOwner } from "@/hooks/use-contract-owner";
 import type { GmStats } from "@/hooks/use-gm-stats";
@@ -40,14 +39,14 @@ export const useHeaderLogic = ({
   onMiniAppAddedAction,
   gmStats,
 }: UseHeaderLogicProps) => {
-  const { address } = useAppKitAccount({ namespace: "eip155" });
+  const { address } = useConnection();
   const miniAppContext = useMiniAppContext();
   const { owner } = useContractOwner();
   const clientAdded = miniAppContext?.context?.client?.added;
   const notificationsEnabled =
     miniAppContext?.context?.client?.notificationDetails;
 
-  const handleAddMiniApp = useCallback(async () => {
+  const handleAddMiniApp = async () => {
     try {
       const response = await sdk.actions.addMiniApp();
       const hasNotifications = Boolean(response.notificationDetails);
@@ -64,7 +63,7 @@ export const useHeaderLogic = ({
         errorMessage: extractErrorMessage(error),
       });
     }
-  }, [onMiniAppAddedAction]);
+  };
 
   const user = extractUserFromContext(miniAppContext?.context);
   const shouldShowUserInfo = !!user || !!address;
