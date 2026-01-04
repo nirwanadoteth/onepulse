@@ -19,8 +19,6 @@ export function AboutContent() {
         </p>
         <ul className="ml-6 list-disc text-xs [&>li]:mt-1">
           <li>Base</li>
-          <li>Celo</li>
-          <li>Optimism</li>
         </ul>
       </div>
 
