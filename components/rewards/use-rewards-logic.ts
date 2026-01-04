@@ -1,8 +1,8 @@
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useConnection } from "wagmi";
 import { useMiniAppContext } from "@/components/providers/miniapp-provider";
 
 export function useRewardsLogic() {
-  const { isConnected, address } = useAppKitAccount({ namespace: "eip155" });
+  const { isConnected, address } = useConnection();
   const miniAppContextData = useMiniAppContext();
 
   const fid = miniAppContextData?.context?.user?.fid

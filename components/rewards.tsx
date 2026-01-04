@@ -1,11 +1,10 @@
 "use client";
 
-import { memo } from "react";
-import { ConnectWalletCard } from "@/components/connect-wallet-card";
 import { RewardChainList } from "@/components/reward-chain-card/reward-chain-list";
 import { useRewardsLogic } from "./rewards/use-rewards-logic";
+import { ConnectWallet } from "./wallet";
 
-export const Rewards = memo(function RewardsTab({
+export const Rewards = function RewardsTab({
   sponsored,
 }: {
   sponsored?: boolean;
@@ -18,12 +17,12 @@ export const Rewards = memo(function RewardsTab({
         <RewardChainList
           address={address}
           fid={fid}
-          isConnected
+          isConnected={isConnected}
           sponsored={Boolean(sponsored)}
         />
       ) : (
-        <ConnectWalletCard />
+        <ConnectWallet />
       )}
     </div>
   );
-});
+};
