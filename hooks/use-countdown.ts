@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { SECONDS_PER_DAY } from "@/lib/constants";
 import { getCurrentTimestampSeconds, timestampToDayNumber } from "@/lib/utils";
 
-export const useCountdown = () => {
+type UseCountdownReturn = {
+  text: string;
+};
+
+export function useCountdown(): UseCountdownReturn {
   const [text, setText] = useState("--:--:--");
   const intervalRef = useRef<number | null>(null);
 
@@ -49,5 +53,5 @@ export const useCountdown = () => {
     };
   }, [targetSec]);
 
-  return text;
-};
+  return { text };
+}
