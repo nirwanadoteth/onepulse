@@ -20,7 +20,6 @@ type ActionButtonProps = {
   isSponsored: boolean;
   processing: boolean;
   address?: `0x${string}`;
-  refetchLastGmDayAction?: () => Promise<unknown>;
   setProcessingAction: (value: boolean) => void;
 };
 
@@ -36,7 +35,6 @@ export function ActionButton({
   isSponsored,
   processing,
   address,
-  refetchLastGmDayAction,
   setProcessingAction,
 }: ActionButtonProps) {
   const { doSwitch, isLoading } = useActionButtonLogic({
@@ -89,9 +87,7 @@ export function ActionButton({
       contractAddress={contractAddress}
       isContractReady={!gmDisabled}
       isSponsored={isSponsored}
-      onCloseAction={() => undefined}
       processing={processing}
-      refetchLastGmDayAction={refetchLastGmDayAction}
       setProcessingAction={setProcessingAction}
     />
   );

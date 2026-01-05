@@ -20,8 +20,6 @@ type GMTransactionProps = {
   chainBtnClasses: string;
   buttonLabel: string;
   address: `0x${string}`;
-  refetchLastGmDayAction?: () => Promise<unknown>;
-  onCloseAction: () => void;
   setProcessingAction: (value: boolean) => void;
 };
 
@@ -34,8 +32,6 @@ export function GMTransaction({
   chainBtnClasses,
   buttonLabel,
   address,
-  refetchLastGmDayAction,
-  onCloseAction,
   setProcessingAction,
 }: GMTransactionProps) {
   const { calls, hasCalls } = useGMTransactionLogic({
@@ -72,8 +68,6 @@ export function GMTransaction({
             <SuccessReporter
               address={address}
               chainId={chainId}
-              onReported={onCloseAction}
-              refetchLastGmDay={refetchLastGmDayAction}
               status={status}
               txHash={context?.transactionHash}
             />

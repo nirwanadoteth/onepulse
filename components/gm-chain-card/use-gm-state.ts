@@ -53,15 +53,12 @@ export const useGMState = (
   isConnected: boolean,
   address?: `0x${string}`
 ) => {
-  const {
-    data: lastGmDayData,
-    isPending: isPendingLastGm,
-    refetch: refetchLastGmDay,
-  } = useReadDailyGmLastGmDay({
-    chainId,
-    args: address ? [address] : undefined,
-    query: { enabled: Boolean(address) },
-  });
+  const { data: lastGmDayData, isPending: isPendingLastGm } =
+    useReadDailyGmLastGmDay({
+      chainId,
+      args: address ? [address] : undefined,
+      query: { enabled: Boolean(address) },
+    });
 
   const { hasGmToday, gmDisabled } = computeGMState({
     address,
@@ -74,6 +71,5 @@ export const useGMState = (
   return {
     hasGmToday,
     gmDisabled,
-    refetchLastGmDay,
   };
 };

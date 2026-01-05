@@ -1,8 +1,8 @@
 import { Spinner } from "@/components/ui/spinner";
-import type { GmStats } from "@/hooks/use-gm-stats";
+import { useGmStats } from "@/hooks/use-gm-stats";
 
 type StatColumnProps = {
-  value: number | undefined;
+  value: number;
   label: string;
 };
 
@@ -18,41 +18,22 @@ function StatColumn({ value, label }: StatColumnProps) {
 }
 
 type StatsDisplayProps = {
-  stats: GmStats | undefined;
-  chainId: number;
+  address: string | undefined;
   isConnected: boolean;
-  isStatsReady: boolean;
 };
 
-export function StatsDisplay({
-  stats,
-  chainId,
-  isConnected,
-  isStatsReady,
-}: StatsDisplayProps) {
-  const chainStats = isConnected && stats ? stats[String(chainId)] : undefined;
+export function StatsDisplay({ address, isConnected }: StatsDisplayProps) {
+  const { stats, isReady } = useGmStats(address);
 
-  const getValue = (statValue: number | undefined) => {
-    if (!isConnected) {
-      return 0;
-    }
-    if (!isStatsReady) {
-      return;
-    }
-    if (!chainStats) {
-      return 0;
-    }
-    return statValue;
+  const getValue = (statValue: number) => {
+    return isConnected && isReady ? statValue : 0;
   };
 
   return (
-    <div className="grid grid-cols-3 gap-2 text-center">
-      <StatColumn label="Current" value={getValue(chainStats?.currentStreak)} />
-      <StatColumn label="Highest" value={getValue(chainStats?.highestStreak)} />
-      <StatColumn
-        label="All-Time"
-        value={getValue(chainStats?.allTimeGmCount)}
-      />
+    <div className="grid grid-cols-3 gap-2 text-center" key={address}>
+      <StatColumn label="Current" value={getValue(stats.currentStreak)} />
+      <StatColumn label="Highest" value={getValue(stats.highestStreak)} />
+      <StatColumn label="All-Time" value={getValue(stats.allTimeGmCount)} />
     </div>
   );
 }

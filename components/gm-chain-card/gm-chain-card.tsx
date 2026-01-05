@@ -8,7 +8,6 @@ import {
   ItemFooter,
   ItemMedia,
 } from "@/components/ui/item";
-import type { GmStats } from "@/hooks/use-gm-stats";
 import type { ChainId } from "@/lib/constants";
 import { ActionButton } from "./action-button";
 import { StatsDisplay } from "./stats-display";
@@ -20,8 +19,6 @@ export type GMChainCardProps = {
   contractAddress: `0x${string}`;
   isConnected: boolean;
   address?: `0x${string}`;
-  stats: GmStats;
-  isStatsReady: boolean;
   isSponsored?: boolean;
 };
 
@@ -31,8 +28,6 @@ export const GMChainCard = ({
   contractAddress,
   isConnected,
   address,
-  stats,
-  isStatsReady,
   isSponsored = false,
 }: GMChainCardProps) => {
   const {
@@ -43,7 +38,6 @@ export const GMChainCard = ({
     chainIconName,
     processing,
     setProcessing,
-    refetchLastGmDay,
   } = useGMChainCardLogic({
     chainId,
     contractAddress,
@@ -64,12 +58,7 @@ export const GMChainCard = ({
         </ItemMedia>
       </ItemContent>
       <ItemActions>
-        <StatsDisplay
-          chainId={chainId}
-          isConnected={isConnected}
-          isStatsReady={isStatsReady}
-          stats={stats}
-        />
+        <StatsDisplay address={address} isConnected={isConnected} />
       </ItemActions>
       <ItemFooter className="flex-col">
         <ActionButton
@@ -84,7 +73,6 @@ export const GMChainCard = ({
           name={name}
           onCorrectChain={onCorrectChain}
           processing={processing}
-          refetchLastGmDayAction={refetchLastGmDay}
           setProcessingAction={setProcessing}
         />
       </ItemFooter>

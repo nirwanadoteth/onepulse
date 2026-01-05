@@ -21,7 +21,7 @@ export function useGMChainCardLogic({
   const onCorrectChain = currentChainId === chainId;
   const [processing, setProcessing] = useState(false);
 
-  const { hasGmToday, gmDisabled, refetchLastGmDay } = useGMState(
+  const { hasGmToday, gmDisabled } = useGMState(
     chainId,
     contractAddress,
     isConnected,
@@ -40,6 +40,5 @@ export function useGMChainCardLogic({
     chainIconName,
     processing,
     setProcessing,
-    refetchLastGmDay,
   };
 }
