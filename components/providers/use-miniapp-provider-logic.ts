@@ -8,18 +8,20 @@ type MiniAppProviderContextType = {
   isInMiniApp: boolean;
 } | null;
 
-export function useMiniAppProviderLogic() {
+export function useMiniAppProviderLogic(): {
+  miniAppContext: MiniAppProviderContextType;
+} {
   const [miniAppContext, setMiniAppContext] =
     useState<MiniAppProviderContextType>(null);
   const { context } = useMiniKit();
 
   useEffect(() => {
-    const init = async () => {
+    async function initializeMiniApp(): Promise<void> {
       try {
         const inMiniApp = await sdk.isInMiniApp();
 
         setMiniAppContext({
-          context,
+          context: context ?? null,
           isInMiniApp: inMiniApp,
         });
       } catch {
@@ -29,9 +31,9 @@ export function useMiniAppProviderLogic() {
           isInMiniApp: false,
         });
       }
-    };
+    }
 
-    init();
+    initializeMiniApp();
   }, [context]);
 
   return {
