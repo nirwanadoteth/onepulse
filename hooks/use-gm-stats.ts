@@ -1,57 +1,46 @@
 "use client";
 
-import type { Infer } from "spacetimedb";
-import type { GmStatsByAddressV2Row } from "@/lib/module_bindings";
-import { gmStatsByAddressStore } from "@/stores/gm-store";
-import { deriveStatsForAddress, groupRowsByAddress } from "./gm-stats-helpers";
-import {
-  useGmStatsFallback,
-  useGmStatsSubscription,
-} from "./use-gm-stats-internal";
+import { eq, useTable, where } from "spacetimedb/react";
+import { tables } from "@/spacetimedb";
 
-type GmStatsByAddress = Infer<typeof GmStatsByAddressV2Row>;
+export type GmStats = {
+  currentStreak: number;
+  highestStreak: number;
+  allTimeGmCount: number;
+};
 
-export type GmStats = Record<
-  string,
-  {
-    name: string;
-    currentStreak: number;
-    highestStreak: number;
-    allTimeGmCount: number;
-    lastGmDay: number;
-  }
->;
-
-export const ZERO: GmStats = {};
-
-export const EMPTY_ROWS: GmStatsByAddress[] = [];
+export const ZERO: GmStats = {
+  currentStreak: 0,
+  highestStreak: 0,
+  allTimeGmCount: 0,
+};
 
 export type GmStatsResult = {
   stats: GmStats;
   isReady: boolean;
 };
 
-export function useGmStats(address?: string | null): GmStatsResult {
-  const normalizedAddress = address?.toLocaleLowerCase() ?? null;
-  const snapshot = useGmStatsSubscription(normalizedAddress);
-  const rowsByAddress = groupRowsByAddress(snapshot);
-  const rowsForAddress = (() => {
-    if (!normalizedAddress) {
-      return EMPTY_ROWS;
-    }
-    return rowsByAddress.get(normalizedAddress) ?? EMPTY_ROWS;
-  })();
-  const fallbackStats = useGmStatsFallback(rowsForAddress, normalizedAddress);
-  const subDerived = deriveStatsForAddress(rowsForAddress, normalizedAddress);
-  const currentKey = `${normalizedAddress ?? ""}:all`;
-  const fallbackForKey =
-    fallbackStats && fallbackStats.key === currentKey
-      ? fallbackStats.stats
-      : undefined;
-  const stats: GmStats = subDerived ?? fallbackForKey ?? ZERO;
-  const isReady =
-    gmStatsByAddressStore.isSubscribedForAddress(address) ||
-    Boolean(fallbackForKey);
+export function useGmStats(address?: string): GmStatsResult {
+  const normalizedAddress = address ?? "";
+  const [gmStats] = useTable(
+    tables.stats,
+    where(eq("address", normalizedAddress))
+  );
 
-  return { stats, isReady };
+  // Return ZERO stats with isReady=false if no address
+  if (!address) {
+    return { stats: ZERO, isReady: false };
+  }
+
+  // Verify the result matches the queried address to avoid stale data
+  if (!gmStats[0] || gmStats[0].address !== normalizedAddress) {
+    return { stats: ZERO, isReady: false };
+  }
+
+  const stats = {
+    currentStreak: gmStats[0].currentStreak,
+    highestStreak: gmStats[0].highestStreak,
+    allTimeGmCount: gmStats[0].allTimeGmCount,
+  };
+  return { stats, isReady: true };
 }
