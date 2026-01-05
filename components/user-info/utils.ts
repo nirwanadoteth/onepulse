@@ -6,34 +6,54 @@ export type UserInfoProps = {
   address?: `0x${string}` | string;
 };
 
-export const getAvatarUrl = (userPfp: string | undefined): string | undefined =>
-  userPfp || undefined;
+type AvatarUrlResult = string | undefined;
+type MiniAppUserDisplayResult = {
+  displayName: string;
+  avatarUrl: string | undefined;
+  username: string | undefined;
+};
+type WalletConnectedDisplayResult = {
+  avatarUrl: string | undefined;
+  displayName: string;
+};
 
-export const getDisplayName = (
+export function getAvatarUrl(userPfp: string | undefined): AvatarUrlResult {
+  return userPfp || undefined;
+}
+
+export function getDisplayName(
   userDisplayName: string | undefined,
   address: `0x${string}`
-): string => userDisplayName || getSlicedAddress(address);
+): string {
+  return userDisplayName || getSlicedAddress(address);
+}
 
-export const getMiniAppUserDisplay = (user: UserInfoProps["user"]) => ({
-  displayName: user?.displayName || "Unknown",
-  avatarUrl: user?.pfpUrl || undefined,
-  username: user?.username,
-});
+export function getMiniAppUserDisplay(
+  user: UserInfoProps["user"]
+): MiniAppUserDisplayResult {
+  return {
+    displayName: user?.displayName || "Unknown",
+    avatarUrl: user?.pfpUrl,
+    username: user?.username,
+  };
+}
 
-export const getWalletConnectedDisplay = (
+export function getWalletConnectedDisplay(
   user: UserInfoProps["user"],
   address: `0x${string}`
-) => ({
-  avatarUrl: getAvatarUrl(user?.pfpUrl),
-  displayName: getDisplayName(user?.displayName, address),
-});
+): WalletConnectedDisplayResult {
+  return {
+    avatarUrl: getAvatarUrl(user?.pfpUrl),
+    displayName: getDisplayName(user?.displayName, address),
+  };
+}
 
 export type DisplayState = "hidden" | "miniapp" | "loading" | "wallet";
 
-export const determineDisplayState = (
+export function determineDisplayState(
   user: UserInfoProps["user"],
   address: `0x${string}` | undefined
-): DisplayState => {
+): DisplayState {
   const hasIdentity = Boolean(user || address);
   if (!hasIdentity) {
     return "hidden";
@@ -42,4 +62,4 @@ export const determineDisplayState = (
     return "wallet";
   }
   return "miniapp";
-};
+}

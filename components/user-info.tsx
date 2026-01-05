@@ -61,7 +61,7 @@ const WalletConnectedView = ({
   );
 };
 
-export const UserInfo = ({ user, address: addressProp }: UserInfoProps) => {
+export function UserInfo({ user, address: addressProp }: UserInfoProps) {
   const { address, isConnected, state } = useUserInfoLogic({
     user,
     address: addressProp,
@@ -86,4 +86,4 @@ export const UserInfo = ({ user, address: addressProp }: UserInfoProps) => {
       user={user}
     />
   );
-};
+}
