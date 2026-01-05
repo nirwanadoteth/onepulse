@@ -1,29 +1,19 @@
 "use client";
 
+import type { JSX } from "react";
 import { Header } from "@/components/header";
-import { Tabs } from "@/components/tabs";
+import { Home as HomeComponent } from "@/components/home";
 import { useHomePage } from "@/hooks/use-home-page";
 
-type ContentProps = {
-  tab: string;
-  setTab: (tab: string) => void;
-};
-
-function Content({ tab, setTab }: ContentProps) {
-  return (
-    <div className="mx-auto w-[95%] max-w-lg px-4 py-4">
-      <Header />
-      <Tabs onTabChangeAction={setTab} tab={tab} />
-    </div>
-  );
-}
-
-export default function Home() {
-  const { safeAreaStyle, tab, setTab } = useHomePage();
+export default function HomePage(): JSX.Element {
+  const { safeAreaStyle } = useHomePage();
 
   return (
     <div className="font-sans" style={safeAreaStyle}>
-      <Content setTab={setTab} tab={tab} />
+      <div className="mx-auto my-4 w-[95%] max-w-lg px-4 py-4">
+        <Header />
+        <HomeComponent />
+      </div>
     </div>
   );
 }
