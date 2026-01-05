@@ -16,7 +16,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import type { useGmStats } from "@/hooks/use-gm-stats";
 import { useTabsLogic } from "./tabs/use-tabs-logic";
 
 const OnChatWidget = dynamic(
@@ -29,25 +28,16 @@ const OnChatWidget = dynamic(
 type TabsProps = {
   tab: string;
   onTabChangeAction: (tab: string) => void;
-  onGmStatsChangeAction: (stats: ReturnType<typeof useGmStats>) => void;
 };
 
-export function Tabs({
-  tab,
-  onTabChangeAction,
-  onGmStatsChangeAction,
-}: TabsProps) {
-  const { isBaseApp, allowedChainIds } = useTabsLogic();
+export function Tabs({ tab, onTabChangeAction }: TabsProps) {
+  const { isBaseApp } = useTabsLogic();
 
   return (
     <div className="my-4">
       <TabsComponent onValueChange={onTabChangeAction} value={tab}>
         <TabsContent value="home">
-          <Home
-            allowedChainIds={allowedChainIds}
-            onGmStatsChangeAction={onGmStatsChangeAction}
-            sponsored={isBaseApp}
-          />
+          <Home sponsored={isBaseApp} />
         </TabsContent>
         <div className="fixed right-0 bottom-0 left-0 mx-auto h-16 w-full max-w-lg bg-transparent">
           <div className="h-16 rounded-t-lg border border-border bg-transparent shadow-lg">
