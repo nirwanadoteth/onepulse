@@ -4,7 +4,11 @@ import { GMChainCard } from "@/components/gm-chain-card/gm-chain-card";
 import { Countdown } from "./countdown";
 import { useHomeLogic } from "./home/use-home-logic";
 
-export const Home = ({ sponsored }: { sponsored?: boolean }) => {
+type HomeProps = {
+  sponsored?: boolean;
+};
+
+export function Home({ sponsored }: HomeProps) {
   const { isConnected, address } = useHomeLogic();
 
   return (
@@ -18,6 +22,6 @@ export const Home = ({ sponsored }: { sponsored?: boolean }) => {
       />
     </div>
   );
-};
+}
 
 Home.displayName = "Home";
