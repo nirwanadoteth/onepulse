@@ -1,6 +1,6 @@
 "use client";
 
-import { eq, useTable, where } from "spacetimedb/react";
+import { eq, useSpacetimeDB, useTable, where } from "spacetimedb/react";
 import { tables } from "@/spacetimedb";
 
 export type GmStats = {
@@ -22,10 +22,15 @@ export type GmStatsResult = {
 
 export function useGmStats(address?: string): GmStatsResult {
   const normalizedAddress = address ?? "";
+  const { identity, isActive: connected } = useSpacetimeDB();
   const [gmStats] = useTable(
     tables.stats,
     where(eq("address", normalizedAddress))
   );
+
+  if (!(connected && identity)) {
+    return { stats: ZERO, isReady: false };
+  }
 
   // Return ZERO stats with isReady=false if no address
   if (!address) {
