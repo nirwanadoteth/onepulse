@@ -32,18 +32,11 @@ export function OnchainKitProvider({ children }: OnchainKitProviderProps) {
     paymaster,
   };
 
-  const miniKit = {
-    enabled: true,
-    autoConnect: true,
-    notificationProxyUrl: undefined,
-  };
-
   return (
     <Provider
       apiKey={apiKey}
       chain={base}
       config={config}
-      miniKit={miniKit}
       projectId={projectId}
     >
       {children}
