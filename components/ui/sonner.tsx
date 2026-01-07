@@ -7,12 +7,11 @@ import {
   TriangleAlertIcon,
   XIcon,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 import { cn } from "@/lib/utils";
-import type { CSSProperties } from "react";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-
   return (
     <Sonner
       icons={{
