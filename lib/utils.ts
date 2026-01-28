@@ -72,3 +72,57 @@ export function isSponsoredOnChain(sponsored: boolean): boolean {
 export function getChainIconName(): string {
   return "base";
 }
+
+/**
+ * Format a number with a specific number of decimal places
+ */
+export function formatNumber(value: number, decimals: number = 2): string {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+/**
+ * Truncate an Ethereum address to display format (0x1234...5678)
+ */
+export function truncateAddress(address: string, chars: number = 4): string {
+  if (!address) return "";
+  if (address.length <= chars * 2 + 2) return address;
+  return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
+}
+
+/**
+ * Wait for a specified duration (in milliseconds)
+ * Useful for rate limiting and testing
+ */
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * Create a memoized version of a computation result
+ * Only recomputes if dependencies change
+ */
+export function memoize<T>(
+  computeFn: () => T,
+  dependencies: readonly unknown[]
+): {
+  current: T;
+  dependencies: readonly unknown[];
+} {
+  return {
+    current: computeFn(),
+    dependencies,
+  };
+}
+
+/**
+ * Check if two arrays are equal (shallow comparison)
+ */
+export function arraysEqual<T>(a: T[], b: T[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((item, index) => item === b[index]);
+}
